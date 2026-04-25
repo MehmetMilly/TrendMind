@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { agents, activityMessages } from '@/lib/trendmind-data';
+import React, { useState, useEffect } from 'react';
+import { useCampaign } from '@/lib/campaign-context';
 import { AgentStatusGrid } from './agent-status-grid';
 import { ActivityFeed } from './activity-feed';
 import { MessageComposer } from './message-composer';
@@ -16,7 +16,21 @@ function CollapseIcon({ collapsed }: { collapsed: boolean }) {
 }
 
 export function AgentRail() {
-  const [collapsed, setCollapsed] = useState(false);
+  const { activePhase, phaseAgents, phaseActivity } = useCampaign();
+  const [collapsed, setCollapsed] = useState(activePhase === 'brief');
+  const [userToggled, setUserToggled] = useState(false);
+
+  // Auto-open the rail when entering an active phase (e.g. Research),
+  // unless the user has manually overridden in this session.
+  useEffect(() => {
+    if (userToggled) return;
+    setCollapsed(activePhase === 'brief');
+  }, [activePhase, userToggled]);
+
+  const handleToggle = () => {
+    setUserToggled(true);
+    setCollapsed((c) => !c);
+  };
 
   return (
     <div className="flex flex-shrink-0 h-full relative" style={{ transition: 'width 0.3s ease', width: collapsed ? '0px' : '300px' }}>
@@ -31,7 +45,7 @@ export function AgentRail() {
           color: '#b5b0a8',
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
         }}
-        onClick={() => setCollapsed(!collapsed)}
+        onClick={handleToggle}
         onMouseEnter={(e) => { e.currentTarget.style.color = '#2c2c2c'; e.currentTarget.style.borderColor = '#c8a96e'; }}
         onMouseLeave={(e) => { e.currentTarget.style.color = '#b5b0a8'; e.currentTarget.style.borderColor = '#e4ded4'; }}
         title={collapsed ? 'Expand agent rail' : 'Collapse agent rail'}
@@ -65,11 +79,11 @@ export function AgentRail() {
 
           {/* Status grid */}
           <div className="px-3 pt-3 pb-2 flex-shrink-0">
-            <AgentStatusGrid agents={agents} />
+            <AgentStatusGrid agents={phaseAgents} />
           </div>
 
           {/* Activity feed */}
-          <ActivityFeed messages={activityMessages} />
+          <ActivityFeed messages={phaseActivity} />
 
           {/* Composer */}
           <MessageComposer />
