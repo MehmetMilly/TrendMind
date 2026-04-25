@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { agents, activityMessages } from '@/lib/trendmind-data';
+import { useCampaign } from '@/lib/campaign-context';
 import { AgentStatusGrid } from './agent-status-grid';
 import { ActivityFeed } from './activity-feed';
 import { MessageComposer } from './message-composer';
@@ -16,7 +16,8 @@ function CollapseIcon({ collapsed }: { collapsed: boolean }) {
 }
 
 export function AgentRail() {
-  const [collapsed, setCollapsed] = useState(false);
+  const { activePhase, phaseAgents, phaseActivity } = useCampaign();
+  const [collapsed, setCollapsed] = useState(activePhase === 'brief');
 
   return (
     <div className="flex flex-shrink-0 h-full relative" style={{ transition: 'width 0.3s ease', width: collapsed ? '0px' : '300px' }}>
@@ -65,11 +66,11 @@ export function AgentRail() {
 
           {/* Status grid */}
           <div className="px-3 pt-3 pb-2 flex-shrink-0">
-            <AgentStatusGrid agents={agents} />
+            <AgentStatusGrid agents={phaseAgents} />
           </div>
 
           {/* Activity feed */}
-          <ActivityFeed messages={activityMessages} />
+          <ActivityFeed messages={phaseActivity} />
 
           {/* Composer */}
           <MessageComposer />

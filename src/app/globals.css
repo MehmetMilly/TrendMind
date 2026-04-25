@@ -102,6 +102,15 @@ html, body {
   animation: pulse-dot 2.5s ease-in-out infinite;
 }
 
+@keyframes phaseEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-phase-enter {
+  animation: phaseEnter 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
 /* Focus styles for accessibility */
 button:focus-visible {
   outline: 2px solid rgba(200, 169, 110, 0.5);
@@ -109,5 +118,13 @@ button:focus-visible {
 }
 
 textarea:focus-visible {
+  outline: none;
+}
+
+input:focus-visible {
+  outline: none;
+}
+
+select:focus-visible {
   outline: none;
 }
