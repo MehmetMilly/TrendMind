@@ -150,6 +150,58 @@ export const RESEARCH_ACTIVITY: ActivityMessage[] = [
   },
 ];
 
+export const STRATEGY_AGENTS: Agent[] = [
+  { id: 'campaign-director',  name: 'Campaign Director',  status: 'Active',             statusColor: 'green',  avatarGradient: ['#c8a96e', '#a68b4b'], initials: 'CD' },
+  { id: 'brand-strategist',   name: 'Brand Strategist',   status: 'Shaping direction',  statusColor: 'amber',  avatarGradient: ['#5b8a72', '#3d7a5f'], initials: 'BS' },
+  { id: 'trend-scout',        name: 'Trend Scout',        status: 'Supporting',         statusColor: 'blue',   avatarGradient: ['#8b6f4e', '#6b5535'], initials: 'TS' },
+  { id: 'visual-director',    name: 'Visual Director',    status: 'Aligning mood',      statusColor: 'purple', avatarGradient: ['#7a6b8a', '#5a4d6a'], initials: 'VD' },
+  { id: 'content-architects', name: 'Content Architects', status: 'Standby',            statusColor: 'gray',   avatarGradient: ['#6b8a7a', '#4d6a5a'], initials: 'CA' },
+  { id: 'performance-critic', name: 'Performance Critic', status: 'Waiting',            statusColor: 'gray',   avatarGradient: ['#8a7a6b', '#6a5a4d'], initials: 'PC' },
+];
+
+export const STRATEGY_ACTIVITY: ActivityMessage[] = [
+  {
+    id: 's1',
+    agentName: 'Campaign Director',
+    agentInitials: 'CD',
+    avatarGradient: ['#c8a96e', '#a68b4b'],
+    message: 'aligned final strategy direction with research findings.',
+    timestamp: 'Just now',
+  },
+  {
+    id: 's2',
+    agentName: 'Brand Strategist',
+    agentInitials: 'BS',
+    avatarGradient: ['#5b8a72', '#3d7a5f'],
+    message: 'defined the positioning statement and messaging hierarchy.',
+    timestamp: '1 min ago',
+  },
+  {
+    id: 's3',
+    agentName: 'Visual Director',
+    agentInitials: 'VD',
+    avatarGradient: ['#7a6b8a', '#5a4d6a'],
+    message: 'grouped visual mood cues around soft luxury and warm seasonal presentation.',
+    timestamp: '3 min ago',
+  },
+  {
+    id: 's4',
+    agentName: 'Trend Scout',
+    agentInitials: 'TS',
+    avatarGradient: ['#8b6f4e', '#6b5535'],
+    message: 'flagged which signals should influence campaign framing.',
+    timestamp: '5 min ago',
+  },
+  {
+    id: 's5',
+    agentName: 'Content Architects',
+    agentInitials: 'CA',
+    avatarGradient: ['#6b8a7a', '#4d6a5a'],
+    message: 'are standing by for the approved strategic brief.',
+    timestamp: '6 min ago',
+  },
+];
+
 // ─── Context ─────────────────────────────────────────────────────────
 
 interface CampaignContextValue {
@@ -235,12 +287,14 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
   const phaseAgents = useMemo(() => {
     if (activePhase === 'brief') return BRIEF_AGENTS;
     if (activePhase === 'research') return RESEARCH_AGENTS;
+    if (activePhase === 'strategy') return STRATEGY_AGENTS;
     return BRIEF_AGENTS;
   }, [activePhase]);
 
   const phaseActivity = useMemo(() => {
     if (activePhase === 'brief') return BRIEF_ACTIVITY;
     if (activePhase === 'research') return RESEARCH_ACTIVITY;
+    if (activePhase === 'strategy') return STRATEGY_ACTIVITY;
     return BRIEF_ACTIVITY;
   }, [activePhase]);
 
