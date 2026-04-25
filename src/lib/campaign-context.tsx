@@ -105,6 +105,51 @@ export const BRIEF_ACTIVITY: ActivityMessage[] = [
   },
 ];
 
+export const RESEARCH_AGENTS: Agent[] = [
+  { id: 'campaign-director',  name: 'Campaign Director',  status: 'Active',     statusColor: 'green',  avatarGradient: ['#c8a96e', '#a68b4b'], initials: 'CD' },
+  { id: 'brand-strategist',   name: 'Brand Strategist',   status: 'Monitoring', statusColor: 'blue',   avatarGradient: ['#5b8a72', '#3d7a5f'], initials: 'BS' },
+  { id: 'trend-scout',        name: 'Trend Scout',        status: 'Processing', statusColor: 'amber',  avatarGradient: ['#8b6f4e', '#6b5535'], initials: 'TS' },
+  { id: 'visual-director',    name: 'Visual Director',    status: 'Curating',   statusColor: 'purple', avatarGradient: ['#7a6b8a', '#5a4d6a'], initials: 'VD' },
+  { id: 'content-architects', name: 'Content Architects', status: 'Standby',    statusColor: 'gray',   avatarGradient: ['#6b8a7a', '#4d6a5a'], initials: 'CA' },
+  { id: 'performance-critic', name: 'Performance Critic', status: 'Waiting',    statusColor: 'gray',   avatarGradient: ['#8a7a6b', '#6a5a4d'], initials: 'PC' },
+];
+
+export const RESEARCH_ACTIVITY: ActivityMessage[] = [
+  {
+    id: 'r1',
+    agentName: 'Trend Scout',
+    agentInitials: 'TS',
+    avatarGradient: ['#8b6f4e', '#6b5535'],
+    message: 'identified 4 relevant seasonal cultural signals.',
+    subItems: ['Soft luxury, intentional shopping, gifting rituals, modern warmth.'],
+    timestamp: 'Just now',
+  },
+  {
+    id: 'r2',
+    agentName: 'Visual Director',
+    agentInitials: 'VD',
+    avatarGradient: ['#7a6b8a', '#5a4d6a'],
+    message: 'grouped references around soft luxury gifting.',
+    timestamp: '1 min ago',
+  },
+  {
+    id: 'r3',
+    agentName: 'Brand Strategist',
+    agentInitials: 'BS',
+    avatarGradient: ['#5b8a72', '#3d7a5f'],
+    message: 'is reviewing audience resonance patterns.',
+    timestamp: '3 min ago',
+  },
+  {
+    id: 'r4',
+    agentName: 'Campaign Director',
+    agentInitials: 'CD',
+    avatarGradient: ['#c8a96e', '#a68b4b'],
+    message: 'updated the campaign direction based on new research.',
+    timestamp: '5 min ago',
+  },
+];
+
 // ─── Context ─────────────────────────────────────────────────────────
 
 interface CampaignContextValue {
@@ -189,12 +234,13 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
   // Phase-aware agent data
   const phaseAgents = useMemo(() => {
     if (activePhase === 'brief') return BRIEF_AGENTS;
-    // Other phases will return default data; extend later
+    if (activePhase === 'research') return RESEARCH_AGENTS;
     return BRIEF_AGENTS;
   }, [activePhase]);
 
   const phaseActivity = useMemo(() => {
     if (activePhase === 'brief') return BRIEF_ACTIVITY;
+    if (activePhase === 'research') return RESEARCH_ACTIVITY;
     return BRIEF_ACTIVITY;
   }, [activePhase]);
 

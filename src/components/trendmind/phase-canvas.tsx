@@ -3,6 +3,7 @@
 import React from 'react';
 import { useCampaign, PHASES } from '@/lib/campaign-context';
 import { BriefPhase } from './phases/brief-phase';
+import { ResearchPhase } from './phases/research-phase';
 import { PlaceholderPhase } from './phases/placeholder-phase';
 
 export function PhaseCanvas() {
@@ -56,7 +57,10 @@ export function PhaseCanvas() {
         {/* Phase body — rendered by active phase */}
         <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
           {activePhase === 'brief' && <BriefPhase />}
-          {activePhase !== 'brief' && <PlaceholderPhase phaseId={activePhase} />}
+          {activePhase === 'research' && <ResearchPhase />}
+          {activePhase !== 'brief' && activePhase !== 'research' && (
+            <PlaceholderPhase phaseId={activePhase} />
+          )}
         </div>
       </div>
     </div>
