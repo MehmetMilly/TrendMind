@@ -5,6 +5,7 @@ import { useCampaign, PHASES } from '@/lib/campaign-context';
 import { BriefPhase } from './phases/brief-phase';
 import { ResearchPhase } from './phases/research-phase';
 import { StrategyPhase } from './phases/strategy-phase';
+import { DraftingPhase } from './phases/drafting-phase';
 import { PlaceholderPhase } from './phases/placeholder-phase';
 
 export function PhaseCanvas() {
@@ -60,9 +61,11 @@ export function PhaseCanvas() {
           {activePhase === 'brief' && <BriefPhase />}
           {activePhase === 'research' && <ResearchPhase />}
           {activePhase === 'strategy' && <StrategyPhase />}
+          {activePhase === 'drafting' && <DraftingPhase />}
           {activePhase !== 'brief' &&
             activePhase !== 'research' &&
-            activePhase !== 'strategy' && (
+            activePhase !== 'strategy' &&
+            activePhase !== 'drafting' && (
               <PlaceholderPhase phaseId={activePhase} />
             )}
         </div>

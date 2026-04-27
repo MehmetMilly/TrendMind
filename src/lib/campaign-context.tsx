@@ -159,6 +159,67 @@ export const STRATEGY_AGENTS: Agent[] = [
   { id: 'performance-critic', name: 'Performance Critic', status: 'Waiting',            statusColor: 'gray',   avatarGradient: ['#8a7a6b', '#6a5a4d'], initials: 'PC' },
 ];
 
+export const DRAFTING_AGENTS: Agent[] = [
+  { id: 'campaign-director',  name: 'Campaign Director',  status: 'Coordinating',     statusColor: 'green',  avatarGradient: ['#c8a96e', '#a68b4b'], initials: 'CD' },
+  { id: 'brand-strategist',   name: 'Brand Strategist',   status: 'Reviewing tone',   statusColor: 'blue',   avatarGradient: ['#5b8a72', '#3d7a5f'], initials: 'BS' },
+  { id: 'trend-scout',        name: 'Trend Scout',        status: 'Supporting',       statusColor: 'amber',  avatarGradient: ['#8b6f4e', '#6b5535'], initials: 'TS' },
+  { id: 'visual-director',    name: 'Visual Director',    status: 'Aligning visuals', statusColor: 'purple', avatarGradient: ['#7a6b8a', '#5a4d6a'], initials: 'VD' },
+  { id: 'content-architects', name: 'Content Architects', status: 'Writing',          statusColor: 'green',  avatarGradient: ['#6b8a7a', '#4d6a5a'], initials: 'CA' },
+  { id: 'performance-critic', name: 'Performance Critic', status: 'Scoring drafts',   statusColor: 'amber',  avatarGradient: ['#8a7a6b', '#6a5a4d'], initials: 'PC' },
+];
+
+export const DRAFTING_ACTIVITY: ActivityMessage[] = [
+  {
+    id: 'd1',
+    agentName: 'Content Architects',
+    agentInitials: 'CA',
+    avatarGradient: ['#6b8a7a', '#4d6a5a'],
+    message: 'are generating three parallel campaign directions for refinement.',
+    subItems: ['Variant A · warm editorial', 'Variant B · emotional invitation', 'Variant C · curated taste'],
+    timestamp: 'Just now',
+  },
+  {
+    id: 'd2',
+    agentName: 'Performance Critic',
+    agentInitials: 'PC',
+    avatarGradient: ['#8a7a6b', '#6a5a4d'],
+    message: 'flagged Variant B for a weak CTA — recommended a stronger emotional hook.',
+    timestamp: '40s ago',
+  },
+  {
+    id: 'd3',
+    agentName: 'Brand Strategist',
+    agentInitials: 'BS',
+    avatarGradient: ['#5b8a72', '#3d7a5f'],
+    message: 'requested stronger warmth and brand-anchored phrasing in Variant C.',
+    timestamp: '1 min ago',
+  },
+  {
+    id: 'd4',
+    agentName: 'Visual Director',
+    agentInitials: 'VD',
+    avatarGradient: ['#7a6b8a', '#5a4d6a'],
+    message: 'aligned imagery prompts with the premium holiday mood across all three variants.',
+    timestamp: '3 min ago',
+  },
+  {
+    id: 'd5',
+    agentName: 'Performance Critic',
+    agentInitials: 'PC',
+    avatarGradient: ['#8a7a6b', '#6a5a4d'],
+    message: 're-scored revised drafts — Variant A 91, Variant B 86, Variant C 82.',
+    timestamp: '4 min ago',
+  },
+  {
+    id: 'd6',
+    agentName: 'Campaign Director',
+    agentInitials: 'CD',
+    avatarGradient: ['#c8a96e', '#a68b4b'],
+    message: 'approved continued refinement before final ranking.',
+    timestamp: '5 min ago',
+  },
+];
+
 export const STRATEGY_ACTIVITY: ActivityMessage[] = [
   {
     id: 's1',
@@ -288,6 +349,7 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     if (activePhase === 'brief') return BRIEF_AGENTS;
     if (activePhase === 'research') return RESEARCH_AGENTS;
     if (activePhase === 'strategy') return STRATEGY_AGENTS;
+    if (activePhase === 'drafting') return DRAFTING_AGENTS;
     return BRIEF_AGENTS;
   }, [activePhase]);
 
@@ -295,6 +357,7 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     if (activePhase === 'brief') return BRIEF_ACTIVITY;
     if (activePhase === 'research') return RESEARCH_ACTIVITY;
     if (activePhase === 'strategy') return STRATEGY_ACTIVITY;
+    if (activePhase === 'drafting') return DRAFTING_ACTIVITY;
     return BRIEF_ACTIVITY;
   }, [activePhase]);
 

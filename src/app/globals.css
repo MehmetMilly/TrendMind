@@ -130,6 +130,38 @@ html, body {
   animation: signalPulse 2.4s ease-in-out infinite;
 }
 
+/* Score bar fill — animates the width of a sub-score bar from 0 to its final value */
+@keyframes scoreFill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+.animate-score-fill {
+  transform-origin: left center;
+  animation: scoreFill 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+/* Soft score-tick — gentle attention pulse for evolving scores */
+@keyframes scoreTick {
+  0%   { transform: translateY(2px); opacity: 0; }
+  60%  { transform: translateY(-1px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-score-tick {
+  animation: scoreTick 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+/* Slow ambient drift used on critic shimmer accents */
+@keyframes ambientDrift {
+  0%, 100% { transform: translateX(0); opacity: 0.55; }
+  50%      { transform: translateX(6px); opacity: 1; }
+}
+
+.animate-ambient-drift {
+  animation: ambientDrift 4s ease-in-out infinite;
+}
+
 /* Focus styles for accessibility */
 button:focus-visible {
   outline: 2px solid rgba(200, 169, 110, 0.5);
