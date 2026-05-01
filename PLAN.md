@@ -1,448 +1,273 @@
-# TrendMind — Workspace Redesign Plan
+# TrendMind - Final Front-End Plan
 
-A bold, structural redesign that turns TrendMind from a five-screen phase wizard with a heavy right rail into a single living *campaign document* where AI agents work continuously in the background and the user supervises, steers, and refines.
+This is the final mix we are choosing.
 
----
+The foundation is `PLAN2`: the campaign should feel like one living artifact that writes itself in front of the user.
 
-## 1. Diagnosis — What is structurally wrong
+From `PLAN1`, we keep the idea that each phase must still feel purpose-built. The product should not turn into a flat "document with seven similar blocks." Each section needs its own work surface and its own logic.
 
-The current product is a collection of beautiful screens stitched into a wizard. The issues are not visual; they are structural.
+From `PLAN3`, we keep only the theatrical energy of `Trial`. That phase should feel like the emotional centerpiece of the product, but we are not turning the whole app into a spatial board.
 
-### 1.1 Structural UX problems
+So the final direction is:
 
-- **The wizard model fights the product idea.** TrendMind is sold as an AI workspace where agents collaborate, but the UX is `fill form → click Continue → wait → click Continue`. That makes the AI feel like a slideshow, not a team. Every "Continue" button in the current build is a confession that the system is passive.
-- **Phases are isolated screens, not parts of one artifact.** When the user is on `Strategy`, they cannot see what the brief said, what research surfaced, or what's about to happen in drafting. There is no campaign — there is only the screen they happen to be on.
-- **State is opaque.** A user has no sense of "what is the system actually doing right now, on what, by which agent, and how close is it to needing me?" The phase stepper and right rail both hint at this but neither answers it.
-- **The agent panel duplicates itself.** Six big avatar tiles + a scrolling activity feed + a composer all describe the same thing: "agents are working." Three surfaces, one signal.
-- **Continue/Back buttons are the wrong mental model.** Real campaign work is non-linear — you go back to brief from drafting all the time. The current model treats that as a phase regression.
-- **The workspace doesn't feel intelligent.** Nothing the system does surprises or assists the user. The AI is invisible until a phase advances.
-
-### 1.2 Structural UI / spatial problems
-
-- **The "PHASE CANVAS" pattern wastes the top of every screen.** Every phase reuses: outer canvas chrome (40px) → giant `<icon> Title + 2-line description` (≈90px) → `Phase X of 5` pill → another section kicker → then the actual content. That's **~150px of vertical chrome before any campaign content appears**, on every screen. In a 720-tall canvas, that's >20% of vertical space spent on saying "this is the brief phase."
-- **The right rail is too wide and always in the way.** 300px on a workspace that already loses 232px to the left sidebar leaves the canvas in the ~700–800px range — too narrow for `Strategy` (8 sub-blocks) and `Drafting` (3 parallel lanes). It is the single biggest cause of the squeezed feeling visible in screenshots 5–10.
-- **The brief phase wastes the entire right half of the canvas.** A long single-column form sits in roughly 50% of the canvas width with the other half blank. It looks like an invoice, not a workspace.
-- **Decorative chrome is competing with content.** Cream gradients, gold pill badges, kickers, sub-kickers, ribbon banners ("DRAFTING WORKSPACE · CRITIC ACTIVE"), oversized emoji-style icons — each is fine alone, but stacked they push real content below the fold.
-- **Hierarchy is performative, not functional.** The most prominent thing on each screen is its own title. The least prominent thing is often what the user has to act on.
-
-### 1.3 Aesthetics in the wrong surface
-
-The current visual language — cream paper, soft greens, gold accents, editorial type — is genuinely strong. But it is being deployed like a *brochure for the product*, not like a workspace tool. That energy belongs on the future homepage / landing. Inside the workspace, the same palette should serve clarity, not perform luxury.
+> TrendMind becomes one living campaign workspace, built as a single scrolling campaign artifact with inline phases, a hidden-by-default Inspector instead of a permanent agent rail, and a standout Trial experience that gives the product its special moment.
 
 ---
 
-## 2. Organizing idea — *Campaign as a living document*
+## 1. Core Product Direction
 
-> **TrendMind should not be a five-screen wizard with an agent panel attached. It should be a single, continuously-updating campaign document that AI agents are visibly building, scored against a clear set of stages, with the user as the supervising editor.**
+TrendMind should no longer behave like a phase-by-phase wizard where the user fills something, waits, clicks `Continue`, then moves to the next screen.
 
-This single shift unlocks everything else:
+It should feel like one campaign artifact that grows from top to bottom:
 
-- The phase navigation becomes **section anchors in one document**, not gates between screens.
-- The right rail dies. It is replaced by **inline agent attribution + an ambient activity ribbon + a summoned director drawer**.
-- "Continue to Research" buttons disappear. The system **streams forward by default**; the user intervenes only when they want to.
-- Every later block is *visible-but-pending* from the start, so the user always sees the full shape of the campaign.
+`Brief -> Research -> Strategy -> Draft -> Trial -> Studio -> Launch`
 
-This is the same conceptual move as: Notion docs (sectioned single artifact), OpenAI Canvas / Anthropic Artifacts (one editable artifact + side conversation), Linear's issue page (atomic doc with an activity rail), GitHub Copilot Workspace (agent operations inline with the file), Granola (notes + ambient transcript ribbon), Cursor's agent mode (you watch the work happen, you don't click Next). None of those products use a phase wizard.
+The user opens a campaign and sees the whole shape of the work immediately. The sections exist from the start as part of one scrollable workspace. As the system works, each section fills in, stabilizes, and becomes editable.
 
-This idea also resolves the brief's hardest constraint: **the workspace should feel active, intelligent, and product-like, not slideshow-y.** A streaming document is active by definition.
+The product should feel like:
 
----
+- one campaign
+- one workspace
+- one continuous flow
+- many specialized sections inside that flow
 
-## 3. Workspace philosophy — Principles the redesign is bound to
-
-These are the rules the rebuild must obey. They are deliberately strict.
-
-1. **One artifact, many phases.** Every campaign is one scrollable document. Phases are sections, not screens.
-2. **The system runs by default.** Buttons are for *intervention*, not *advancement*. Approval is implicit (timed) unless you object.
-3. **Agents are inline, not in a panel.** Every block carries the byline of the agent(s) who produced it. Hover/click reveals that agent's reasoning. The agent panel becomes a *summoned* surface, not a layout citizen.
-4. **The canvas owns the screen.** Sidebar collapses. Top bar is single row, ~36px. Phase nav is ~32px. Activity ribbon is ~28px. The campaign content gets ≥80% of vertical and ≥75% of horizontal at all times.
-5. **Information density is a feature, not a flaw.** Polished doesn't mean spacious. Real workspaces (Linear, Figma, Notion) are dense.
-6. **Decorative chrome is taxed.** Every gradient/badge/divider has to defend its existence in pixels.
-7. **The premium feeling is in *typography, restraint, and motion*, not in ornaments.** Save expressive design energy for the future landing page.
-8. **Collapsibility everywhere.** Sidebar, drawer, every block. Workspace adapts to what the user is doing right now.
-9. **Diff-aware updates.** When research updates because the brief changed, the document shows what changed and why, not a silent re-render.
-10. **No locked phases.** All sections are visible from second one. Future sections render as quiet skeletons with status; the user can scroll, peek, plan ahead.
+Not seven disconnected pages.
 
 ---
 
-## 4. Layout system — The new shell
+## 2. The Main Shell
 
-### 4.1 Three-region shell with ambient ribbon
+The shell should stay disciplined and space-efficient.
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│ TopBar  (36px)  campaign title · status · share · export · ⋯         │
-├────┬────────────────────────────────────────────────────┬────────────┤
-│    │ PhaseRibbon (32px)  ● Brief  ● Research  ● Strategy ● Drafting  │
-│    │              ● Imagery  ○ Results                                │
-│Nav ├────────────────────────────────────────────────────┤  Director  │
-│Rail│                                                    │  Drawer    │
-│56→ │              CAMPAIGN DOCUMENT                     │  (hidden / │
-│256 │              (single scroll, all blocks)           │   peek /   │
-│    │                                                    │   open)    │
-│    │                                                    │            │
-│    ├────────────────────────────────────────────────────┤            │
-│    │ ActivityRibbon (28px) · live agent ticker · ▸ open │            │
-└────┴────────────────────────────────────────────────────┴────────────┘
-```
+On the left, there is still a slim navigation rail for campaigns, library, analytics, and account-level navigation. It should behave like a spine, not a heavy wall.
 
-- **Left NavRail** — replaces the current 232px dark sidebar. Default state: **56px icons-only**. Hover/click expands to **256px**. Holds: logo, Library, Analytics, Campaigns/threads, user. Dark green stays — but as a thin spine, not a wall. **Saves ~176px of horizontal space.**
-- **TopBar** — single 36px row. Campaign title (left), thread switcher inline, **live status pill** ("Strategy · drafting in 2m"), share/export/⋯ (right). The current ad-hoc "dark mode toggle" + dot menu cluster is consolidated.
-- **PhaseRibbon** — replaces the current `PhaseNav`. Single 32px row with anchor pills. Each anchor shows status (`pending / running / ready / approved`) and an agent count. Click = scroll to that section in the document. No locks. Filled state shows a tiny progress arc per phase.
-- **DocumentArea** — the main scrollable region. **All phase blocks render here in order**, top to bottom: Brief → Research → Strategy → Drafting → Imagery → Results. Everything below the active block is visible as a quiet skeleton with state.
-- **ActivityRibbon** — replaces the activity feed. A 28px bottom-of-canvas ticker showing the most recent 1–2 agent actions, with a live time stamp. Click expands to a 240px ambient panel with the last ~12 actions. Never wider, never modal.
-- **DirectorDrawer** — replaces the right `AgentRail`. Three states: **hidden** (default), **peek** (40px right tab showing a vertical "Director" label + 2 mini-avatars indicating active agents), **open** (380px overlay drawer, shadow over canvas, dismissible). Only opens when summoned. Never permanent.
+At the top, there is a very compact top strip for the campaign name, status, share, export, and the few highest-level actions.
 
-### 4.2 Layout states
+Under that, there is a slim phase ribbon showing:
 
-| State                                  | NavRail | Document   | Drawer   | Use                              |
-|----------------------------------------|---------|------------|----------|----------------------------------|
-| Default (working)                      | 56px    | full       | hidden   | most of the time                 |
-| Browsing campaigns                     | 256px   | dimmed     | hidden   | switching threads                |
-| Talking to an agent / reviewing reasoning | 56px | full     | open 380 | summoned only                    |
-| Watching live agent action             | 56px    | full       | peek 40  | system is busy, user is ambient  |
-| Read mode (final review / present)     | 0       | full bleed | hidden   | export-style read-through        |
+`Brief`, `Research`, `Strategy`, `Draft`, `Trial`, `Studio`, `Launch`
 
-### 4.3 Space budget (vs. today)
+This ribbon is not a gate. It is a navigator. Clicking a phase jumps the user to that section inside the campaign workspace.
 
-At 1440 wide × 800 tall:
+The center of the product is the campaign itself: one vertically scrollable workspace.
 
-| Region              | Today        | Redesigned (default) | Δ        |
-|---------------------|--------------|----------------------|----------|
-| Left sidebar        | 232px        | 56px                 | +176px   |
-| Right rail          | 300px        | 0px (drawer summoned)| +300px   |
-| TopBar height       | 48px         | 36px                 | +12px    |
-| PhaseNav height     | 38px         | 32px                 | +6px     |
-| Canvas chrome (per phase) | ~150px | ~32px                | +118px   |
-| **Net canvas gain** | —            | —                    | **~+476px horizontal, ~+136px vertical** |
+The right side should no longer be a permanent agent panel. Instead, it becomes a selection-aware `Inspector`. Most of the time, it stays hidden so the workspace gets the width it needs. When the user selects a research card, a strategy angle, a draft element, a persona reaction, or a visual layer, the Inspector opens and shows the relevant depth for that exact thing.
 
-That is roughly **40% more usable canvas area** before redesigning a single block.
+There can still be a light ambient activity surface, but not a big permanent rail. A small pulse bar or live ticker is enough for background activity.
+
+So the shell becomes:
+
+- a slim left rail
+- a compact top strip
+- a compact phase ribbon
+- one large central campaign workspace
+- a hidden-by-default Inspector on the right
+
+That solves the biggest current layout problem immediately.
 
 ---
 
-## 5. The agent system redesign
+## 3. The Main UX Model
 
-The current `AgentRail` is doing three jobs at once and doing none well: status display, activity log, conversational interface. Split them.
+The campaign should write itself forward by default.
 
-### 5.1 Inline agent attribution (replaces the avatar grid)
+The user should not babysit the flow by pressing `Continue` after every stage. Instead, the system runs forward with soft auto-advance. When a section is ready, the next section begins unless the user pauses or intervenes.
 
-Every block in the document has a small byline:
+All sections should be visible from the start as quiet skeletons, so the user always understands the full shape of the campaign.
 
-> *Authored by **Brand Strategist** · refined with **Trend Scout** · 4m ago*
+Editing should feel intelligent. If the user changes something important in `Brief`, the downstream sections should become visibly stale. The product should make that cause-and-effect relationship clear instead of silently regenerating everything.
 
-with two micro-avatars. Hover = tooltip with current status. Click = opens the **DirectorDrawer** scoped to that agent (their recent thinking, prompts they used, references they leaned on, "ask them" composer).
+The user should feel like a supervising editor, not like a wizard-step operator.
 
-This collapses the 6-avatar grid into context-relevant cues that exist exactly where the user already needs them.
+That means:
 
-### 5.2 Activity ribbon (replaces the activity feed)
+- no locked phases
+- no required `Continue` flow
+- no dead waiting states
+- no giant empty screens for not-yet-reached phases
 
-A 28px strip at the bottom of the canvas. Default content: a single live line.
-
-> `● Performance Critic — re-scoring Variant B (pass 2 of 2) · 12s`
-
-Behavior:
-- Rotates through the top 1–2 ongoing actions every ~6s, no flashing.
-- Has a tiny segmented progress strip on the right showing aggregate phase progress.
-- Click anywhere on the ribbon to expand into a **240px ambient drawer** (slides up over canvas) with the last ~12 actions, grouped by phase.
-- Press `Esc` or click outside to dismiss.
-
-This is the equivalent of Linear's bottom toast, Granola's transcript bar, or Figma's presence row — quiet, persistent, never invasive.
-
-### 5.3 Director drawer (replaces composer + agent panel modal)
-
-Right-edge summoned drawer (380px, overlay with backdrop blur, not layout). Three uses:
-
-- **Talk to the Campaign Director** — global ask: "tighten the tone" / "make Variant C punchier" / "swap holiday for winter framing." Director routes to the right specialist agent.
-- **Talk to a specific agent** — opened from any inline byline. Scoped to that agent's work.
-- **Intervene in a running phase** — if the user opens the drawer while a phase is running, it shows a *steering* affordance: pause, revise the brief, redirect, fork.
-
-Drawer states:
-
-- **Hidden** (default) — 0px.
-- **Peek tab** (40px) — a thin vertical strip with a "Director" label and 2 active-agent dots. Appears any time at least one agent is actively working. Single click = open.
-- **Open** (380px) — overlay over canvas, never pushes layout.
-
-### 5.4 Why this is better
-
-- Status is shown *where the work lives* (inline bylines), not in a separate column.
-- Activity is **ambient**, the way it should be — visible without being demanding.
-- Conversation with agents is **summoned**, not always-on.
-- Total horizontal cost in the default state: **0 px**. Total horizontal cost when actively talking to an agent: 380 px overlay (canvas dims, content remains). At no point does the right rail steal layout space.
+The campaign should always feel alive.
 
 ---
 
-## 6. The phase model redesign — From wizard to streaming document
+## 4. Section Philosophy
 
-### 6.1 Phases become document sections, not screens
+This is where the final mix matters most.
 
-`Brief / Research / Strategy / Drafting / Imagery / Results` are sections in **one** scrollable document. Each section is a **block** with:
+We are keeping the living-document structure from `PLAN2`, but each phase still needs to behave like a real tool, as in `PLAN1`.
 
-- A 28px sticky sub-header (section name + status chip + agent bylines + "collapse" affordance).
-- Its body content (redesigned per phase, see §7).
-- An optional **inline action bar** at the bottom of the block: `Approve · Refine · Regenerate · Talk to <Agent>`.
+So the sections should live inside one campaign artifact, but they should not all look like repeated document cards.
 
-States per block: `Pending` (skeleton + placeholder summary), `Running` (live shimmer + agent ticker per block), `Ready` (full content, awaiting acknowledgement), `Approved` (compact "approved" treatment, can re-expand).
+Each section should answer the question: what kind of work is happening here, and what is the best surface for that work?
 
-### 6.2 Streaming flow, not gated flow
-
-- The moment the brief has the minimum required fields, downstream agents start. No "Continue to Research" button is ever required. The button can be offered as an *accelerator* ("Run all now") but never as a gate.
-- As the brief is edited, downstream blocks re-flow with a **diff hint** ("research refreshed because target audience changed — review changes").
-- The user can scroll into Strategy while Research is still running — they'll see Strategy's skeleton with the message "waiting on Research insights" and the live ribbon for that block.
-
-### 6.3 Approval is implicit by default
-
-Each "Ready" block auto-approves after a soft cooldown (e.g. 90s, configurable). A subtle countdown is shown on the block's status chip ("auto-approves in 1m 14s"). The user can:
-
-- Approve now.
-- Refine inline.
-- Pause (block won't auto-approve).
-- Regenerate with a steering note.
-
-This eliminates "click Continue" as a UX requirement while preserving control. The user is the editor, not the operator.
-
-### 6.4 Phase ribbon ↔ document
-
-The PhaseRibbon at the top of the canvas:
-
-- Acts as a sticky table of contents.
-- Click = smooth-scrolls to that section.
-- Each pill shows live state and a 4px progress arc.
-- The currently-visible section is highlighted (scroll-spy).
-- No phase is locked. Skeletons handle "not yet ready" gracefully.
+That is the rule for the whole redesign.
 
 ---
 
-## 7. Per-phase rebuild specs
+## 5. Section-by-Section Plan
 
-Per the user's directive: assume current phase implementations are discardable. Each spec below is a **rebuild from zero**.
+### Brief
 
-### 7.1 Brief — *Configuration block, not a form screen*
+`Brief` should sit at the top of the workspace as the source-of-truth block.
 
-**Today:** A long, single-column form taking ~50% of canvas width with the other half blank, separated into ~6 vertical sections.
+It should be compact, dense, and inline-editable. No giant title area. No oversized decorative intro. No wasting the first screen on phase branding.
 
-**Rebuild:**
+This section should clearly hold the campaign essentials: brand, audience, goal, platform, tone, references, and constraints.
 
-- Render as a **dense 3-column grid** inside one block:
-  - Column 1: Identity (title, brand, business type, platform, language)
-  - Column 2: Direction (goal, audience, focus)
-  - Column 3: Voice & guardrails (tone, brand pillars, banned phrases, extra context)
-- Inputs are inline-edit text (Notion / Linear style), not boxed form fields. Click to edit, blur to save.
-- A 2-line **summary header** at the top: `"Q4 Holiday Push" · X · English · Premium lifestyle gifting` — auto-generated from current state, always visible when the brief is collapsed.
-- The "Save Draft" button dies. Saving is automatic, the timestamp is shown subtly in the block's byline ("auto-saved 8s ago").
-- The "Continue to Research" button dies. As soon as required fields exist, the Research block below starts running.
-- When the user edits a field after agents have started, the block shows a 14px chip: `↻ Research will refresh on next pass — undo`.
+AI suggestions can appear directly inside the fields, but the section should still feel like a clean, controllable source of truth.
 
-**Why:** Forms in workspaces should feel like docs, not surveys. This pattern recovers ~40% of vertical space and removes wizard semantics.
+Its job is not to impress visually. Its job is to establish the campaign cleanly and make downstream editing meaningful.
 
-### 7.2 Research — *Evidence layer, scannable in seconds*
+### Research
 
-**Today:** Hero audience card, demographic clusters, motivation columns, then four trend reference cards. Strong content. Right rail squeezes it.
+`Research` should become an embedded evidence board inside the campaign.
 
-**Rebuild:**
+This section needs to feel richer and denser than the current UI. It should show actual useful findings, not decorative blocks. The structure from the earlier plans is the right one: a compact research grid that makes it easy to scan trend signals, competitive references, audience insights, risk notes, and fact checks.
 
-- Two-pane block layout, full canvas width:
-  - **Left 60%: Audience synthesis.** A single condensed audience card (hero), four demographic chips in a row (not a 2×2), and the three motivation/behavior/preference columns stay but become a single 3-col row, dense.
-  - **Right 40%: Trend signals.** A vertical list of trend cards (4–8) with image thumbnail at left, title + 2-line summary, signal strength bar, source tag. Each card is ~80px tall, not 200px tall. Image previews load inline.
-- Sticky sub-bar inside the block: `Research · by Trend Scout & Brand Strategist · 4 audiences · 6 trend signals · 3m`.
-- "Source" links open the Director drawer with the citation, not a new window.
-- Refresh affordance: `↻ Pull more signals` runs Trend Scout again with a steering prompt.
+Each research item should feel attributable and inspectable. The user should be able to click into it and see more through the Inspector.
 
-**Why:** Research is a *reference layer* the user scans then forgets. It should be fast to skim and easy to come back to. The current giant cards optimize for first-impression, not for usefulness.
+This section should feel analytical and credible.
 
-### 7.3 Strategy — *Strategic foundation as a wall, not a stack*
+### Strategy
 
-**Today:** Eight sub-blocks (summary, positioning, messaging direction, angle, emotional territory, brand pillars, banned phrases, guardrails, content principles) stacked vertically. Compressed into ~700px because of the right rail.
+`Strategy` should become the place where the product clearly makes three angle bets in parallel.
 
-**Rebuild:**
+This section should show three distinct angle cards side by side, with equal importance. The user should immediately understand that TrendMind is not producing one generic direction. It is surfacing multiple meaningful strategic lanes.
 
-- Use the recovered ~476px of horizontal width to render strategy as a **full-bleed strategy wall**, in a structured 12-column grid:
-  - **Top row: Positioning Statement** (full width, large editorial quote treatment — this is the only place we keep showy typography because it's the campaign's north star).
-  - **Row 2: Campaign Angle (8 col) | Emotional Territory (4 col).**
-  - **Row 3: Messaging Direction principles (6 col) | Content Principles (6 col).**
-  - **Row 4: Creative Guardrails — DO/AVOID** (full width, dense two-column do/avoid table, not card stack).
-- The "Campaign Summary" duplicate block is **deleted** — it just restated the brief. Replaced by a single subtle line at the top of the strategy block: `Strategy derived from: Q4 Holiday Push · Premium lifestyle gifting · 6 trend signals · soft luxury mood`.
-- All sub-blocks are inline-editable. Edit any of them and a `↻ regenerate downstream` chip appears.
-- Each guardrail row shows which agent will enforce it downstream (Performance Critic / Brand Strategist).
+This section should feel like a decision surface, not a text dump.
 
-**Why:** Strategy is information-dense by nature. It needs the full width. The right rail being gone is what makes this possible.
+The key thing here is contrast. The three angles need to feel clearly different in posture and direction, while still belonging to the same campaign.
 
-### 7.4 Drafting — *Three lanes that breathe*
+### Draft
 
-**Today:** Three variant lanes, each a tall stack of: header → score → sub-scores → iteration history → CTA → hashtags → critique. Right rail makes them ~230px wide each.
+`Draft` should feel like a drafting tool, not a paragraph section.
 
-**Rebuild:**
+The best direction here is the structured, compact drafting surface from the existing plans: the system generates multiple pieces of the draft such as hook, angle, tone, and CTA, then composes them into full variants below.
 
-- Three lanes side-by-side, full width (~440px each at 1440 viewport).
-- Each lane is a **vertical column with three collapsible sub-sections**, default state:
-  1. **Draft body** (current revision, large, the main thing).
-  2. **Score & sub-scores** (collapsed by default into a 32px summary row showing score + delta + a "view sub-scores" affordance).
-  3. **Iteration history** (collapsed by default into "2 versions · expand").
-  4. **CTA + hashtags + critique** (single dense footer row).
-- The hero "DRAFTING WORKSPACE · CRITIC ACTIVE · 3 in flight · 2 of 2 passes · +18 uplift" banner is **deleted**. That information moves into the section sub-header (sticky 28px) where it belongs.
-- A new affordance per lane: `Pin as final` / `Reject` / `Fork`. Forking creates a fourth lane.
-- Live critique animations: when a critic is scoring, the lane shows a 2px scrolling underline animation, not a flashing badge.
+This keeps the section purposeful and interactive, while still fitting inside the living campaign artifact.
 
-**Why:** The current lanes have 6+ visual sections each in a narrow column — they look like ledgers. Letting the body breathe and pushing meta-info into collapsibles makes drafts feel like writing.
+The important thing is that Draft must not look like "here are three big text blocks." It needs to visually communicate construction, comparison, and refinement.
 
-### 7.5 Imagery — *New phase, paired with drafts*
+Critique should appear inline, attached to the relevant draft content, instead of becoming a separate ceremony.
 
-This is the new sixth phase between Drafting and Results.
+### Trial
 
-**Layout:** A block with two tracks:
+`Trial` should be the showpiece.
 
-- **Top: Mood synthesis** (full width, 80–100px) — a single horizontal band of 6–8 reference thumbnails the Visual Director has assembled, with a 1-line synthesis ("warm editorial · paper textures · muted palette · low warmth lighting"). Locked to the strategy mood territory.
-- **Body: Variant imagery grid** — for each surviving copy variant (A, B, C — or whichever the user pinned), 3 generated images per variant, in a 3×N grid. Each image has:
-  - Hover: prompt used, agent who generated it, regenerate button.
-  - Click: opens DirectorDrawer with full prompt, references, regenerate-with-steer.
-  - Pin: marks an image as the variant's selected hero image.
-- **Sub-header status**: `Imagery · by Visual Director · 3 variants · 9 images · 1 pinned`.
+This is where we take the emotional energy from `PLAN3` without changing the whole product model.
 
-**Pairing rule:** Every copy variant must have at least one pinned image to advance to Results. If no image is pinned, Results' block shows "1 image needed for Variant B."
+The section should stay inside the campaign workspace, but when it becomes active it should feel more dramatic than the surrounding sections. It can temporarily expand, gain more visual focus, and turn into a small audience-simulation theatre inside the scroll.
 
-**Why a separate phase, not a sub-track of Drafting?** The user explicitly chose this. Functionally it makes sense: image generation is its own creative act, with its own references, its own steering, its own outputs. Folding it inside the drafting lanes would crush the lanes (they're already dense) and would conflate two different review cadences (text iteration vs. image curation). A dedicated phase also gives Visual Director a real home in the agent narrative.
+The user should see drafts under test, synthetic personas reacting, and verdicts forming in a way that feels alive and memorable.
 
-### 7.6 Results — *Final assembly, ready-to-ship*
+This section is where judges should immediately understand that TrendMind is doing something more interesting than "generate ad copy."
 
-**Today:** Placeholder.
+But it is important that Trial still fits the rest of the product. It should be theatrical, not chaotic.
 
-**Rebuild:**
+### Studio
 
-- A block that renders the **final shippable artifacts**, one card per pinned variant:
-  - Twitter/X-style preview (real proportions, not cards-of-cards).
-  - Pinned hero image.
-  - Final copy.
-  - CTA + hashtags inline.
-  - Per-post critic summary, audience fit score, trend-signal alignment.
-- Above the cards: a **comparison table** — variants × dimensions (hook strength, brand fit, emotional resonance, predicted CTR) — read in 5 seconds.
-- Top-right of the block: `Export bundle · Schedule · Hand off`. Export = zip with copy, images, prompts, references, agent rationale. Hand off = sends to a downstream tool / generates a brief for a human team.
-- A small "campaign retrospective" affordance opens a Director drawer summarizing what each agent contributed.
+`Studio` should become the visual production stage.
 
-**Why:** Results should feel like the *deliverable*, not another screen of cards. The post should look like a post.
+This section should not just show a finished image. It should feel like a real composition surface with a live ad preview and meaningful visual structure.
+
+The right model here is the inline Studio from the earlier plans: the selected draft is turned into a composed ad preview with layers such as background, product, headline, CTA, and logo.
+
+Inside the main document, this section should show the composed result. When the user wants to work on it more deeply, Studio can expand into a larger focus mode while still belonging to the same campaign artifact.
+
+This section is important because it makes TrendMind feel like it goes beyond text.
+
+### Launch
+
+`Launch` should be the ending state of the campaign and the natural bottom of the artifact.
+
+This section should feel read-first and presentation-ready. It should clearly show the selected winner, the alternates, the platform adaptations, and the risk/response notes carried over from Trial.
+
+The user should be able to scroll from the brief all the way down to a clear, polished deliverable.
+
+That continuity is one of the biggest advantages of this whole direction.
 
 ---
 
-## 8. Workflow choreography — How it feels in motion
+## 6. The Inspector and Agent Presence
 
-A user opens TrendMind:
+The permanent right-side agent panel should be removed.
 
-1. NavRail icons-only. TopBar shows campaign title + status pill (`brief · awaiting input`). PhaseRibbon shows 6 anchors, only Brief is `running`.
-2. They fill the brief. The instant required fields exist, the **Research block below quietly turns on**. Activity ribbon: `● Trend Scout — scanning seasonal signals`.
-3. They scroll down. They see Research populating block-by-block (audience first, then trends as they come in). No spinner takeover — the block fills as content lands.
-4. The user keeps reading. By the time they hit Strategy, Brand Strategist has already started shaping a positioning statement. Strategy block is `running`, with two skeleton blocks and a live positioning quote being typed in.
-5. The user disagrees with the positioning. They click `Refine` on that sub-block, type "less editorial, more confident." A regeneration starts. Activity ribbon updates. The downstream Drafting block (which had started) shows: `↻ pausing — strategy is changing`.
-6. By the time the user reaches Drafting, three lanes are filled and being scored. They pin Variant A and C, reject B. Imagery block below now generates only for A and C.
-7. They scroll into Imagery, look at 6 images, pin one per surviving variant. Results block self-assembles.
-8. Done. They click `Export bundle`. No "Continue" was ever pressed.
+It is too expensive spatially, and it hurts the product more than it helps.
 
-Throughout: no panel ever pushed the canvas. The Director drawer opened twice (once to read Brand Strategist's reasoning, once to ask for a tone change) and dismissed itself. The ActivityRibbon was always 28px, never more.
+Instead, agent presence should be split into three lighter layers.
 
-This is the difference between a workspace and a wizard.
+First, every meaningful block should have small inline attribution. Research items, strategy angles, drafts, reactions, and visual outputs should all quietly show who produced them.
 
----
+Second, the product can keep a subtle ambient activity surface, like a pulse bar or ticker, so the workspace still feels alive even when the Inspector is closed.
 
-## 9. Visual language — Polished, but disciplined
+Third, the right side becomes the `Inspector`. It opens only when the user selects something. It should show the exact depth relevant to the selected thing: reasoning, sources, alternatives, supporting evidence, or revision actions.
 
-Keep:
-- Cream/paper canvas, dark green spine, gold accent. The palette is genuinely strong.
-- The editorial typography on the Positioning Statement and on campaign titles. That's the one place expressive type earns its keep.
-- The micro-component vocabulary: pill chips, agent avatars (smaller), score bars, signal-strength bars, banded section labels.
+This gives the product depth without sacrificing canvas space.
 
-Reduce:
-- Gradient surfaces inside content. Confine gradients to the shell (sidebar, top bar) and to the Positioning Statement.
-- Decorative kickers ("BRIEF CANVAS", "DRAFTING WORKSPACE — CRITIC ACTIVE"). Replace with one 28px sticky sub-header per block.
-- Drop shadows on cards. Use 1px borders + subtle background tint for separation.
-- Hero icon tiles next to phase titles. Replaced by the agent byline.
-
-Remove:
-- The botanical decoration in the sidebar. Beautiful, but performative; it has no place in a 56px collapsed rail and it's gone in the redesign.
-- Any "Phase X of N" badge that just restates the ribbon.
-- Per-phase canvas headers ("BRIEF CANVAS", "RESEARCH CANVAS", etc.). The block sub-header replaces them.
-
-Add:
-- A subtle **typing/streaming animation** when an agent is generating into a block (a 2px gold underline traveling left to right under the active sub-header).
-- A subtle **diff highlight** when a downstream block re-flows because an upstream block changed.
-- A **"who touched this last"** micro-byline on every block.
+If there is still a Director-style chat surface, it should be separate from the old permanent rail mentality. It should be summoned only when the user wants to give a higher-level instruction, not pinned open all the time.
 
 ---
 
-## 10. What we keep, simplify, remove, rebuild
+## 7. Space and Layout Rules
 
-### Keep
-- Color palette and brand voice.
-- Agent identity system (avatars, gradients, statuses).
-- Strong micro-components: signal-strength bar, score sub-scores, do/avoid chips, trend cards (with size reduction).
-- Editorial Positioning Statement treatment.
-- Threads list / multi-campaign concept.
+The redesign should be ruthless about wasted space.
 
-### Simplify
-- Sidebar → 56px NavRail with hover-expand.
-- TopBar → single 36px row, consolidated controls.
-- PhaseNav → 32px PhaseRibbon with state + scroll-spy.
-- Trend cards → 80px scannable rows.
-- Agent grid → inline bylines on blocks.
+The current front-end spends too much room telling the user what phase they are on. The new version should spend that room on actual work.
 
-### Remove (with conviction)
-- The full right `AgentRail` as a layout citizen.
-- The activity feed as a vertical list.
-- The composer as a permanent surface.
-- "Continue to <Phase>" buttons as gates.
-- "Save Draft" buttons (auto-save instead).
-- Per-phase canvas chrome (BRIEF CANVAS / Phase X of 5 / giant title + description).
-- Decorative botanical SVG in sidebar.
-- Hero ribbon banners inside phase content.
-- The duplicate "Campaign Summary" block in Strategy.
+So:
 
-### Rebuild from scratch
-- All five existing phases (per the user's directive).
-- The shell (`AppShell`, `Sidebar`, `TopBar`, `PhaseNav`, `PhaseCanvas`, `AgentRail`).
-- The campaign context model — needs to support streaming block states (`pending / running / ready / approved`), per-block agent attribution, diff hints, auto-approval cooldowns, and inter-block dependencies.
+- phase headers must become much smaller
+- repeated title-and-description hero blocks should disappear
+- decorative chrome should stop pushing content below the fold
+- the central workspace should win as much width and height as possible
 
-### Add
-- `Imagery` as a real sixth phase between Drafting and Results.
-- ActivityRibbon component.
-- DirectorDrawer component (overlay, summoned).
-- Block-level inline action bar (Approve / Refine / Regenerate / Talk to agent).
-- Auto-approval cooldown system.
-- Diff hint chips on downstream blocks when upstream changes.
+The campaign should feel editorial in polish, but tool-like in discipline.
+
+That balance is important. We are not trying to make the workspace boring. We are trying to make it intentional.
 
 ---
 
-## 11. Open questions / decisions still to make
+## 8. What We Are Explicitly Not Doing
 
-These do not block the plan but should be decided before implementation:
+We are not keeping the current phase implementations and lightly polishing them.
 
-1. **Auto-approval default** — 90s? 60s? Off by default? My recommendation: 90s, dismissible, with a workspace-level toggle.
-2. **Read mode** — should there be a dedicated "presentation" mode (no chrome, full bleed) for stakeholder review? Recommended: yes, triggered by `Cmd+.`.
-3. **Mobile / narrow** — out of scope for this plan, but the redesign assumes ≥1280 width. Below that, NavRail becomes hidden, Drawer becomes a sheet.
-4. **Multi-user / presence** — not part of the brief but the ActivityRibbon is a natural place to add it later.
-5. **Versioning** — does the user want to fork campaigns? Recommended: yes, from any block ("Fork from here"), but defer to a follow-up.
-6. **Agent personality / voice** — the agents currently feel interchangeable. Recommended: give each one a distinct one-line voice that surfaces in their reasoning panels. Defer to implementation.
+We are not keeping the permanent right-side agent rail.
 
----
+We are not building the full spatial-board concept from `PLAN3`.
 
-## 12. Implementation phasing (for when approval lands)
+We are not letting the living-document idea flatten the product into seven similar content blocks.
 
-Not executing yet. This is the order I would implement it in:
-
-1. **Foundation** — new shell (`AppShell`, NavRail, TopBar, PhaseRibbon) + new campaign context model with block states.
-2. **Document container** — the scrollable document with section anchors and scroll-spy.
-3. **ActivityRibbon + DirectorDrawer** — the two new agent surfaces; remove the old `AgentRail`.
-4. **Brief block rebuild** — dense 3-column inline-edit, auto-save.
-5. **Research block rebuild** — left-right split, dense trend rows.
-6. **Strategy block rebuild** — full-bleed wall.
-7. **Drafting block rebuild** — three lanes with collapsibles.
-8. **Imagery phase (new)** — mood band + variant grid.
-9. **Results phase (new)** — final post previews + comparison + export.
-10. **Streaming + auto-approval polish** — diff hints, cooldown chips, inline action bars.
-
-Each step ships a working workspace; no big-bang rewrite is needed.
+And we are not designing the workspace like a landing page or a design showcase.
 
 ---
 
-## 13. Bottom line
+## 9. Why This Is the Right Mix
 
-The current TrendMind is a beautifully decorated wizard. The redesign turns it into a workspace.
+This direction keeps the strongest thing from `PLAN2`, which is that the campaign becomes one artifact that visibly writes itself and resolves into a deliverable.
 
-The single biggest move is killing the right rail and the "Continue" buttons. The single biggest gain is treating the campaign as one living document. The single biggest risk is over-keeping current visuals — the rebuild has to be willing to delete chrome the team is proud of.
+It keeps the most important corrective from `PLAN1`, which is that each phase still has its own purpose-built surface and its own kind of work.
 
-Done well, the workspace will feel like Linear, Notion, and Cursor had a child that knew marketing.
+And it keeps the most memorable moment from `PLAN3`, which is the feeling that `Trial` is a real event inside the product, not just another static section.
+
+That combination gives TrendMind a better chance of feeling:
+
+- special enough to stand out
+- clear enough to understand quickly
+- polished enough to feel premium
+- grounded enough to actually build
+
+---
+
+## 10. Final Summary
+
+TrendMind should become a single living campaign workspace.
+
+The campaign should be one scrollable artifact with seven inline phases:
+
+`Brief -> Research -> Strategy -> Draft -> Trial -> Studio -> Launch`
+
+The right-side agent rail should be replaced by a hidden-by-default Inspector.
+
+Each phase should feel like a real specialized tool inside the artifact, not just another document card.
+
+And `Trial` should be treated as the dramatic centerpiece that makes the whole product feel different from a normal AI marketing app.
