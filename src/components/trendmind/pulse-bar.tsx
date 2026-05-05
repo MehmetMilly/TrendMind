@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 import { AGENTS } from "@/lib/campaign-data";
+import { formatClockLabel } from "@/lib/time-format";
 import { useStore } from "@/lib/workspace-store";
 
 export function PulseBar() {
@@ -58,10 +59,7 @@ export function PulseBar() {
           </div>
 
           <span className="text-[9px] tabular-nums" style={{ color: "#9b9590" }}>
-            {new Date(current.createdAt).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {formatClockLabel(current.createdAt)}
           </span>
         </>
       ) : (

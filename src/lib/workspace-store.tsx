@@ -141,11 +141,23 @@ export function useStore() {
   return context;
 }
 
-export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
-  const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
-  const [campaign, setCampaign] = useState<CampaignWorkspace | null>(null);
-  const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+export function WorkspaceProvider({
+  children,
+  initialBootstrap,
+}: {
+  children: React.ReactNode;
+  initialBootstrap?: CampaignBootstrap;
+}) {
+  const [campaigns, setCampaigns] = useState<CampaignSummary[]>(
+    () => initialBootstrap?.campaigns ?? [],
+  );
+  const [campaign, setCampaign] = useState<CampaignWorkspace | null>(
+    () => initialBootstrap?.activeCampaign ?? null,
+  );
+  const [activeCampaignId, setActiveCampaignId] = useState<string | null>(
+    () => initialBootstrap?.activeCampaignId ?? null,
+  );
+  const [loading, setLoading] = useState(!initialBootstrap);
   const [refreshing, setRefreshing] = useState(false);
   const [savingBrief, setSavingBrief] = useState(false);
   const [runPending, setRunPending] = useState(false);
@@ -202,9 +214,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
+    if (initialBootstrap) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void refreshCampaign();
-  }, [refreshCampaign]);
+  }, [initialBootstrap, refreshCampaign]);
 
   useEffect(() => {
     const activeRun = campaign?.runs[0];

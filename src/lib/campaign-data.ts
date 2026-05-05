@@ -14,7 +14,7 @@ export const AGENTS: Record<string, AgentMeta> = {
     short: "المخرج",
     initials: "CD",
     accent: "#c8a96e",
-    role: "يحافظ على إيقاع الحملة ويؤطر القرارات.",
+    role: "يحافظ على إيقاع الحملة ويحوّل المخرجات إلى قرارات واضحة.",
   },
   scout: {
     id: "scout",
@@ -22,7 +22,7 @@ export const AGENTS: Record<string, AgentMeta> = {
     short: "الكاشف",
     initials: "TS",
     accent: "#b7863f",
-    role: "يلتقط إشارات السوق والجمهور والسياق المدعوم بالمصادر.",
+    role: "يلتقط إشارات السوق والجمهور والمنافسين.",
   },
   strategist: {
     id: "strategist",
@@ -30,7 +30,7 @@ export const AGENTS: Record<string, AgentMeta> = {
     short: "المخطط",
     initials: "BS",
     accent: "#3d7a5f",
-    role: "يحول البحث إلى زوايا تلائم الجمهور فعلا.",
+    role: "يحوّل البحث إلى زوايا حملة قابلة للاختبار.",
   },
   architect: {
     id: "architect",
@@ -38,7 +38,7 @@ export const AGENTS: Record<string, AgentMeta> = {
     short: "المهندس",
     initials: "CA",
     accent: "#4f6e87",
-    role: "يبني مسارات صياغة متعددة بدل إعلان واحد عام.",
+    role: "يبني نسخا متعددة بدل إعلان واحد عام.",
   },
   simulator: {
     id: "simulator",
@@ -46,7 +46,7 @@ export const AGENTS: Record<string, AgentMeta> = {
     short: "المحاكي",
     initials: "AS",
     accent: "#7a6b8a",
-    role: "يحاكي ردود فعل محتملة من شرائح جمهور مختلفة.",
+    role: "يحاكي ردود فعل شرائح جمهور مختلفة.",
   },
   critic: {
     id: "critic",
@@ -54,7 +54,7 @@ export const AGENTS: Record<string, AgentMeta> = {
     short: "الناقد",
     initials: "PC",
     accent: "#8a6a5a",
-    role: "يقيس القوة والاحتكاك والوضوح ومخاطر التحويل.",
+    role: "يقيس القوة والوضوح ومخاطر التحويل.",
   },
   factChecker: {
     id: "factChecker",
@@ -62,7 +62,7 @@ export const AGENTS: Record<string, AgentMeta> = {
     short: "المدقق",
     initials: "FC",
     accent: "#6b6560",
-    role: "يلتقط الادعاءات غير المدعومة وضعف الإسناد.",
+    role: "يراجع الادعاءات ويقلل مخاطر الوعود غير المدعومة.",
   },
   visual: {
     id: "visual",
@@ -70,7 +70,7 @@ export const AGENTS: Record<string, AgentMeta> = {
     short: "البصري",
     initials: "VD",
     accent: "#5d7688",
-    role: "يحول الرسالة المختارة إلى اتجاه بصري قابل للإطلاق.",
+    role: "يحوّل الرسالة المختارة إلى اتجاه بصري قابل للإطلاق.",
   },
 };
 
@@ -97,12 +97,12 @@ export const EMPTY_PHASE_STATUSES: Record<PhaseId, PhaseStatus> = {
 };
 
 export const DEFAULT_BRIEF: CampaignBrief = {
-  campaignName: "حملة جديدة",
+  campaignName: "حملة عربية جديدة",
   brandName: "",
   productName: "",
   audience: "",
   goal: "",
-  platform: "X",
+  platform: "تيك توك",
   language: "العربية",
   tone: "",
   valueProposition: "",

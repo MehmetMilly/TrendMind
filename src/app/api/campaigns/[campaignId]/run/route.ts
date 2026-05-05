@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { startCampaignRun } from "@/lib/campaign-engine";
-import { getCampaign } from "@/lib/campaign-repository";
+import { startDummyRun } from "@/lib/campaign-repository";
 
 export const dynamic = "force-dynamic";
 
@@ -17,14 +16,13 @@ export async function POST(
       mode?: "full" | "phase";
     };
 
-    const runId = await startCampaignRun(campaignId, {
+    const payload = await startDummyRun(campaignId, {
       startPhase: (body.startPhase as never) ?? "research",
       note: body.note,
       mode: body.mode ?? "full",
     });
 
-    const campaign = await getCampaign(campaignId);
-    return NextResponse.json({ runId, campaign });
+    return NextResponse.json(payload);
   } catch (error) {
     return NextResponse.json(
       {

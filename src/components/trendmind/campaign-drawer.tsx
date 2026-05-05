@@ -4,6 +4,7 @@ import { FolderOpen, Plus, Sparkles } from "lucide-react";
 import React from "react";
 
 import { useStore } from "@/lib/workspace-store";
+import { formatTimestampLabel } from "@/lib/time-format";
 
 export function CampaignDrawer() {
   const {
@@ -150,7 +151,7 @@ export function CampaignDrawer() {
                     <StatusTag status={campaign.status} />
                   </div>
                   <div className="mt-2 text-[9px]" style={{ color: "#b0a99e" }}>
-                    تم التحديث {new Date(campaign.updatedAt).toLocaleString("ar")}
+                    تم التحديث {formatTimestampLabel(campaign.updatedAt)}
                   </div>
                 </button>
               );

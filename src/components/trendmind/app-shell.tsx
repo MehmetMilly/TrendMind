@@ -11,10 +11,15 @@ import { PhaseTransitionOverlay } from "@/components/trendmind/phase-transition-
 import { PulseBar } from "@/components/trendmind/pulse-bar";
 import { TopBar } from "@/components/trendmind/top-bar";
 import { WorkspaceProvider } from "@/lib/workspace-store";
+import type { CampaignBootstrap } from "@/lib/types";
 
-export function AppShell() {
+export function AppShell({
+  initialBootstrap,
+}: {
+  initialBootstrap: CampaignBootstrap;
+}) {
   return (
-    <WorkspaceProvider>
+    <WorkspaceProvider initialBootstrap={initialBootstrap}>
       <div
         className="flex h-screen w-full items-stretch overflow-hidden"
         style={{ background: "#cfc9bf", padding: "5px 6px 6px 6px" }}
