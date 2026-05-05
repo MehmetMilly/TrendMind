@@ -1,153 +1,151 @@
-'use client';
+"use client";
 
-// Compact top strip. Holds campaign identity, status, and the highest-level
-// actions (Share, Export, Director). Deliberately thin — the workspace
-// below is the product.
+import {
+  FolderOpen,
+  Play,
+  Share2,
+  SlidersHorizontal,
+  Download,
+} from "lucide-react";
 
-import React from 'react';
+import { useStore } from "@/lib/workspace-store";
 
 export function TopStrip() {
+  const {
+    campaign,
+    openCampaignDrawer,
+    openDirector,
+    runPending,
+    savingBrief,
+    shareCampaign,
+    startFullRun,
+    exportCampaign,
+  } = useStore();
+
   return (
     <header
-      className="flex items-center justify-between h-[44px] px-5 flex-shrink-0 relative"
+      className="relative flex h-[40px] flex-shrink-0 items-center justify-between px-4"
       style={{
-        background: 'linear-gradient(180deg, #faf7f2 0%, #f4efe7 100%)',
-        borderBottom: '1px solid #e4ded4',
+        background: "linear-gradient(180deg, #faf7f2 0%, #f3eee5 100%)",
+        borderBottom: "1px solid #e4ded4",
       }}
     >
-      {/* Left — campaign identity */}
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="flex items-center gap-1.5 text-[11px] tracking-[0.12em] uppercase" style={{ color: '#9b9590' }}>
-          <span>Northfield Supply Co.</span>
-          <span style={{ color: '#c8a96e' }}>/</span>
-        </div>
-        <h1
-          className="text-[15px] tracking-[-0.005em] font-medium truncate"
-          style={{ fontFamily: 'var(--font-heading)', color: '#2c2c2c' }}
+      <div className="flex min-w-0 items-center gap-2.5">
+        <span
+          className="text-[10px] font-medium uppercase tracking-[0.14em]"
+          style={{ color: "#9b9590" }}
         >
-          Q4 Holiday Push
+          {campaign?.brandName ?? "TrendMind"}
+        </span>
+        <span className="text-[10px]" style={{ color: "#c8a96e" }}>
+          /
+        </span>
+        <h1
+          className="truncate text-[14px] font-medium tracking-[-0.005em]"
+          style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}
+        >
+          {campaign?.name ?? "Loading workspace..."}
         </h1>
-        <StatusPill />
+        <StatusPill
+          status={campaign?.status ?? "draft"}
+          savingBrief={savingBrief}
+          runPending={runPending}
+        />
       </div>
 
-      {/* Right — actions */}
-      <div className="flex items-center gap-1">
-        <TextBtn label="Director" iconLeft={<ChatIcon />} accent />
+      <div className="flex items-center gap-0.5">
+        <ActionButton label="Campaigns" icon={<FolderOpen size={13} />} onClick={openCampaignDrawer} />
+        <ActionButton
+          label={runPending ? "Running" : "Run"}
+          icon={<Play size={13} />}
+          accent
+          onClick={() => void startFullRun()}
+        />
+        <ActionButton
+          label="Director"
+          icon={<SlidersHorizontal size={13} />}
+          onClick={() => openDirector()}
+        />
         <Divider />
-        <TextBtn label="Share" iconLeft={<ShareIcon />} />
-        <TextBtn label="Export" iconLeft={<ExportIcon />} />
-        <Divider />
-        <IconBtn label="More" icon={<MoreIcon />} />
+        <ActionButton
+          label="Share"
+          icon={<Share2 size={13} />}
+          onClick={() => void shareCampaign()}
+        />
+        <ActionButton
+          label="Export"
+          icon={<Download size={13} />}
+          onClick={exportCampaign}
+        />
       </div>
     </header>
   );
 }
 
-function StatusPill() {
+function StatusPill({
+  status,
+  savingBrief,
+  runPending,
+}: {
+  status: string;
+  savingBrief: boolean;
+  runPending: boolean;
+}) {
+  const palette: Record<string, { color: string; background: string; dot: string }> = {
+    draft: { color: "#8a6a5a", background: "rgba(138,106,90,0.08)", dot: "#b58a7a" },
+    running: { color: "#3d7a5f", background: "rgba(61,122,95,0.08)", dot: "#4a9070" },
+    ready: { color: "#3d7a5f", background: "rgba(61,122,95,0.07)", dot: "#4a9070" },
+    attention: { color: "#b25b50", background: "rgba(178,91,80,0.08)", dot: "#b25b50" },
+  };
+  const style = palette[status] ?? palette.draft;
+
   return (
     <div
-      className="flex items-center gap-1.5 px-2 py-[3px] rounded-full text-[10.5px] font-medium tracking-[0.04em]"
+      className="flex items-center gap-1 rounded-full px-1.5 py-[2px] text-[9.5px] font-medium tracking-[0.06em]"
       style={{
-        color: '#3d7a5f',
-        background: 'rgba(61, 122, 95, 0.08)',
-        border: '1px solid rgba(61, 122, 95, 0.18)',
+        color: style.color,
+        background: style.background,
+        border: `1px solid ${style.color}20`,
       }}
     >
       <span
-        className="w-1.5 h-1.5 rounded-full animate-pulse-dot"
-        style={{ background: '#4a9070' }}
+        className={`h-[5px] w-[5px] rounded-full ${runPending || savingBrief ? "animate-pulse-dot" : ""}`}
+        style={{ background: style.dot }}
       />
-      Live
+      {savingBrief ? "Saving" : runPending ? "Queued" : status}
     </div>
   );
 }
 
-function TextBtn({
+function ActionButton({
   label,
-  iconLeft,
+  icon,
   accent,
+  onClick,
 }: {
   label: string;
-  iconLeft?: React.ReactNode;
+  icon: React.ReactNode;
   accent?: boolean;
+  onClick?: () => void;
 }) {
-  const [hover, setHover] = React.useState(false);
   return (
     <button
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-medium transition-all duration-200"
+      onClick={onClick}
+      className="flex items-center gap-1 rounded-md px-2 py-[5px] text-[11px] font-medium transition-all duration-200"
       style={{
-        color: accent ? (hover ? '#1e3a2f' : '#3d7a5f') : hover ? '#2c2c2c' : '#6b6560',
+        color: accent ? "#f0e8d8" : "#6b6560",
         background: accent
-          ? hover
-            ? 'rgba(61, 122, 95, 0.14)'
-            : 'rgba(61, 122, 95, 0.07)'
-          : hover
-            ? 'rgba(200, 169, 110, 0.12)'
-            : 'transparent',
-        border: accent ? '1px solid rgba(61, 122, 95, 0.25)' : '1px solid transparent',
+          ? "linear-gradient(160deg, #3d7a5f, #1e3a2f)"
+          : "transparent",
+        border: accent ? "1px solid rgba(61,122,95,0.2)" : "1px solid transparent",
       }}
     >
-      {iconLeft}
+      {icon}
       {label}
     </button>
   );
 }
 
-function IconBtn({ label, icon }: { label: string; icon: React.ReactNode }) {
-  const [hover, setHover] = React.useState(false);
-  return (
-    <button
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      title={label}
-      className="w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200"
-      style={{
-        color: hover ? '#2c2c2c' : '#9b9590',
-        background: hover ? 'rgba(200, 169, 110, 0.12)' : 'transparent',
-      }}
-    >
-      {icon}
-    </button>
-  );
-}
-
 function Divider() {
-  return <div className="w-px h-4 mx-1" style={{ background: '#e4ded4' }} />;
-}
-
-function ChatIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 4C2 2.9 2.9 2 4 2H10C11.1 2 12 2.9 12 4V8C12 9.1 11.1 10 10 10H6L3 12.5V10C2.4 10 2 9.6 2 9V4Z" />
-    </svg>
-  );
-}
-function ShareIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 7.5V11H10V7.5" />
-      <path d="M7 2V9" />
-      <path d="M4.5 4.5L7 2L9.5 4.5" />
-    </svg>
-  );
-}
-function ExportIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M7 2V8.5" />
-      <path d="M4.5 6L7 8.5L9.5 6" />
-      <path d="M3 11H11" />
-    </svg>
-  );
-}
-function MoreIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <circle cx="3.5" cy="7" r="1.1" fill="currentColor" />
-      <circle cx="7" cy="7" r="1.1" fill="currentColor" />
-      <circle cx="10.5" cy="7" r="1.1" fill="currentColor" />
-    </svg>
-  );
+  return <div className="mx-0.5 h-3.5 w-px" style={{ background: "#e4ded4" }} />;
 }

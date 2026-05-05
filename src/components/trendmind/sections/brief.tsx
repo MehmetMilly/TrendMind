@@ -1,110 +1,159 @@
-'use client';
+"use client";
 
-// Brief — the source of truth block.
-// Compact, dense, inline-editable. No hero, no giant title, no wasted
-// first screen. The whole point is to make the campaign essentials
-// controllable and make downstream edits *meaningful*.
+import React from "react";
 
-import React from 'react';
-import { SectionShell, Attribution } from './section-shell';
-import { AGENTS } from '@/lib/campaign-data';
-import { useStore } from '@/lib/workspace-store';
+import { AGENTS } from "@/lib/campaign-data";
+import { useStore } from "@/lib/workspace-store";
+
+import { SectionShell } from "./section-shell";
 
 export function BriefSection() {
   const { brief, updateBrief } = useStore();
+  if (!brief) return null;
 
   return (
-    <SectionShell id="brief" tagline="Source of truth — everything downstream reads from here">
+    <SectionShell id="brief">
       <div
-        className="rounded-xl overflow-hidden"
+        className="overflow-hidden rounded-xl"
         style={{
-          background: 'linear-gradient(180deg, #faf7f2 0%, #f5f1ea 100%)',
-          border: '1px solid #e4ded4',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+          background: "#fdfaf5",
+          border: "1px solid #e4ded4",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
         }}
       >
-        {/* Top row — campaign + brand + platform */}
-        <div
-          className="grid grid-cols-[1.4fr_1fr_0.9fr] gap-0"
-          style={{ borderBottom: '1px solid #eae3d6' }}
-        >
+        <div className="flex items-center gap-0" style={{ borderBottom: "1px solid #ece5d8" }}>
           <Field
             label="Campaign"
-            value={brief.campaign}
-            onChange={(v) => updateBrief('campaign', v)}
+            value={brief.campaignName}
+            onChange={(value) => updateBrief("campaignName", value)}
+            className="flex-[1.3]"
             heading
           />
           <Field
             label="Brand"
-            value={brief.brand}
-            onChange={(v) => updateBrief('brand', v)}
+            value={brief.brandName}
+            onChange={(value) => updateBrief("brandName", value)}
+            className="flex-1"
             border
           />
           <Field
             label="Platform"
             value={brief.platform}
-            onChange={(v) => updateBrief('platform', v)}
+            onChange={(value) => updateBrief("platform", value)}
+            className="flex-[0.6]"
             border
           />
         </div>
 
-        {/* Goal — the single most important editable line */}
-        <BigField
-          label="Goal"
-          value={brief.goal}
-          onChange={(v) => updateBrief('goal', v)}
-        />
-
-        {/* Audience */}
-        <BigField
-          label="Audience"
-          value={brief.audience}
-          onChange={(v) => updateBrief('audience', v)}
-        />
-
-        {/* Tone + Pillars + Avoid row */}
-        <div
-          className="grid grid-cols-[1fr_1.2fr_1fr]"
-          style={{ borderTop: '1px solid #eae3d6' }}
-        >
+        <div className="grid grid-cols-[1fr_0.6fr_0.8fr] gap-0" style={{ borderBottom: "1px solid #ece5d8" }}>
+          <Field
+            label="Product"
+            value={brief.productName}
+            onChange={(value) => updateBrief("productName", value)}
+            className="px-4 py-2.5"
+          />
+          <Field
+            label="Language"
+            value={brief.language}
+            onChange={(value) => updateBrief("language", value)}
+            className="px-4 py-2.5"
+            border
+          />
           <Field
             label="Tone"
             value={brief.tone}
-            onChange={(v) => updateBrief('tone', v)}
-          />
-          <ChipField
-            label="Pillars"
-            values={brief.pillars}
-            onChange={(vals) => updateBrief('pillars', vals)}
-            accent="#3d7a5f"
-            border
-          />
-          <ChipField
-            label="Avoid"
-            values={brief.avoid}
-            onChange={(vals) => updateBrief('avoid', vals)}
-            accent="#8a6a5a"
+            onChange={(value) => updateBrief("tone", value)}
+            className="px-4 py-2.5"
             border
           />
         </div>
 
-        {/* Context — longform, editorial */}
-        <BigField
-          label="Context"
-          value={brief.context}
-          onChange={(v) => updateBrief('context', v)}
-          soft
+        <TextArea
+          label="Goal"
+          value={brief.goal}
+          onChange={(value) => updateBrief("goal", value)}
+          rows={2}
+          accent="#a68b4b"
         />
 
-        {/* Footer row — attribution + downstream note */}
-        <div
-          className="flex items-center justify-between px-4 py-2.5"
-          style={{ borderTop: '1px solid #eae3d6', background: '#f0ebe1' }}
-        >
-          <Attribution agentShort={AGENTS.director.short} accent={AGENTS.director.accent} extra="orchestrating" />
-          <div className="flex items-center gap-2 text-[11px]" style={{ color: '#6b6560' }}>
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#4a9070' }} />
-            Research, Strategy, Draft, Trial, Studio, Launch all read from this
+        <TextArea
+          label="Value proposition"
+          value={brief.valueProposition}
+          onChange={(value) => updateBrief("valueProposition", value)}
+          rows={2}
+        />
+
+        <TextArea
+          label="Audience"
+          value={brief.audience}
+          onChange={(value) => updateBrief("audience", value)}
+          rows={2}
+        />
+
+        <div className="grid grid-cols-3 gap-0" style={{ borderBottom: "1px solid #ece5d8" }}>
+          <ChipGroup
+            label="Pillars"
+            values={brief.pillars}
+            onChange={(values) => updateBrief("pillars", values)}
+            accent="#3d7a5f"
+          />
+          <ChipGroup
+            label="Avoid"
+            values={brief.avoid}
+            onChange={(values) => updateBrief("avoid", values)}
+            accent="#8a6a5a"
+            border
+          />
+          <ChipGroup
+            label="Guardrails"
+            values={brief.guardrails}
+            onChange={(values) => updateBrief("guardrails", values)}
+            accent="#4f6e87"
+            border
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-0" style={{ borderBottom: "1px solid #ece5d8" }}>
+          <ChipGroup
+            label="Brand links"
+            values={brief.brandLinks}
+            onChange={(values) => updateBrief("brandLinks", values)}
+            accent="#6b6560"
+          />
+          <ChipGroup
+            label="References"
+            values={brief.references}
+            onChange={(values) => updateBrief("references", values)}
+            accent="#a68b4b"
+            border
+          />
+        </div>
+
+        <div className="grid grid-cols-[1.2fr_0.8fr] gap-0">
+          <TextArea
+            label="Context"
+            value={brief.context}
+            onChange={(value) => updateBrief("context", value)}
+            rows={3}
+            italic
+          />
+          <TextArea
+            label="Call to action"
+            value={brief.callToAction}
+            onChange={(value) => updateBrief("callToAction", value)}
+            rows={3}
+            border
+          />
+        </div>
+
+        <div className="flex items-center justify-between px-4 py-2" style={{ background: "#f0ebe1" }}>
+          <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.08em]" style={{ color: "#9b9590" }}>
+            <span className="h-1 w-1 rounded-full" style={{ background: AGENTS.director.accent }} />
+            <span style={{ color: AGENTS.director.accent }}>{AGENTS.director.short}</span>
+            <span>· source of truth</span>
+          </div>
+          <div className="text-[9px]" style={{ color: "#9b9590" }}>
+            All downstream phases read from this brief.
           </div>
         </div>
       </div>
@@ -116,80 +165,86 @@ function Field({
   label,
   value,
   onChange,
-  heading,
+  className,
   border,
+  heading,
 }: {
   label: string;
   value: string;
-  onChange: (v: string) => void;
-  heading?: boolean;
+  onChange: (value: string) => void;
+  className?: string;
   border?: boolean;
+  heading?: boolean;
 }) {
   return (
-    <label
-      className="relative block px-4 py-3 group"
-      style={border ? { borderLeft: '1px solid #eae3d6' } : undefined}
+    <div
+      className={className ?? "px-4 py-2.5"}
+      style={border ? { borderLeft: "1px solid #ece5d8" } : undefined}
     >
-      <span
-        className="block text-[10px] tracking-[0.18em] uppercase font-semibold mb-1.5"
-        style={{ color: '#9b9590' }}
-      >
+      <div className="mb-1 text-[8.5px] font-bold uppercase tracking-[0.2em]" style={{ color: "#b0a99e" }}>
         {label}
-      </span>
+      </div>
       <input
+        aria-label={label}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(event) => onChange(event.target.value)}
         className="w-full bg-transparent outline-none"
         style={{
-          color: '#2c2c2c',
-          fontSize: heading ? '16px' : '13.5px',
-          fontFamily: heading ? 'var(--font-heading)' : undefined,
-          letterSpacing: heading ? '-0.01em' : undefined,
+          color: "#1f1d1a",
+          fontFamily: heading ? "var(--font-heading)" : undefined,
+          fontSize: heading ? "15px" : "13px",
+          letterSpacing: heading ? "-0.01em" : "0",
         }}
       />
-    </label>
+    </div>
   );
 }
 
-function BigField({
+function TextArea({
   label,
   value,
   onChange,
-  soft,
+  rows,
+  accent,
+  border,
+  italic,
 }: {
   label: string;
   value: string;
-  onChange: (v: string) => void;
-  soft?: boolean;
+  onChange: (value: string) => void;
+  rows: number;
+  accent?: string;
+  border?: boolean;
+  italic?: boolean;
 }) {
   return (
-    <label
-      className="block px-4 py-3"
-      style={{ borderTop: '1px solid #eae3d6' }}
+    <div
+      className="px-4 py-3"
+      style={{
+        borderBottom: label === "Call to action" || label === "Context" ? undefined : "1px solid #ece5d8",
+        borderLeft: border ? "1px solid #ece5d8" : undefined,
+      }}
     >
-      <span
-        className="block text-[10px] tracking-[0.18em] uppercase font-semibold mb-1.5"
-        style={{ color: '#9b9590' }}
-      >
+      <div className="mb-1 text-[8.5px] font-bold uppercase tracking-[0.2em]" style={{ color: accent ?? "#b0a99e" }}>
         {label}
-      </span>
+      </div>
       <textarea
+        aria-label={label}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        rows={soft ? 2 : 2}
-        className="w-full bg-transparent outline-none resize-none leading-[1.5]"
+        onChange={(event) => onChange(event.target.value)}
+        rows={rows}
+        className="w-full resize-none bg-transparent text-[13px] leading-[1.55] outline-none"
         style={{
-          color: soft ? '#4a4540' : '#2c2c2c',
-          fontSize: '13.5px',
-          fontStyle: soft ? 'italic' : 'normal',
-          fontFamily: soft ? 'var(--font-heading)' : undefined,
+          color: label === "Audience" ? "#3a3631" : "#1f1d1a",
+          fontStyle: italic ? "italic" : "normal",
+          fontFamily: italic ? "var(--font-heading)" : undefined,
         }}
       />
-    </label>
+    </div>
   );
 }
 
-function ChipField({
+function ChipGroup({
   label,
   values,
   onChange,
@@ -198,57 +253,51 @@ function ChipField({
 }: {
   label: string;
   values: string[];
-  onChange: (v: string[]) => void;
+  onChange: (values: string[]) => void;
   accent: string;
   border?: boolean;
 }) {
-  const [draft, setDraft] = React.useState('');
+  const [draft, setDraft] = React.useState("");
+
   return (
-    <div
-      className="px-4 py-3"
-      style={border ? { borderLeft: '1px solid #eae3d6' } : undefined}
-    >
-      <span
-        className="block text-[10px] tracking-[0.18em] uppercase font-semibold mb-1.5"
-        style={{ color: '#9b9590' }}
-      >
+    <div className="px-4 py-2.5" style={border ? { borderLeft: "1px solid #ece5d8" } : undefined}>
+      <div className="mb-1.5 text-[8.5px] font-bold uppercase tracking-[0.2em]" style={{ color: "#b0a99e" }}>
         {label}
-      </span>
-      <div className="flex flex-wrap gap-1.5">
-        {values.map((v, i) => (
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {values.map((value, index) => (
           <span
-            key={i}
-            className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded-full text-[11.5px] font-medium tracking-[0.01em] group cursor-default"
+            key={`${value}-${index}`}
+            className="inline-flex items-center gap-1 rounded-full px-1.5 py-[2px] text-[10.5px] font-medium"
             style={{
               color: accent,
-              background: `${accent}12`,
-              border: `1px solid ${accent}28`,
+              background: `${accent}10`,
+              border: `1px solid ${accent}22`,
             }}
           >
-            {v}
+            {value}
             <button
-              onClick={() => onChange(values.filter((_, j) => j !== i))}
-              className="opacity-40 hover:opacity-100 transition-opacity"
-              title="Remove"
+              onClick={() => onChange(values.filter((_, itemIndex) => itemIndex !== index))}
+              className="opacity-30 transition-opacity hover:opacity-100"
             >
-              <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-                <path d="M2 2L7 7M7 2L2 7" />
-              </svg>
+              ×
             </button>
           </span>
         ))}
         <input
+          aria-label={`${label} input`}
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && draft.trim()) {
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && draft.trim()) {
+              event.preventDefault();
               onChange([...values, draft.trim()]);
-              setDraft('');
+              setDraft("");
             }
           }}
-          placeholder="+ add"
-          className="bg-transparent outline-none text-[11.5px] px-1 w-16"
-          style={{ color: '#6b6560' }}
+          placeholder="+"
+          className="w-8 bg-transparent px-1 text-[10.5px] outline-none"
+          style={{ color: "#9b9590" }}
         />
       </div>
     </div>

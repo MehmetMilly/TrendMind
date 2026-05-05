@@ -1,75 +1,80 @@
-'use client';
+"use client";
 
-// Ambient activity surface. Lives at the very bottom of the workspace
-// and rotates through recent agent actions. Replaces the old permanent
-// activity rail with a single, light, living line.
+import React, { useEffect, useMemo, useState } from "react";
 
-import React, { useEffect, useState } from 'react';
-import { ACTIVITY, AGENTS } from '@/lib/campaign-data';
+import { AGENTS } from "@/lib/campaign-data";
+import { useStore } from "@/lib/workspace-store";
 
 export function PulseBar() {
-  const [idx, setIdx] = useState(0);
+  const { campaign } = useStore();
+  const activities = useMemo(
+    () => (campaign?.activities ?? []).slice().reverse(),
+    [campaign?.activities],
+  );
+  const [index, setIndex] = useState(0);
+  const safeIndex = activities.length === 0 ? 0 : index % activities.length;
 
   useEffect(() => {
-    const handle = window.setInterval(() => {
-      setIdx((i) => (i + 1) % ACTIVITY.length);
-    }, 3200);
-    return () => window.clearInterval(handle);
-  }, []);
+    if (activities.length <= 1) return;
 
-  const current = ACTIVITY[idx];
-  const agent = AGENTS[current.by];
+    const handle = window.setInterval(() => {
+      setIndex((current) => (current + 1) % activities.length);
+    }, 3600);
+
+    return () => window.clearInterval(handle);
+  }, [activities.length]);
+
+  const current = activities[safeIndex];
+  const agent = current ? AGENTS[current.actor] : null;
 
   return (
     <div
-      className="relative h-[28px] flex items-center px-4 gap-3 flex-shrink-0 overflow-hidden"
+      className="relative flex h-[26px] flex-shrink-0 items-center gap-2.5 overflow-hidden px-3"
       style={{
-        background: 'linear-gradient(180deg, #f4efe7 0%, #ebe6dd 100%)',
-        borderTop: '1px solid #e4ded4',
+        background: "linear-gradient(180deg, #f0ebe1 0%, #e8e3d9 100%)",
+        borderTop: "1px solid #e4ded4",
       }}
     >
-      {/* Left — pulse + label */}
-      <div className="flex items-center gap-2">
-        <div className="relative w-2 h-2">
-          <span
-            className="absolute inset-0 rounded-full"
-            style={{ background: agent.accent }}
-          />
-          <span
-            className="absolute -inset-1 rounded-full animate-signal-pulse"
-            style={{ background: agent.accent, opacity: 0.25 }}
-          />
-        </div>
-        <span
-          className="text-[9.5px] tracking-[0.18em] uppercase font-medium"
-          style={{ color: '#9b9590' }}
-        >
-          Ambient
-        </span>
-      </div>
+      {current && agent ? (
+        <>
+          <div className="relative h-[6px] w-[6px]">
+            <span className="absolute inset-0 rounded-full" style={{ background: agent.accent }} />
+            <span
+              className="absolute -inset-0.5 rounded-full animate-signal-pulse"
+              style={{ background: agent.accent, opacity: 0.2 }}
+            />
+          </div>
 
-      {/* Current activity — crossfades */}
-      <div key={current.id} className="flex-1 flex items-center gap-2 min-w-0 animate-fade-in">
-        <span
-          className="text-[11px] font-semibold tracking-[0.04em]"
-          style={{ color: agent.accent }}
-        >
-          {agent.short}
-        </span>
-        <span className="text-[11.5px] truncate" style={{ color: '#6b6560' }}>
-          {current.text}
-        </span>
-      </div>
+          <div key={current.id} className="flex min-w-0 flex-1 items-center gap-1.5 animate-fade-in">
+            <span
+              className="text-[10px] font-semibold tracking-[0.04em]"
+              style={{ color: agent.accent }}
+            >
+              {agent.short}
+            </span>
+            <span className="truncate text-[10.5px]" style={{ color: "#5a5550" }}>
+              {current.message}
+            </span>
+          </div>
 
-      {/* Right — time */}
-      <span className="text-[10px] tabular-nums" style={{ color: '#9b9590' }}>
-        {current.age}
-      </span>
+          <span className="text-[9px] tabular-nums" style={{ color: "#9b9590" }}>
+            {new Date(current.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
+        </>
+      ) : (
+        <span className="text-[10.5px]" style={{ color: "#9b9590" }}>
+          ستظهر الإشارات هنا عندما تبدأ الحملة بالحركة.
+        </span>
+      )}
 
-      {/* Gold drift */}
       <div
-        className="absolute left-0 bottom-0 h-[1px] w-20 animate-ambient-drift"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(200,169,110,0.55), transparent)' }}
+        className="absolute bottom-0 right-0 h-[1px] w-16 animate-ambient-drift"
+        style={{
+          background: "linear-gradient(90deg, transparent, rgba(200,169,110,0.45), transparent)",
+        }}
       />
     </div>
   );

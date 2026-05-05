@@ -1,282 +1,271 @@
-'use client';
+"use client";
 
-// Selection-aware Inspector. Hidden by default. When the user selects a
-// research item, angle, draft atom, variant, persona, or studio layer,
-// this panel slides in with the right depth for that exact thing.
+import React from "react";
 
-import React from 'react';
-import { useStore } from '@/lib/workspace-store';
-import {
-  AGENTS,
-  ANGLES,
-  DRAFT_ATOMS,
-  DRAFT_VARIANTS,
-  PERSONAS,
-  RESEARCH,
-  STUDIO_LAYERS,
-  TRIAL_REACTIONS,
-} from '@/lib/campaign-data';
+import { AGENTS } from "@/lib/campaign-data";
+import { useStore } from "@/lib/workspace-store";
 
 export function Inspector() {
-  const { inspector, closeInspector } = useStore();
+  const { campaign, closeInspector, inspector } = useStore();
   const open = inspector.kind !== null;
 
   return (
     <>
-      {/* Soft dim backdrop — sits inside the rounded shell */}
       <div
         onClick={closeInspector}
-        className="absolute inset-0 bg-black/10 transition-opacity duration-200 z-[45]"
-        style={{
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? 'auto' : 'none',
-        }}
+        className="absolute inset-0 z-[45] bg-black/8 transition-opacity duration-200"
+        style={{ opacity: open ? 1 : 0, pointerEvents: open ? "auto" : "none" }}
       />
       <aside
-        className="absolute top-0 right-0 h-full z-[50] flex flex-col transition-transform duration-300 ease-out"
+        className="absolute right-0 top-0 z-[50] flex h-full flex-col transition-transform duration-300 ease-out"
         style={{
-          width: 'min(420px, 38vw)',
-          transform: open ? 'translateX(0)' : 'translateX(105%)',
-          background: '#faf7f2',
-          borderLeft: '1px solid #d8d0c4',
-          boxShadow: open ? '-24px 0 60px rgba(0,0,0,0.12), -2px 0 10px rgba(0,0,0,0.06)' : 'none',
+          width: "min(400px, 36vw)",
+          transform: open ? "translateX(0)" : "translateX(105%)",
+          background: "#fdfaf5",
+          borderLeft: "1px solid #d8d0c4",
+          boxShadow: open ? "-20px 0 50px rgba(0,0,0,0.1), -2px 0 8px rgba(0,0,0,0.05)" : "none",
         }}
       >
-        {/* Header */}
-        <header
-          className="flex items-center justify-between px-5 h-[44px] flex-shrink-0"
-          style={{ borderBottom: '1px solid #e4ded4', background: '#f5f1ea' }}
-        >
-          <div className="flex items-center gap-2 text-[10.5px] tracking-[0.18em] uppercase font-medium" style={{ color: '#9b9590' }}>
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#c8a96e' }} />
+        <header className="flex h-[38px] flex-shrink-0 items-center justify-between px-4" style={{ borderBottom: "1px solid #e4ded4", background: "#f5f1ea" }}>
+          <div className="flex items-center gap-1.5 text-[9px] font-medium uppercase tracking-[0.2em]" style={{ color: "#9b9590" }}>
+            <span className="h-[4px] w-[4px] rounded-full" style={{ background: "#c8a96e" }} />
             Inspector
-            {inspector.kind && (
-              <span style={{ color: '#6b6560' }}>· {kindLabel(inspector.kind)}</span>
-            )}
+            {inspector.kind ? <span style={{ color: "#5a5550" }}>· {labelForKind(inspector.kind)}</span> : null}
           </div>
           <button
+            aria-label="Close inspector"
             onClick={closeInspector}
-            className="w-7 h-7 flex items-center justify-center rounded-md transition-colors"
-            style={{ color: '#6b6560' }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(200,169,110,0.12)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-            title="Close"
+            className="flex h-6 w-6 items-center justify-center rounded-md transition-colors"
+            style={{ color: "#9b9590" }}
           >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-              <path d="M3 3L11 11M11 3L3 11" />
-            </svg>
+            ×
           </button>
         </header>
 
-        {/* Body — per-kind content */}
         <div className="flex-1 overflow-y-auto">
-          {open && <InspectorBody kind={inspector.kind} id={inspector.id} />}
+          {open && campaign ? <InspectorBody /> : null}
         </div>
       </aside>
     </>
   );
 }
 
-function kindLabel(k: string) {
-  switch (k) {
-    case 'research':   return 'Research';
-    case 'angle':      return 'Angle';
-    case 'draft-atom': return 'Draft piece';
-    case 'variant':    return 'Variant';
-    case 'persona':    return 'Persona';
-    case 'layer':      return 'Layer';
-    default:           return '';
-  }
+function labelForKind(kind: string) {
+  return {
+    research: "Research",
+    angle: "Angle",
+    "draft-atom": "Draft",
+    variant: "Variant",
+    persona: "Persona",
+    layer: "Layer",
+  }[kind];
 }
 
-function InspectorBody({
-  kind,
-  id,
-}: {
-  kind: ReturnType<typeof useStore>['inspector']['kind'];
-  id: string | null;
-}) {
-  if (!kind || !id) return null;
+function InspectorBody() {
+  const {
+    campaign,
+    directorDraft,
+    inspector,
+    openDirector,
+    rerunPhase,
+    setDirectorDraft,
+    setSelectedAngleId,
+    setSelectedVariantId,
+  } = useStore();
 
-  if (kind === 'research') {
-    const item = RESEARCH.find((r) => r.id === id);
+  if (!campaign || !inspector.kind || !inspector.id) return null;
+
+  if (inspector.kind === "research") {
+    const item = campaign.phases.research.data?.items.find((entry) => entry.id === inspector.id);
     if (!item) return null;
     const agent = AGENTS[item.by];
     return (
       <Frame>
-        <KindHeader title={item.title} sub={`${kindDotColor(item.kind)} ${item.kind}`} />
-        <p className="text-[13px] leading-[1.65]" style={{ color: '#3a3631' }}>
+        <KindHeader title={item.title} sub={item.kind} />
+        <p className="text-[12px] leading-[1.6]" style={{ color: "#3a3631" }}>
           {item.summary}
         </p>
         <Divider />
         <MetaRow label="Source" value={item.source} />
         <MetaRow label="Confidence" value={`${item.confidence}%`} />
-        <MetaRow label="Attribution" value={`${agent.name}`} accent={agent.accent} />
-        <Divider />
-        <Section title="Why this matters">
-          <p className="text-[12.5px] leading-[1.6]" style={{ color: '#6b6560' }}>
-            This signal is feeding the{' '}
-            <em style={{ color: '#2c2c2c', fontStyle: 'normal', fontWeight: 500 }}>
-              {item.kind === 'trend' ? 'Strategy angle selection' : 'campaign framing'}
-            </em>{' '}
-            and has been promoted into the Strategy section.
-          </p>
-        </Section>
+        <MetaRow label="By" value={agent.name} accent={agent.accent} />
+        <MetaRow label="Tags" value={item.tags.join(", ")} />
         <ActionRow>
-          <BtnPrimary>Use in Strategy</BtnPrimary>
-          <BtnGhost>Dismiss signal</BtnGhost>
+          <ButtonPrimary
+            onClick={() => {
+              setDirectorDraft({
+                ...directorDraft,
+                phase: "strategy",
+                note: `Lean harder on this signal: ${item.title}`,
+              });
+              openDirector("strategy");
+            }}
+          >
+            Send to Strategy
+          </ButtonPrimary>
+          <ButtonGhost onClick={() => void rerunPhase("research")}>Refresh</ButtonGhost>
         </ActionRow>
       </Frame>
     );
   }
 
-  if (kind === 'angle') {
-    const a = ANGLES.find((x) => x.id === id);
-    if (!a) return null;
+  if (inspector.kind === "angle") {
+    const angle = campaign.phases.strategy.data?.angles.find((entry) => entry.id === inspector.id);
+    if (!angle) return null;
     return (
       <Frame>
-        <KindHeader title={a.name} sub={`Angle ${a.letter}`} />
-        <p className="text-[13px] italic leading-[1.6]" style={{ color: '#3a3631', fontFamily: 'var(--font-heading)' }}>
-          “{a.hook}”
+        <KindHeader title={angle.title} sub={`Angle ${angle.letter} · ${angle.lane}`} />
+        <p className="text-[13px] italic leading-[1.5]" style={{ color: "#1f1d1a", fontFamily: "var(--font-heading)" }}>
+          “{angle.hook}”
         </p>
         <Divider />
-        <Section title="Stance">
-          <p className="text-[12.5px] leading-[1.6]" style={{ color: '#6b6560' }}>{a.stance}</p>
-        </Section>
-        <Section title="Promise">
-          <p className="text-[12.5px] leading-[1.6]" style={{ color: '#6b6560' }}>{a.promise}</p>
-        </Section>
-        <Section title="Supports">
-          <ul className="text-[12.5px] leading-[1.6] space-y-1.5" style={{ color: '#3a3631' }}>
-            {a.support.map((s, i) => (
-              <li key={i} className="flex gap-2">
-                <span style={{ color: '#c8a96e' }}>—</span>
-                <span>{s}</span>
-              </li>
-            ))}
-          </ul>
+        <Section title="Thesis">{angle.thesis}</Section>
+        <Section title="Promise">{angle.promise}</Section>
+        <Section title="Rationale">
+          {angle.rationale.map((entry, index) => (
+            <Bullet key={`${entry}-${index}`}>{entry}</Bullet>
+          ))}
         </Section>
         <Section title="Risk">
-          <p className="text-[12.5px] leading-[1.6]" style={{ color: '#8a6a5a' }}>{a.risk}</p>
+          {angle.risks.map((entry, index) => (
+            <Bullet key={`${entry}-${index}`}>{entry}</Bullet>
+          ))}
         </Section>
-        <Divider />
-        <MetaRow label="Lead signal" value={`Research · ${a.leadSignal.toUpperCase()}`} />
+        <ActionRow>
+          <ButtonPrimary onClick={() => void setSelectedAngleId(angle.id)}>Commit</ButtonPrimary>
+          <ButtonGhost onClick={() => void rerunPhase("strategy")}>Re-run</ButtonGhost>
+        </ActionRow>
       </Frame>
     );
   }
 
-  if (kind === 'draft-atom') {
-    const atom = DRAFT_ATOMS.find((x) => x.id === id);
+  if (inspector.kind === "draft-atom") {
+    const atom = campaign.phases.draft.data?.atoms.find((entry) => entry.id === inspector.id);
     if (!atom) return null;
     return (
       <Frame>
         <KindHeader title={atom.kind.toUpperCase()} sub="Draft piece" />
-        <div
-          className="px-4 py-3 rounded-lg text-[13.5px] leading-[1.6]"
-          style={{ background: '#f0ebe1', color: '#2c2c2c', border: '1px solid #e4ded4' }}
-        >
+        <div className="rounded-lg px-3 py-2.5 text-[12.5px] leading-[1.55]" style={{ background: "#f0ebe1", color: "#1f1d1a", border: "1px solid #e4ded4" }}>
           {atom.text}
         </div>
-        {atom.note && (
-          <Section title="Critic note">
-            <p className="text-[12.5px] leading-[1.6]" style={{ color: '#8a6a5a' }}>
-              {atom.note}
-            </p>
-          </Section>
-        )}
+        {atom.note ? <Section title="Note">{atom.note}</Section> : null}
         <ActionRow>
-          <BtnPrimary>Use in variant</BtnPrimary>
-          <BtnGhost>Ask for alternates</BtnGhost>
+          <ButtonPrimary
+            onClick={() => {
+              setDirectorDraft({
+                ...directorDraft,
+                phase: "draft",
+                note: `Keep this ${atom.kind} energy, but generate stronger alternates around: ${atom.text}`,
+              });
+              openDirector("draft");
+            }}
+          >
+            Ask for alternates
+          </ButtonPrimary>
+          <ButtonGhost onClick={() => void rerunPhase("draft")}>Re-run Draft</ButtonGhost>
         </ActionRow>
       </Frame>
     );
   }
 
-  if (kind === 'variant') {
-    const v = DRAFT_VARIANTS.find((x) => x.id === id);
-    if (!v) return null;
-    const hook = DRAFT_ATOMS.find((a) => a.id === v.hookId);
-    const body = DRAFT_ATOMS.find((a) => a.id === v.bodyId);
-    const cta = DRAFT_ATOMS.find((a) => a.id === v.ctaId);
-    return (
-      <Frame>
-        <KindHeader title={`Variant ${v.id.toUpperCase()}`} sub={`Angle ${v.angleId.toUpperCase()} · ${v.score}/100`} />
-        <Section title="Composition">
-          <StackLine label="Hook" text={hook?.text} />
-          <StackLine label="Body" text={body?.text} />
-          <StackLine label="CTA"  text={cta?.text} />
-        </Section>
-        <Section title="Critiques">
-          <div className="space-y-2">
-            {v.critiques.map((c, i) => {
-              const agent = AGENTS[c.agent];
-              return (
-                <div key={i} className="flex gap-2 items-start">
-                  <span
-                    className="text-[10px] font-semibold tracking-[0.04em] rounded px-1.5 py-0.5 mt-0.5"
-                    style={{ color: agent.accent, background: `${agent.accent}14` }}
-                  >
-                    {agent.short}
-                  </span>
-                  <p className="text-[12.5px] leading-[1.55]" style={{ color: '#3a3631' }}>
-                    {c.note}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </Section>
-      </Frame>
-    );
-  }
+  if (inspector.kind === "variant") {
+    const draft = campaign.phases.draft.data;
+    const variant = draft?.variants.find((entry) => entry.id === inspector.id);
+    if (!draft || !variant) return null;
+    const hook = draft.atoms.find((atom) => atom.id === variant.hookId)?.text ?? "";
+    const body = draft.atoms.find((atom) => atom.id === variant.bodyId)?.text ?? "";
+    const cta = draft.atoms.find((atom) => atom.id === variant.ctaId)?.text ?? "";
 
-  if (kind === 'persona') {
-    const p = PERSONAS.find((x) => x.id === id);
-    if (!p) return null;
-    const reactions = TRIAL_REACTIONS.filter((r) => r.personaId === p.id);
     return (
       <Frame>
-        <KindHeader title={p.name} sub="Synthetic persona" />
-        <p className="text-[13px] leading-[1.6]" style={{ color: '#3a3631' }}>
-          {p.oneLiner}
-        </p>
-        <Divider />
-        <Section title="Reactions across variants">
-          <div className="space-y-2">
-            {reactions.map((r) => (
-              <div
-                key={r.variantId}
-                className="px-3 py-2 rounded-md"
-                style={{ background: '#f0ebe1', border: '1px solid #e4ded4' }}
-              >
-                <div className="flex items-center justify-between mb-1 text-[10.5px] tracking-[0.06em] uppercase" style={{ color: '#9b9590' }}>
-                  <span>Variant {r.variantId.replace('v', '')}</span>
-                  <span style={{ color: sentimentColor(r.sentiment) }}>{r.sentiment}</span>
-                </div>
-                <p className="text-[12.5px] italic leading-[1.55]" style={{ color: '#3a3631', fontFamily: 'var(--font-heading)' }}>
-                  {r.quote}
+        <KindHeader title={variant.name} sub={`${variant.id} · ${variant.score}/100`} />
+        <Section title="Composition">
+          <StackLine label="Hook" text={hook} />
+          <StackLine label="Body" text={body} />
+          <StackLine label="CTA" text={cta} />
+        </Section>
+        <Section title="Critique">
+          {variant.critique.map((entry, index) => {
+            const agent = AGENTS[entry.agent];
+            return (
+              <div key={`${entry.note}-${index}`} className="mb-1.5 flex items-start gap-1.5 last:mb-0">
+                <span
+                  className="mt-[1px] rounded px-1 py-[1px] text-[9px] font-bold tracking-[0.04em]"
+                  style={{ color: agent.accent, background: `${agent.accent}12` }}
+                >
+                  {agent.short}
+                </span>
+                <p className="text-[11.5px] leading-[1.5]" style={{ color: "#3a3631" }}>
+                  {entry.note}
                 </p>
               </div>
-            ))}
-          </div>
+            );
+          })}
+        </Section>
+        <ActionRow>
+          <ButtonPrimary onClick={() => void setSelectedVariantId(variant.id)}>Elevate</ButtonPrimary>
+          <ButtonGhost onClick={() => void rerunPhase("trial")}>Send to Trial</ButtonGhost>
+        </ActionRow>
+      </Frame>
+    );
+  }
+
+  if (inspector.kind === "persona") {
+    const trial = campaign.phases.trial.data;
+    const persona = trial?.personas.find((entry) => entry.id === inspector.id);
+    if (!trial || !persona) return null;
+    const reactions = trial.reactions.filter((entry) => entry.personaId === persona.id);
+    return (
+      <Frame>
+        <KindHeader title={persona.name} sub={persona.archetype} />
+        <p className="text-[12px]" style={{ color: "#3a3631" }}>
+          {persona.oneLiner}
+        </p>
+        <Divider />
+        <Section title="Reaction feed">
+          {reactions.map((reaction) => (
+            <div key={reaction.id} className="mb-2 rounded-md border px-2.5 py-2 last:mb-0" style={{ background: "#f0ebe1", borderColor: "#e4ded4" }}>
+              <div className="mb-0.5 flex items-center justify-between text-[9.5px] uppercase" style={{ color: "#9b9590" }}>
+                <span>{reaction.variantId}</span>
+                <span style={{ color: resolveSentimentColor(reaction.sentiment) }}>{reaction.sentiment}</span>
+              </div>
+              <p className="text-[11.5px] italic leading-[1.5]" style={{ color: "#3a3631", fontFamily: "var(--font-heading)" }}>
+                {reaction.quote}
+              </p>
+              <p className="mt-1 text-[10px] leading-[1.45]" style={{ color: "#5a5550" }}>
+                {reaction.why}
+              </p>
+            </div>
+          ))}
         </Section>
       </Frame>
     );
   }
 
-  if (kind === 'layer') {
-    const l = STUDIO_LAYERS.find((x) => x.id === id);
-    if (!l) return null;
+  if (inspector.kind === "layer") {
+    const layer = campaign.phases.studio.data?.layers.find((entry) => entry.id === inspector.id);
+    if (!layer) return null;
     return (
       <Frame>
-        <KindHeader title={l.name} sub={`Studio · ${l.kind}`} />
-        <p className="text-[13px] leading-[1.6]" style={{ color: '#3a3631' }}>
-          {l.note}
+        <KindHeader title={layer.name} sub={`Studio · ${layer.kind}`} />
+        <p className="text-[12px]" style={{ color: "#3a3631" }}>
+          {layer.note}
         </p>
         <Divider />
         <ActionRow>
-          <BtnPrimary>Open in focus</BtnPrimary>
-          <BtnGhost>Swap layer</BtnGhost>
+          <ButtonPrimary onClick={() => void rerunPhase("studio")}>Regenerate studio</ButtonPrimary>
+          <ButtonGhost
+            onClick={() => {
+              setDirectorDraft({
+                ...directorDraft,
+                phase: "studio",
+                note: `Refine the ${layer.name.toLowerCase()} layer: ${layer.note}`,
+              });
+              openDirector("studio");
+            }}
+          >
+            Direct refinement
+          </ButtonGhost>
         </ActionRow>
       </Frame>
     );
@@ -285,20 +274,17 @@ function InspectorBody({
   return null;
 }
 
-// ── Pieces ──────────────────────────────────────────────────────────
-
 function Frame({ children }: { children: React.ReactNode }) {
-  return <div className="p-5 flex flex-col gap-4 animate-fade-in">{children}</div>;
+  return <div className="flex flex-col gap-3 p-4 animate-fade-in">{children}</div>;
 }
 
 function KindHeader({ title, sub }: { title: string; sub: string }) {
   return (
     <div>
-      <div className="text-[10.5px] tracking-[0.18em] uppercase mb-1" style={{ color: '#9b9590' }}>{sub}</div>
-      <h2
-        className="text-[18px] leading-[1.25] tracking-[-0.01em]"
-        style={{ fontFamily: 'var(--font-heading)', color: '#2c2c2c' }}
-      >
+      <div className="mb-0.5 text-[9px] uppercase tracking-[0.2em]" style={{ color: "#9b9590" }}>
+        {sub}
+      </div>
+      <h2 className="text-[16px] leading-[1.2] tracking-[-0.01em]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
         {title}
       </h2>
     </div>
@@ -306,37 +292,61 @@ function KindHeader({ title, sub }: { title: string; sub: string }) {
 }
 
 function Divider() {
-  return <div className="h-px" style={{ background: 'linear-gradient(90deg, transparent, #e4ded4 30%, #e4ded4 70%, transparent)' }} />;
+  return <div className="h-px" style={{ background: "linear-gradient(90deg, transparent, #e4ded4 25%, #e4ded4 75%, transparent)" }} />;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <div className="text-[10.5px] tracking-[0.18em] uppercase mb-2 font-medium" style={{ color: '#9b9590' }}>{title}</div>
-      {children}
+      <div className="mb-1.5 text-[9px] font-medium uppercase tracking-[0.2em]" style={{ color: "#9b9590" }}>
+        {title}
+      </div>
+      <div className="text-[12px] leading-[1.6]" style={{ color: "#5a5550" }}>
+        {children}
+      </div>
     </div>
   );
 }
 
-function MetaRow({ label, value, accent }: { label: string; value: string; accent?: string }) {
+function Bullet({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4 text-[12.5px]">
-      <span style={{ color: '#9b9590' }}>{label}</span>
-      <span style={{ color: accent ?? '#2c2c2c', fontWeight: 500 }}>{value}</span>
+    <div className="mb-1 flex gap-1.5 last:mb-0">
+      <span style={{ color: "#c8a96e" }}>•</span>
+      <span>{children}</span>
     </div>
   );
 }
 
-function StackLine({ label, text }: { label: string; text?: string }) {
+function MetaRow({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: string;
+}) {
   return (
-    <div className="mb-2 last:mb-0">
-      <div className="text-[9.5px] tracking-[0.18em] uppercase mb-1" style={{ color: '#b0a99e' }}>
+    <div className="flex items-center justify-between gap-3 text-[11.5px]">
+      <span style={{ color: "#9b9590" }}>{label}</span>
+      <span style={{ color: accent ?? "#1f1d1a", fontWeight: 500 }}>{value}</span>
+    </div>
+  );
+}
+
+function StackLine({ label, text }: { label: string; text: string }) {
+  return (
+    <div className="mb-1.5 last:mb-0">
+      <div className="mb-0.5 text-[8.5px] uppercase tracking-[0.2em]" style={{ color: "#b0a99e" }}>
         {label}
       </div>
-      <div
-        className="px-3 py-2 rounded-md text-[12.5px] leading-[1.55]"
-        style={{ background: '#f0ebe1', color: '#2c2c2c', border: '1px solid #e4ded4' }}
-      >
+      <div className="rounded-md px-2.5 py-1.5 text-[11.5px] leading-[1.5]" style={{ background: "#f0ebe1", color: "#1f1d1a", border: "1px solid #e4ded4" }}>
         {text}
       </div>
     </div>
@@ -344,47 +354,52 @@ function StackLine({ label, text }: { label: string; text?: string }) {
 }
 
 function ActionRow({ children }: { children: React.ReactNode }) {
-  return <div className="flex gap-2 pt-2">{children}</div>;
+  return <div className="flex gap-2 pt-1">{children}</div>;
 }
 
-function BtnPrimary({ children }: { children: React.ReactNode }) {
+function ButtonPrimary({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
   return (
     <button
-      className="flex-1 px-3 py-2 rounded-md text-[12px] font-medium tracking-[0.02em] transition-all"
+      onClick={onClick}
+      className="flex-1 rounded-md px-3 py-1.5 text-[11px] font-medium transition-all"
       style={{
-        color: '#f0e8d8',
-        background: 'linear-gradient(160deg, #2d5a47, #1e3a2f)',
-        boxShadow: '0 2px 8px rgba(30,58,47,0.3), inset 0 1px 0 rgba(255,255,255,0.08)',
+        color: "#f0e8d8",
+        background: "linear-gradient(160deg, #2d5a47, #1e3a2f)",
+        boxShadow: "0 2px 8px rgba(30,58,47,0.25), inset 0 1px 0 rgba(255,255,255,0.06)",
       }}
     >
       {children}
     </button>
   );
 }
-function BtnGhost({ children }: { children: React.ReactNode }) {
+
+function ButtonGhost({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
   return (
     <button
-      className="flex-1 px-3 py-2 rounded-md text-[12px] font-medium tracking-[0.02em] transition-all"
-      style={{
-        color: '#6b6560',
-        background: 'transparent',
-        border: '1px solid #d8d0c4',
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(200,169,110,0.08)')}
-      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+      onClick={onClick}
+      className="flex-1 rounded-md px-3 py-1.5 text-[11px] font-medium transition-all"
+      style={{ color: "#5a5550", border: "1px solid #d8d0c4" }}
     >
       {children}
     </button>
   );
 }
 
-function kindDotColor(kind: string) {
-  return '·';
-}
-
-function sentimentColor(s: string) {
-  if (s === 'love') return '#3d7a5f';
-  if (s === 'warm') return '#a68b4b';
-  if (s === 'neutral') return '#6b6560';
-  return '#8a6a5a';
+function resolveSentimentColor(sentiment: string) {
+  if (sentiment === "love") return "#3d7a5f";
+  if (sentiment === "warm") return "#a68b4b";
+  if (sentiment === "neutral") return "#6b6560";
+  return "#8a6a5a";
 }

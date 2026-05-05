@@ -1,232 +1,230 @@
-'use client';
+"use client";
 
-// Trial — the emotional centerpiece.
-// This section is where TrendMind shows that it is not just "write an ad."
-// It is a small audience-simulation theatre: the selected variant goes on
-// a lit stage, synthetic personas react one by one, verdicts form, and
-// the user sees the campaign meet its audience before it meets the world.
-//
-// Theatrical, not chaotic. Still inside the scrolling artifact, but with
-// a darker, more immersive surface.
+import { useMemo } from "react";
 
-import React, { useMemo } from 'react';
-import { SectionShell, Attribution } from './section-shell';
-import {
-  AGENTS,
-  DRAFT_ATOMS,
-  DRAFT_VARIANTS,
-  PERSONAS,
-  TRIAL_REACTIONS,
-} from '@/lib/campaign-data';
-import { useStore } from '@/lib/workspace-store';
+import { SectionShell } from "@/components/trendmind/sections/section-shell";
+import { useStore } from "@/lib/workspace-store";
 
 export function TrialSection() {
   const {
-    selectedVariantId,
-    trialPhase,
-    trialTick,
-    startTrial,
-    resetTrial,
+    campaign,
     openInspector,
+    rerunPhase,
+    runPending,
+    startTrialReplay,
+    resetTrialReplay,
+    trialPlaybackState,
+    trialPlaybackTick,
   } = useStore();
 
-  const variant = DRAFT_VARIANTS.find((v) => v.id === selectedVariantId) ?? DRAFT_VARIANTS[0];
-  const hook = DRAFT_ATOMS.find((a) => a.id === variant.hookId);
-  const body = DRAFT_ATOMS.find((a) => a.id === variant.bodyId);
-  const cta = DRAFT_ATOMS.find((a) => a.id === variant.ctaId);
+  const draft = campaign?.phases.draft.data;
+  const trial = campaign?.phases.trial.data;
+  const selectedVariantId = campaign?.selectedVariantId ?? trial?.winningVariantId ?? null;
+  const variant = draft?.variants.find((entry) => entry.id === selectedVariantId) ?? draft?.variants[0];
+
+  const hook = draft?.atoms.find((atom) => atom.id === variant?.hookId)?.text ?? "";
+  const body = draft?.atoms.find((atom) => atom.id === variant?.bodyId)?.text ?? "";
+  const cta = draft?.atoms.find((atom) => atom.id === variant?.ctaId)?.text ?? "";
 
   const reactions = useMemo(
-    () => TRIAL_REACTIONS.filter((r) => r.variantId === variant.id),
-    [variant.id],
+    () =>
+      trial?.reactions.filter((reaction) => reaction.variantId === variant?.id) ?? [],
+    [trial?.reactions, variant?.id],
   );
 
-  const revealed = trialPhase === 'complete' ? reactions.length : Math.min(trialTick, reactions.length);
+  const revealed =
+    trialPlaybackState === "complete" ? reactions.length : Math.min(trialPlaybackTick, reactions.length);
 
-  // Verdict — soft aggregation
   const verdict = useMemo(() => {
-    const shown = reactions.slice(0, revealed);
-    if (shown.length === 0) return null;
-    const avg =
-      shown.reduce((acc, r) => acc + (r.subScores.clarity + r.subScores.feel + r.subScores.intent) / 3, 0) /
-      shown.length;
-    const loves = shown.filter((r) => r.sentiment === 'love').length;
-    return { avg, loves, total: shown.length };
-  }, [reactions, revealed]);
+    if (!trial || !variant) return null;
+    return trial.scoreboard.find((entry) => entry.variantId === variant.id) ?? null;
+  }, [trial, variant]);
 
   const right = (
     <div className="flex items-center gap-2">
-      <Attribution agentShort={AGENTS.critic.short} accent={AGENTS.critic.accent} extra="judging" />
-      <div className="flex items-center gap-1">
-        {trialPhase === 'idle' && (
-          <button
-            onClick={startTrial}
-            className="px-3 py-1 rounded-md text-[11px] font-medium tracking-[0.04em] transition-all"
-            style={{
-              color: '#f0e8d8',
-              background: 'linear-gradient(160deg, #c8a96e, #a68b4b)',
-              boxShadow: '0 2px 8px rgba(200,169,110,0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
-            }}
-          >
-            ▸ Run trial
-          </button>
-        )}
-        {trialPhase === 'running' && (
-          <button
-            onClick={resetTrial}
-            className="px-3 py-1 rounded-md text-[11px] font-medium tracking-[0.04em]"
-            style={{
-              color: '#dcc487',
-              background: 'rgba(200,169,110,0.1)',
-              border: '1px solid rgba(200,169,110,0.3)',
-            }}
-          >
-            Pause
-          </button>
-        )}
-        {trialPhase === 'complete' && (
-          <button
-            onClick={resetTrial}
-            className="px-3 py-1 rounded-md text-[11px] font-medium tracking-[0.04em]"
-            style={{
-              color: '#dcc487',
-              background: 'rgba(200,169,110,0.1)',
-              border: '1px solid rgba(200,169,110,0.3)',
-            }}
-          >
-            Re-run
-          </button>
-        )}
-      </div>
+      {!trial ? (
+        <button
+          onClick={() => void rerunPhase("trial")}
+          disabled={runPending}
+          className="rounded-md px-3 py-[5px] text-[10.5px] font-medium tracking-[0.04em]"
+          style={{
+            color: "#0f1a15",
+            background: "linear-gradient(160deg, #dcc487, #a68b4b)",
+            opacity: runPending ? 0.65 : 1,
+          }}
+        >
+          Run trial
+        </button>
+      ) : trialPlaybackState === "running" ? (
+        <button
+          onClick={resetTrialReplay}
+          className="rounded-md border px-3 py-[5px] text-[10.5px] font-medium"
+          style={{
+            color: "#dcc487",
+            background: "rgba(200,169,110,0.08)",
+            borderColor: "rgba(200,169,110,0.25)",
+          }}
+        >
+          Pause
+        </button>
+      ) : (
+        <button
+          onClick={startTrialReplay}
+          className="rounded-md px-3 py-[5px] text-[10.5px] font-medium tracking-[0.04em]"
+          style={{
+            color: "#0f1a15",
+            background: "linear-gradient(160deg, #dcc487, #a68b4b)",
+          }}
+        >
+          {trialPlaybackState === "idle" ? "Replay trial" : "Replay again"}
+        </button>
+      )}
+      <button
+        onClick={() => void rerunPhase("trial")}
+        disabled={runPending}
+        className="rounded-md border px-3 py-[5px] text-[10.5px] font-medium"
+        style={{
+          color: "#dcc487",
+          background: "rgba(200,169,110,0.08)",
+          borderColor: "rgba(200,169,110,0.25)",
+          opacity: runPending ? 0.65 : 1,
+        }}
+      >
+        Regenerate
+      </button>
     </div>
   );
 
   return (
-    <SectionShell
-      id="trial"
-      tagline="Synthetic audience simulation — the campaign meets its audience before the world does"
-      rightSlot={right}
-      dramatic
-    >
-      {/* The theatre — a darker, lit stage */}
-      <div
-        className="relative rounded-2xl overflow-hidden"
-        style={{
-          background:
-            'radial-gradient(800px 400px at 50% 10%, rgba(200,169,110,0.18), transparent 60%), ' +
-            'linear-gradient(180deg, #1a2f26 0%, #14241d 100%)',
-          border: '1px solid rgba(200,169,110,0.22)',
-          boxShadow: '0 20px 50px rgba(20,36,29,0.3), inset 0 1px 0 rgba(200,169,110,0.15)',
-        }}
-      >
-        {/* Stage lights / ambient glow */}
-        <StageLights active={trialPhase !== 'idle'} />
-
-        {/* Center stage — the variant on trial */}
-        <div className="relative px-6 pt-7 pb-5">
-          <div className="flex items-center justify-center mb-4">
-            <div className="flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase" style={{ color: '#dcc487' }}>
-              <span className="w-1 h-1 rounded-full animate-pulse-dot" style={{ background: '#dcc487' }} />
-              On stage
-              <span style={{ color: 'rgba(220,196,135,0.5)' }}>·</span>
-              <span>Variant {variant.id.replace('v', '')}</span>
-            </div>
-          </div>
-
-          <div className="max-w-[680px] mx-auto text-center space-y-3">
-            <p
-              className="text-[24px] leading-[1.25] tracking-[-0.01em] italic"
-              style={{ fontFamily: 'var(--font-heading)', color: '#f5e8c8' }}
-            >
-              “{hook?.text}”
-            </p>
-            <p className="text-[13.5px] leading-[1.65]" style={{ color: 'rgba(240,232,216,0.78)' }}>
-              {body?.text}
-            </p>
-            <p
-              className="text-[12px] tracking-[0.04em] font-medium pt-1"
-              style={{ color: '#c8a96e' }}
-            >
-              {cta?.text}
-            </p>
-          </div>
-
-          {/* Verdict meter */}
-          {verdict && (
-            <div className="mt-5 flex items-center justify-center">
-              <VerdictMeter verdict={verdict} running={trialPhase === 'running'} />
-            </div>
-          )}
-        </div>
-
-        {/* Audience grid */}
+    <SectionShell id="trial" rightSlot={right} dark>
+      {trial && variant ? (
         <div
-          className="relative px-5 pt-4 pb-5"
+          className="relative overflow-hidden rounded-2xl"
           style={{
-            borderTop: '1px solid rgba(200,169,110,0.15)',
-            background: 'linear-gradient(180deg, rgba(0,0,0,0.08) 0%, transparent 100%)',
+            background:
+              "radial-gradient(900px 450px at 50% 8%, rgba(200,169,110,0.14), transparent 60%), linear-gradient(180deg, #162b22 0%, #0f1a15 50%, #0c1610 100%)",
+            border: "1px solid rgba(200,169,110,0.18)",
+            boxShadow: "0 24px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(200,169,110,0.12)",
           }}
         >
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] tracking-[0.22em] uppercase font-medium" style={{ color: 'rgba(220,196,135,0.7)' }}>
-              Audience · {PERSONAS.length} synthetic personas
-            </span>
-            <span className="text-[10px] tabular-nums" style={{ color: 'rgba(220,196,135,0.55)' }}>
-              {revealed}/{reactions.length} reactions in
-            </span>
+          <div
+            className="pointer-events-none absolute left-[20%] top-0 h-[200px] w-[350px] animate-spotlight"
+            style={{ background: "radial-gradient(ellipse at top, rgba(220,196,135,0.18), transparent 70%)" }}
+          />
+          <div
+            className="pointer-events-none absolute right-[20%] top-0 h-[200px] w-[350px] animate-spotlight"
+            style={{
+              background: "radial-gradient(ellipse at top, rgba(61,122,95,0.1), transparent 70%)",
+              animationDelay: "1.5s",
+            }}
+          />
+
+          <div className="relative px-6 pb-6 pt-8">
+            <div className="mb-5 flex items-center justify-center">
+              <div className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.25em]" style={{ color: "#dcc487" }}>
+                <span className="h-[5px] w-[5px] rounded-full animate-stage-glow" style={{ background: "#dcc487" }} />
+                On stage
+                <span style={{ color: "rgba(220,196,135,0.35)" }}>·</span>
+                {variant.name}
+              </div>
+            </div>
+
+            <div className="mx-auto max-w-[640px] space-y-4 text-center">
+              <p
+                className="text-[28px] italic leading-[1.2] tracking-[-0.015em]"
+                style={{ fontFamily: "var(--font-heading)", color: "#f5e8c8" }}
+              >
+                “{hook}”
+              </p>
+              <p className="text-[13px] leading-[1.7]" style={{ color: "rgba(240,232,216,0.7)" }}>
+                {body}
+              </p>
+              <p className="pt-1 text-[11.5px] font-medium tracking-[0.05em]" style={{ color: "#c8a96e" }}>
+                {cta}
+              </p>
+            </div>
+
+            {verdict ? (
+              <div className="mt-6 flex items-center justify-center">
+                <VerdictMeter verdict={verdict} running={trialPlaybackState === "running"} />
+              </div>
+            ) : null}
           </div>
 
-          <div className="grid grid-cols-5 gap-3">
-            {PERSONAS.map((p, i) => {
-              const reaction = reactions.find((r) => r.personaId === p.id);
-              const reactionIndex = reactions.findIndex((r) => r.personaId === p.id);
-              const hasSpoken = reactionIndex > -1 && reactionIndex < revealed;
-              return (
-                <PersonaStall
-                  key={p.id}
-                  name={p.name}
-                  oneLiner={p.oneLiner}
-                  glyph={p.glyph}
-                  accent={p.accent}
-                  hasSpoken={hasSpoken}
-                  sentiment={hasSpoken ? reaction!.sentiment : 'idle'}
-                  quote={hasSpoken ? reaction!.quote : undefined}
-                  subScores={hasSpoken ? reaction!.subScores : undefined}
-                  onOpen={() => openInspector('persona', p.id)}
-                  order={i}
+          <div
+            className="relative px-5 pb-5 pt-4"
+            style={{
+              borderTop: "1px solid rgba(200,169,110,0.1)",
+              background: "linear-gradient(180deg, rgba(0,0,0,0.12) 0%, transparent 100%)",
+            }}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-[9px] font-medium uppercase tracking-[0.25em]" style={{ color: "rgba(220,196,135,0.6)" }}>
+                Audience · {trial.personas.length} personas
+              </span>
+              <span className="text-[9px] tabular-nums" style={{ color: "rgba(220,196,135,0.45)" }}>
+                {revealed}/{reactions.length} reactions
+              </span>
+            </div>
+
+            <div className="grid grid-cols-5 gap-2.5">
+              {trial.personas.map((persona, order) => {
+                const reaction = reactions.find((entry) => entry.personaId === persona.id);
+                const reactionIndex = reactions.findIndex((entry) => entry.personaId === persona.id);
+                const hasSpoken = reactionIndex > -1 && reactionIndex < revealed;
+                return (
+                  <PersonaCard
+                    key={persona.id}
+                    name={persona.name}
+                    oneLiner={persona.oneLiner}
+                    glyph={persona.glyph}
+                    accent={persona.accent}
+                    hasSpoken={hasSpoken}
+                    sentiment={hasSpoken && reaction ? reaction.sentiment : "idle"}
+                    quote={hasSpoken ? reaction?.quote : undefined}
+                    subScores={hasSpoken ? reaction?.subScores : undefined}
+                    onOpen={() => openInspector("persona", persona.id)}
+                    order={order}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          <div
+            className="flex items-center justify-between px-5 py-2"
+            style={{ borderTop: "1px solid rgba(200,169,110,0.1)", background: "rgba(0,0,0,0.18)" }}
+          >
+            <div className="flex items-center gap-3 text-[9px] uppercase tracking-[0.18em]" style={{ color: "rgba(220,196,135,0.5)" }}>
+              <span className="inline-flex items-center gap-1">
+                <span
+                  className={`h-[4px] w-[4px] rounded-full ${trialPlaybackState !== "idle" ? "animate-pulse-dot" : ""}`}
+                  style={{ background: trialPlaybackState !== "idle" ? "#4a9070" : "rgba(220,196,135,0.35)" }}
                 />
-              );
-            })}
+                {trialPlaybackState === "idle"
+                  ? "Ready"
+                  : trialPlaybackState === "running"
+                    ? "Playing"
+                    : "Complete"}
+              </span>
+              <span>{trial.scoreboard.length} variants scored</span>
+            </div>
+            <span className="text-[9px]" style={{ color: "rgba(220,196,135,0.35)" }}>
+              Synthetic persona model · not real users
+            </span>
           </div>
         </div>
-
-        {/* Bottom control strip */}
-        <div
-          className="px-5 py-2.5 flex items-center justify-between"
-          style={{
-            borderTop: '1px solid rgba(200,169,110,0.15)',
-            background: 'rgba(0,0,0,0.15)',
-          }}
-        >
-          <div className="flex items-center gap-4 text-[10.5px] tracking-[0.14em] uppercase" style={{ color: 'rgba(220,196,135,0.6)' }}>
-            <StatusChip
-              label={trialPhase === 'idle' ? 'Waiting' : trialPhase === 'running' ? 'Running' : 'Complete'}
-              active={trialPhase !== 'idle'}
-            />
-            <span>{reactions.length} reactions modeled</span>
-            <span>variants compared: 3</span>
-          </div>
-          <div className="flex items-center gap-3 text-[10.5px]" style={{ color: 'rgba(220,196,135,0.55)' }}>
-            <span>Reactions based on persona model · not real users</span>
-          </div>
-        </div>
-      </div>
+      ) : (
+        <EmptyState
+          title="No audience simulation yet"
+          body="Run Draft and Trial to pressure-test your variants against synthetic audience personas and reveal the strongest angle."
+        />
+      )}
     </SectionShell>
   );
 }
 
-// ── Persona card ─────────────────────────────────────────────────────
-
-function PersonaStall({
+function PersonaCard({
   name,
   oneLiner,
   glyph,
@@ -243,218 +241,168 @@ function PersonaStall({
   glyph: string;
   accent: string;
   hasSpoken: boolean;
-  sentiment: 'love' | 'warm' | 'neutral' | 'cold' | 'idle';
+  sentiment: "love" | "warm" | "neutral" | "cold" | "idle";
   quote?: string;
-  subScores?: { clarity: number; feel: number; intent: number };
+  subScores?: { clarity: number; resonance: number; intent: number };
   onOpen: () => void;
   order: number;
 }) {
-  const sColor = sentimentColor(sentiment);
+  const sentimentColor = resolveSentimentColor(sentiment);
+
   return (
     <button
       onClick={onOpen}
-      className="group text-left rounded-xl p-3 flex flex-col gap-2 transition-all duration-300"
+      className="group flex flex-col gap-1.5 rounded-xl p-2.5 text-left transition-all duration-300"
       style={{
         background: hasSpoken
-          ? 'linear-gradient(180deg, rgba(200,169,110,0.1) 0%, rgba(30,58,47,0.35) 100%)'
-          : 'rgba(30,58,47,0.4)',
-        border: hasSpoken ? `1px solid ${accent}55` : '1px solid rgba(200,169,110,0.12)',
-        boxShadow: hasSpoken ? `0 8px 24px rgba(0,0,0,0.22), inset 0 1px 0 ${accent}30` : 'none',
-        transform: hasSpoken ? 'translateY(0)' : 'translateY(2px)',
-        opacity: hasSpoken ? 1 : 0.72,
+          ? "linear-gradient(180deg, rgba(200,169,110,0.08) 0%, rgba(15,26,21,0.5) 100%)"
+          : "rgba(15,26,21,0.5)",
+        border: hasSpoken ? `1px solid ${accent}44` : "1px solid rgba(200,169,110,0.08)",
+        boxShadow: hasSpoken ? `0 6px 20px rgba(0,0,0,0.2), inset 0 1px 0 ${accent}20` : "none",
+        opacity: hasSpoken ? 1 : 0.65,
         animationDelay: `${order * 80}ms`,
       }}
     >
-      {/* Head */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <div
-          className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold"
+          className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[9px] font-bold"
           style={{
-            color: hasSpoken ? '#1e3a2f' : accent,
-            background: hasSpoken ? accent : 'rgba(200,169,110,0.08)',
-            border: hasSpoken ? `1px solid ${accent}` : `1px solid ${accent}30`,
+            color: hasSpoken ? "#0f1a15" : accent,
+            background: hasSpoken ? accent : "rgba(200,169,110,0.06)",
+            border: hasSpoken ? "none" : `1px solid ${accent}25`,
           }}
         >
           {glyph}
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-[11.5px] leading-none truncate" style={{ color: hasSpoken ? '#f5e8c8' : 'rgba(245,232,200,0.6)', fontWeight: 500 }}>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[10.5px] leading-none" style={{ color: hasSpoken ? "#f5e8c8" : "rgba(245,232,200,0.5)", fontWeight: 500 }}>
             {name}
           </div>
-          <div className="text-[9.5px] mt-1 truncate" style={{ color: 'rgba(220,196,135,0.5)' }}>
+          <div className="mt-0.5 truncate text-[8.5px]" style={{ color: "rgba(220,196,135,0.4)" }}>
             {oneLiner}
           </div>
         </div>
-        {hasSpoken && (
-          <span
-            className="text-[9px] tracking-[0.18em] uppercase font-semibold px-1 py-0.5 rounded"
-            style={{ color: sColor, background: `${sColor}22` }}
-          >
+        {hasSpoken ? (
+          <span className="rounded px-1 py-[1px] text-[8px] font-bold uppercase tracking-[0.2em]" style={{ color: sentimentColor, background: `${sentimentColor}18` }}>
             {sentiment}
           </span>
-        )}
+        ) : null}
       </div>
 
-      {/* Quote */}
       <div
-        className="relative min-h-[54px] text-[11.5px] leading-[1.5] italic px-1 pt-1"
-        style={{
-          color: hasSpoken ? '#f5e8c8' : 'rgba(245,232,200,0.25)',
-          fontFamily: 'var(--font-heading)',
-        }}
+        className="min-h-[44px] px-0.5 text-[10.5px] italic leading-[1.45]"
+        style={{ color: hasSpoken ? "#f5e8c8" : "rgba(245,232,200,0.2)", fontFamily: "var(--font-heading)" }}
       >
-        {hasSpoken ? (
-          <span className="animate-fade-in block">{quote}</span>
-        ) : (
-          <ThinkingDots />
-        )}
+        {hasSpoken ? <span className="animate-fade-in block">{quote}</span> : <ThinkingDots />}
       </div>
 
-      {/* Sub scores */}
-      {hasSpoken && subScores && (
-        <div className="grid grid-cols-3 gap-2 pt-1" style={{ borderTop: '1px solid rgba(200,169,110,0.1)' }}>
-          <SubScore label="Clar" value={subScores.clarity} accent={accent} />
-          <SubScore label="Feel" value={subScores.feel} accent={accent} />
-          <SubScore label="Intent" value={subScores.intent} accent={accent} />
+      {hasSpoken && subScores ? (
+        <div className="grid grid-cols-3 gap-1.5 pt-0.5" style={{ borderTop: "1px solid rgba(200,169,110,0.08)" }}>
+          <MiniScore label="Clar" value={subScores.clarity} accent={accent} />
+          <MiniScore label="Feel" value={subScores.resonance} accent={accent} />
+          <MiniScore label="Intent" value={subScores.intent} accent={accent} />
         </div>
-      )}
+      ) : null}
     </button>
   );
 }
 
-function SubScore({ label, value, accent }: { label: string; value: number; accent: string }) {
+function MiniScore({ label, value, accent }: { label: string; value: number; accent: string }) {
   return (
     <div className="flex flex-col">
-      <div className="flex items-baseline justify-between mb-0.5">
-        <span className="text-[8.5px] tracking-[0.18em] uppercase" style={{ color: 'rgba(220,196,135,0.5)' }}>
+      <div className="mb-[2px] flex items-baseline justify-between">
+        <span className="text-[7.5px] uppercase tracking-[0.2em]" style={{ color: "rgba(220,196,135,0.4)" }}>
           {label}
         </span>
-        <span className="text-[9.5px] tabular-nums" style={{ color: accent }}>
+        <span className="text-[8.5px] tabular-nums" style={{ color: accent }}>
           {value}
         </span>
       </div>
-      <div className="h-[2px] rounded-full overflow-hidden" style={{ background: 'rgba(200,169,110,0.1)' }}>
-        <div
-          className="h-full animate-score-fill"
-          style={{ width: `${value}%`, background: accent }}
-        />
+      <div className="h-[2px] overflow-hidden rounded-full" style={{ background: "rgba(200,169,110,0.08)" }}>
+        <div className="h-full" style={{ width: `${value}%`, background: accent }} />
       </div>
     </div>
   );
 }
-
-// ── Verdict meter ────────────────────────────────────────────────────
 
 function VerdictMeter({
   verdict,
   running,
 }: {
-  verdict: { avg: number; loves: number; total: number };
+  verdict: { average: number; verdict: string; risk: number; resonance: number };
   running: boolean;
 }) {
   return (
     <div
-      className="flex items-center gap-5 px-5 py-2.5 rounded-full"
+      className="flex items-center gap-4 rounded-full px-5 py-2.5"
       style={{
-        background: 'rgba(0,0,0,0.25)',
-        border: '1px solid rgba(200,169,110,0.28)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+        background: "rgba(0,0,0,0.3)",
+        border: "1px solid rgba(200,169,110,0.22)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 8px 24px rgba(0,0,0,0.2)",
       }}
     >
       <div className="flex items-center gap-2">
-        <span className="text-[9.5px] tracking-[0.18em] uppercase" style={{ color: 'rgba(220,196,135,0.65)' }}>
+        <span className="text-[8.5px] uppercase tracking-[0.2em]" style={{ color: "rgba(220,196,135,0.55)" }}>
           Verdict
         </span>
-        <span
-          className="text-[20px] tabular-nums leading-none animate-score-tick"
-          key={Math.round(verdict.avg)}
-          style={{ color: '#f5e8c8', fontFamily: 'var(--font-heading)' }}
-        >
-          {Math.round(verdict.avg)}
+        <span className="text-[22px] leading-none tabular-nums" style={{ color: "#f5e8c8", fontFamily: "var(--font-heading)" }}>
+          {Math.round(verdict.average)}
         </span>
-        <span className="text-[10.5px]" style={{ color: 'rgba(220,196,135,0.55)' }}>
-          / 100
+        <span className="text-[10px]" style={{ color: "rgba(220,196,135,0.4)" }}>
+          /100
         </span>
       </div>
-      <div className="w-px h-5" style={{ background: 'rgba(200,169,110,0.22)' }} />
-      <div className="text-[10.5px] tracking-[0.08em]" style={{ color: 'rgba(220,196,135,0.7)' }}>
-        <span style={{ color: '#dcc487', fontWeight: 600 }}>{verdict.loves}</span> loved ·{' '}
-        <span style={{ color: '#dcc487', fontWeight: 600 }}>{verdict.total}</span> heard
+      <div className="h-4 w-px" style={{ background: "rgba(200,169,110,0.18)" }} />
+      <div className="text-[10px]" style={{ color: "rgba(220,196,135,0.6)" }}>
+        Resonance <span style={{ color: "#dcc487", fontWeight: 600 }}>{verdict.resonance}</span> · Risk{" "}
+        <span style={{ color: "#dcc487", fontWeight: 600 }}>{verdict.risk}</span>
       </div>
-      {running && (
-        <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: '#4a9070' }} />
-          <span className="text-[10px] tracking-[0.14em] uppercase" style={{ color: '#4a9070' }}>
+      {running ? (
+        <div className="flex items-center gap-1">
+          <span className="h-[4px] w-[4px] rounded-full animate-pulse-dot" style={{ background: "#4a9070" }} />
+          <span className="text-[9px] uppercase tracking-[0.15em]" style={{ color: "#4a9070" }}>
             Forming
           </span>
         </div>
-      )}
+      ) : null}
     </div>
-  );
-}
-
-// ── Stage lights ─────────────────────────────────────────────────────
-
-function StageLights({ active }: { active: boolean }) {
-  return (
-    <>
-      <div
-        className="pointer-events-none absolute top-0 left-1/4 w-[320px] h-[180px]"
-        style={{
-          background: 'radial-gradient(ellipse at top, rgba(220,196,135,0.22), transparent 70%)',
-          opacity: active ? 1 : 0.6,
-          transition: 'opacity 0.4s ease-out',
-        }}
-      />
-      <div
-        className="pointer-events-none absolute top-0 right-1/4 w-[320px] h-[180px]"
-        style={{
-          background: 'radial-gradient(ellipse at top, rgba(61,122,95,0.14), transparent 70%)',
-          opacity: active ? 1 : 0.6,
-          transition: 'opacity 0.4s ease-out',
-        }}
-      />
-    </>
-  );
-}
-
-// ── Tiny pieces ──────────────────────────────────────────────────────
-
-function StatusChip({ label, active }: { label: string; active: boolean }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span
-        className={`w-1.5 h-1.5 rounded-full ${active ? 'animate-pulse-dot' : ''}`}
-        style={{ background: active ? '#4a9070' : 'rgba(220,196,135,0.4)' }}
-      />
-      <span style={{ color: active ? '#dcc487' : 'rgba(220,196,135,0.6)' }}>{label}</span>
-    </span>
   );
 }
 
 function ThinkingDots() {
   return (
-    <div className="flex items-center gap-1 h-full pt-2">
-      <Dot delay={0} />
-      <Dot delay={180} />
-      <Dot delay={360} />
+    <div className="flex h-full items-center gap-1 pt-2">
+      {[0, 180, 360].map((delay) => (
+        <span
+          key={delay}
+          className="h-[3px] w-[3px] rounded-full animate-pulse-dot"
+          style={{ background: "rgba(220,196,135,0.35)", animationDelay: `${delay}ms` }}
+        />
+      ))}
     </div>
   );
 }
 
-function Dot({ delay }: { delay: number }) {
-  return (
-    <span
-      className="w-1 h-1 rounded-full animate-pulse-dot"
-      style={{ background: 'rgba(220,196,135,0.45)', animationDelay: `${delay}ms` }}
-    />
-  );
+function resolveSentimentColor(sentiment: string) {
+  if (sentiment === "love") return "#8fd3a8";
+  if (sentiment === "warm") return "#dcc487";
+  if (sentiment === "neutral") return "#b0a99e";
+  if (sentiment === "cold") return "#b58a7a";
+  return "#6b6560";
 }
 
-function sentimentColor(s: string) {
-  if (s === 'love')    return '#8fd3a8';
-  if (s === 'warm')    return '#dcc487';
-  if (s === 'neutral') return '#b0a99e';
-  if (s === 'cold')    return '#b58a7a';
-  return '#6b6560';
+function EmptyState({ title, body }: { title: string; body: string }) {
+  return (
+    <div
+      className="rounded-xl border px-4 py-6 text-center"
+      style={{ borderColor: "rgba(200,169,110,0.22)", background: "rgba(15,26,21,0.75)" }}
+    >
+      <h3 className="text-[16px]" style={{ fontFamily: "var(--font-heading)", color: "#f5e8c8" }}>
+        {title}
+      </h3>
+      <p className="mx-auto mt-2 max-w-xl text-[12px] leading-[1.6]" style={{ color: "rgba(240,232,216,0.72)" }}>
+        {body}
+      </p>
+    </div>
+  );
 }

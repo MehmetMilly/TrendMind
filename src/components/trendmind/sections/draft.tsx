@@ -1,71 +1,99 @@
-'use client';
+"use client";
 
-// Draft — construction, not paragraphs.
-// Top: a compact kit of hooks / bodies / CTAs the system has produced.
-// Bottom: three composed variants where the user can see construction,
-// compare scores, and read inline critic notes attached to the piece
-// that earned them.
+import { AGENTS } from "@/lib/campaign-data";
+import type { DraftAtom, DraftVariant } from "@/lib/types";
+import { useStore } from "@/lib/workspace-store";
 
-import React from 'react';
-import { SectionShell, Attribution } from './section-shell';
-import {
-  AGENTS,
-  DRAFT_ATOMS,
-  DRAFT_VARIANTS,
-  DraftAtom,
-  DraftVariant,
-  ANGLES,
-} from '@/lib/campaign-data';
-import { useStore } from '@/lib/workspace-store';
+import { SectionShell } from "./section-shell";
 
 export function DraftSection() {
-  const { selectedVariantId, setSelectedVariantId, openInspector } = useStore();
+  const {
+    campaign,
+    openInspector,
+    rerunPhase,
+    runPending,
+    setSelectedVariantId,
+  } = useStore();
+  const draft = campaign?.phases.draft.data;
+  const selectedVariantId = campaign?.selectedVariantId ?? draft?.recommendedVariantId ?? null;
 
-  const hooks = DRAFT_ATOMS.filter((a) => a.kind === 'hook');
-  const bodies = DRAFT_ATOMS.filter((a) => a.kind === 'body');
-  const ctas = DRAFT_ATOMS.filter((a) => a.kind === 'cta');
-
-  const right = (
-    <div className="flex items-center gap-2">
-      <Attribution agentShort={AGENTS.architects.short} accent={AGENTS.architects.accent} extra="writing" />
-      <span className="text-[11px]" style={{ color: '#9b9590' }}>·</span>
-      <Attribution agentShort={AGENTS.critic.short} accent={AGENTS.critic.accent} extra="scoring" />
-    </div>
-  );
+  const hooks = draft?.atoms.filter((atom) => atom.kind === "hook") ?? [];
+  const bodies = draft?.atoms.filter((atom) => atom.kind === "body") ?? [];
+  const ctas = draft?.atoms.filter((atom) => atom.kind === "cta") ?? [];
 
   return (
     <SectionShell
       id="draft"
-      tagline="A kit of pieces and three composed variants — hover to see construction"
-      rightSlot={right}
+      rightSlot={
+        <div className="flex items-center gap-2">
+          <AgentTag label={AGENTS.architect.short} accent={AGENTS.architect.accent} extra="building variants" />
+          <AgentTag label={AGENTS.critic.short} accent={AGENTS.critic.accent} extra="scoring" />
+          <button
+            onClick={() => void rerunPhase("draft")}
+            disabled={runPending}
+            className="rounded-md px-2 py-[4px] text-[10px] font-medium"
+            style={{
+              color: "#1e3a2f",
+              border: "1px solid rgba(30,58,47,0.18)",
+              opacity: runPending ? 0.6 : 1,
+            }}
+          >
+            Re-run
+          </button>
+        </div>
+      }
     >
-      {/* Construction kit */}
-      <div
-        className="grid grid-cols-[1fr_1.6fr_1fr] gap-0 rounded-xl overflow-hidden mb-5"
-        style={{
-          background: '#fbf8f2',
-          border: '1px solid #e4ded4',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-        }}
-      >
-        <AtomColumn title="Hooks"  atoms={hooks}  onSelect={(id) => openInspector('draft-atom', id)} />
-        <AtomColumn title="Bodies" atoms={bodies} onSelect={(id) => openInspector('draft-atom', id)} border />
-        <AtomColumn title="CTAs"   atoms={ctas}   onSelect={(id) => openInspector('draft-atom', id)} border />
-      </div>
+      {draft ? (
+        <>
+          <div
+            className="mb-4 overflow-hidden rounded-lg border"
+            style={{ background: "#fdfaf5", borderColor: "#e4ded4" }}
+          >
+            <div className="grid grid-cols-[1fr_1.6fr_1fr] gap-0">
+              <AtomColumn title="Hooks" atoms={hooks} onSelect={openInspector} />
+              <AtomColumn title="Bodies" atoms={bodies} onSelect={openInspector} border />
+              <AtomColumn title="CTAs" atoms={ctas} onSelect={openInspector} border />
+            </div>
+          </div>
 
-      {/* Variants — composed */}
-      <div className="grid grid-cols-3 gap-3">
-        {DRAFT_VARIANTS.map((v) => (
-          <VariantCard
-            key={v.id}
-            variant={v}
-            selected={selectedVariantId === v.id}
-            onSelect={() => setSelectedVariantId(v.id)}
-            onOpen={() => openInspector('variant', v.id)}
-          />
-        ))}
-      </div>
+          <div className="grid grid-cols-3 gap-2.5">
+            {draft.variants.map((variant) => (
+              <VariantCard
+                key={variant.id}
+                atoms={draft.atoms}
+                variant={variant}
+                selected={selectedVariantId === variant.id}
+                onInspect={() => openInspector("variant", variant.id)}
+                onSelect={() => void setSelectedVariantId(variant.id)}
+              />
+            ))}
+          </div>
+        </>
+      ) : (
+        <EmptyState
+          title="No drafts yet"
+          body="Run Strategy and Draft to generate structured hooks, bodies, CTAs, and launch-ready variants."
+        />
+      )}
     </SectionShell>
+  );
+}
+
+function AgentTag({
+  label,
+  accent,
+  extra,
+}: {
+  label: string;
+  accent: string;
+  extra: string;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-[0.06em]" style={{ color: "#9b9590" }}>
+      <span className="h-[3px] w-[3px] rounded-full" style={{ background: accent }} />
+      <span style={{ color: accent }}>{label}</span>
+      <span>· {extra}</span>
+    </span>
   );
 }
 
@@ -77,56 +105,35 @@ function AtomColumn({
 }: {
   title: string;
   atoms: DraftAtom[];
-  onSelect: (id: string) => void;
+  onSelect: (kind: "draft-atom", id: string) => void;
   border?: boolean;
 }) {
   return (
-    <div
-      className="flex flex-col"
-      style={border ? { borderLeft: '1px solid #eae3d6' } : undefined}
-    >
-      <div
-        className="px-3.5 py-2 flex items-center justify-between"
-        style={{ borderBottom: '1px solid #eae3d6', background: '#f5f1ea' }}
-      >
-        <span
-          className="text-[10px] tracking-[0.18em] uppercase font-semibold"
-          style={{ color: '#a68b4b' }}
-        >
+    <div className="flex flex-col" style={border ? { borderLeft: "1px solid #ece5d8" } : undefined}>
+      <div className="flex items-center justify-between border-b px-3 py-1.5" style={{ borderColor: "#ece5d8", background: "#f5f1ea" }}>
+        <span className="text-[8.5px] font-bold uppercase tracking-[0.2em]" style={{ color: "#a68b4b" }}>
           {title}
         </span>
-        <span className="text-[10px] tabular-nums" style={{ color: '#9b9590' }}>
+        <span className="text-[9px] tabular-nums" style={{ color: "#b0a99e" }}>
           {atoms.length}
         </span>
       </div>
-      <div className="p-2 space-y-1.5">
-        {atoms.map((a) => (
+      <div className="space-y-1 p-1.5">
+        {atoms.map((atom) => (
           <button
-            key={a.id}
-            onClick={() => onSelect(a.id)}
-            className="w-full text-left px-2.5 py-2 rounded-md transition-all text-[12.5px] leading-[1.45] relative group"
-            style={{
-              color: '#2c2c2c',
-              background: '#fbf8f2',
-              border: '1px solid #eae3d6',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#faf3e3';
-              e.currentTarget.style.borderColor = '#d8c79a';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#fbf8f2';
-              e.currentTarget.style.borderColor = '#eae3d6';
-            }}
+            key={atom.id}
+            onClick={() => onSelect("draft-atom", atom.id)}
+            className="relative w-full rounded-md border px-2 py-1.5 text-left text-[11.5px] leading-[1.4]"
+            style={{ color: "#1f1d1a", background: "#fdfaf5", borderColor: "#ece5d8" }}
           >
-            {a.text}
-            {a.note && (
+            {atom.text}
+            {atom.note ? (
               <span
-                className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full"
-                style={{ background: '#b7863f' }}
-                title={a.note}
+                className="absolute right-1 top-1 h-[4px] w-[4px] rounded-full"
+                style={{ background: "#b7863f" }}
+                title={atom.note}
               />
-            )}
+            ) : null}
           </button>
         ))}
       </div>
@@ -135,177 +142,109 @@ function AtomColumn({
 }
 
 function VariantCard({
+  atoms,
   variant,
   selected,
+  onInspect,
   onSelect,
-  onOpen,
 }: {
+  atoms: DraftAtom[];
   variant: DraftVariant;
   selected: boolean;
+  onInspect: () => void;
   onSelect: () => void;
-  onOpen: () => void;
 }) {
-  const hook = DRAFT_ATOMS.find((a) => a.id === variant.hookId);
-  const body = DRAFT_ATOMS.find((a) => a.id === variant.bodyId);
-  const cta = DRAFT_ATOMS.find((a) => a.id === variant.ctaId);
-  const angle = ANGLES.find((a) => a.id === variant.angleId);
-
-  const scoreAccent =
-    variant.score >= 90 ? '#3d7a5f' : variant.score >= 80 ? '#a68b4b' : '#8a6a5a';
+  const hook = atoms.find((atom) => atom.id === variant.hookId)?.text ?? "";
+  const body = atoms.find((atom) => atom.id === variant.bodyId)?.text ?? "";
+  const cta = atoms.find((atom) => atom.id === variant.ctaId)?.text ?? "";
+  const scoreAccent = variant.score >= 90 ? "#3d7a5f" : variant.score >= 82 ? "#a68b4b" : "#8a6a5a";
 
   return (
     <div
       onClick={onSelect}
-      className="relative rounded-xl overflow-hidden transition-all duration-300 cursor-pointer animate-rise-in"
+      className="flex cursor-pointer flex-col overflow-hidden rounded-xl transition-all duration-300"
       style={{
-        background: '#fbf8f2',
-        border: selected ? '1px solid #3d7a5f' : '1px solid #e4ded4',
-        boxShadow: selected
-          ? '0 8px 24px rgba(61,122,95,0.15), 0 1px 2px rgba(0,0,0,0.03)'
-          : '0 1px 2px rgba(0,0,0,0.02)',
-        transform: selected ? 'translateY(-2px)' : 'translateY(0)',
+        background: "#fdfaf5",
+        border: selected ? "1.5px solid #3d7a5f" : "1px solid #e4ded4",
+        boxShadow: selected ? "0 6px 20px rgba(61,122,95,0.12)" : "0 1px 3px rgba(0,0,0,0.02)",
+        transform: selected ? "translateY(-2px)" : "translateY(0)",
       }}
     >
-      {/* Header */}
-      <div
-        className="flex items-center justify-between px-3.5 py-2.5"
-        style={{ borderBottom: '1px solid #eae3d6', background: '#f5f1ea' }}
-      >
-        <div className="flex items-center gap-2">
-          <span
-            className="text-[10px] tracking-[0.18em] uppercase font-semibold"
-            style={{ color: '#a68b4b' }}
-          >
-            Variant {variant.id.replace('v', '')}
+      <div className="flex items-center justify-between border-b px-3 py-2" style={{ borderColor: "#ece5d8", background: "#f5f1ea" }}>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: "#a68b4b" }}>
+            {variant.name}
           </span>
-          <span className="text-[10.5px]" style={{ color: '#9b9590' }}>
-            · Angle {variant.angleId.toUpperCase()}
+          <span className="text-[9px]" style={{ color: "#b0a99e" }}>
+            · {variant.length}
           </span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div
-            className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold tabular-nums"
+        <div className="flex items-center gap-1">
+          <span
+            className="rounded px-1.5 py-[1px] text-[10px] font-bold tabular-nums"
             style={{
               color: scoreAccent,
-              background: `${scoreAccent}12`,
-              border: `1px solid ${scoreAccent}30`,
+              background: `${scoreAccent}10`,
+              border: `1px solid ${scoreAccent}25`,
             }}
           >
             {variant.score}
-          </div>
-          {selected && (
-            <span
-              className="w-1.5 h-1.5 rounded-full animate-pulse-dot"
-              style={{ background: '#3d7a5f' }}
-              title="Elevated to Studio & Launch"
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Composition (stacked pieces with faint chips of origin) */}
-      <div className="p-3.5 space-y-3">
-        <Piece label="HOOK"  text={hook?.text}  />
-        <Piece label="BODY"  text={body?.text}  note={body?.note} />
-        <Piece label="CTA"   text={cta?.text}   small />
-      </div>
-
-      {/* Angle tag */}
-      {angle && (
-        <div className="px-3.5 pb-3">
-          <span className="text-[10.5px]" style={{ color: '#9b9590' }}>
-            Built from <span style={{ color: '#1e3a2f', fontWeight: 500 }}>{angle.name}</span>
           </span>
+          {selected ? <span className="h-[5px] w-[5px] rounded-full" style={{ background: "#3d7a5f" }} /> : null}
         </div>
-      )}
+      </div>
 
-      {/* Critiques inline */}
-      <div
-        className="px-3.5 py-2.5"
-        style={{ background: 'rgba(200,169,110,0.05)', borderTop: '1px solid #eae3d6' }}
-      >
-        {variant.critiques.map((c, i) => {
-          const agent = AGENTS[c.agent];
+      <div className="flex-1 space-y-2 p-3">
+        <p className="text-[13px] italic leading-[1.3]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
+          “{hook}”
+        </p>
+        <p className="text-[11.5px] leading-[1.5]" style={{ color: "#3a3631" }}>
+          {body}
+        </p>
+        <p className="text-[11px] font-medium" style={{ color: "#a68b4b" }}>
+          {cta}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-1 border-t px-3 py-2" style={{ borderColor: "#ece5d8", background: "rgba(200,169,110,0.03)" }}>
+        {variant.critique.map((critique, index) => {
+          const agent = AGENTS[critique.agent];
           return (
-            <div key={i} className="flex items-start gap-2 mb-1.5 last:mb-0">
-              <span
-                className="text-[9.5px] font-semibold tracking-[0.05em] px-1 py-0.5 rounded mt-[1px]"
-                style={{ color: agent.accent, background: `${agent.accent}14` }}
-              >
-                {agent.short}
-              </span>
-              <span className="text-[11.5px] leading-[1.45]" style={{ color: '#3a3631' }}>
-                {c.note}
-              </span>
-            </div>
+            <span
+              key={`${variant.id}-${index}`}
+              className="inline-flex items-center gap-1 rounded px-1.5 py-[2px] text-[9.5px]"
+              style={{ color: "#5a5550", background: "rgba(200,169,110,0.06)" }}
+            >
+              <span className="h-[3px] w-[3px] rounded-full" style={{ background: agent.accent }} />
+              {critique.note}
+            </span>
           );
         })}
       </div>
 
-      {/* Footer actions */}
-      <div
-        className="px-3.5 py-2 flex items-center justify-between"
-        style={{ borderTop: '1px solid #eae3d6' }}
-      >
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpen();
-          }}
-          className="text-[11px] font-medium tracking-[0.04em] transition-colors"
-          style={{ color: '#6b6560' }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = '#1e3a2f')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = '#6b6560')}
-        >
+      <div className="flex items-center justify-between border-t px-3 py-1.5" style={{ borderColor: "#ece5d8" }}>
+        <button onClick={(event) => { event.stopPropagation(); onInspect(); }} className="text-[9.5px] font-medium" style={{ color: "#9b9590" }}>
           Inspect →
         </button>
-        <span className="text-[10.5px] tracking-[0.1em] uppercase" style={{ color: selected ? '#3d7a5f' : '#b0a99e' }}>
-          {selected ? 'Elevated' : 'Tap to elevate'}
+        <span className="text-[9px] uppercase tracking-[0.12em]" style={{ color: selected ? "#3d7a5f" : "#b0a99e" }}>
+          {selected ? "Elevated" : "Elevate"}
         </span>
       </div>
     </div>
   );
 }
 
-function Piece({
-  label,
-  text,
-  note,
-  small,
-}: {
-  label: string;
-  text?: string;
-  note?: string;
-  small?: boolean;
-}) {
+function EmptyState({ title, body }: { title: string; body: string }) {
   return (
-    <div>
-      <div className="flex items-center justify-between mb-1">
-        <span
-          className="text-[9px] tracking-[0.2em] uppercase font-semibold"
-          style={{ color: '#b0a99e' }}
-        >
-          {label}
-        </span>
-        {note && (
-          <span
-            className="text-[9.5px] italic"
-            style={{ color: '#b7863f' }}
-            title={note}
-          >
-            note
-          </span>
-        )}
-      </div>
-      <p
-        className={`leading-[1.5] ${small ? 'text-[12px]' : 'text-[13px]'}`}
-        style={{
-          color: '#2c2c2c',
-          fontFamily: label === 'HOOK' ? 'var(--font-heading)' : undefined,
-          fontStyle: label === 'HOOK' ? 'italic' : undefined,
-        }}
-      >
-        {text}
+    <div
+      className="rounded-xl border px-4 py-6 text-center"
+      style={{ borderColor: "#e4ded4", background: "#fdfaf5" }}
+    >
+      <h3 className="text-[16px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
+        {title}
+      </h3>
+      <p className="mx-auto mt-2 max-w-xl text-[12px] leading-[1.6]" style={{ color: "#5a5550" }}>
+        {body}
       </p>
     </div>
   );

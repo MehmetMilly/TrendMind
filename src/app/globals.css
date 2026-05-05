@@ -1,30 +1,50 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@600;700&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #e8e2d8;
-  --color-foreground: #2c2c2c;
-  --color-sidebar: #1e3a2f;
-  --color-sidebar-dark: #162e24;
-  --color-sidebar-hover: #27503f;
-  --color-sidebar-active: #2d5a47;
-  --color-sidebar-text: #d4c8b0;
+  /* ── Core palette ──────────────────────────────────────────────── */
+  --color-background: #e2ddd4;
+  --color-foreground: #1f1d1a;
+  --color-sidebar: #162b22;
+  --color-sidebar-dark: #0f1f18;
+  --color-sidebar-hover: #1e3a2f;
+  --color-sidebar-active: #264a3a;
+  --color-sidebar-text: #a89e88;
   --color-sidebar-text-bright: #f0e8d8;
   --color-surface: #f5f1ea;
   --color-surface-warm: #faf7f2;
   --color-surface-muted: #ebe6dd;
+  --color-surface-elevated: #fdfaf5;
+
+  /* ── Accent ────────────────────────────────────────────────────── */
   --color-accent-gold: #c8a96e;
   --color-accent-gold-light: #d4ba84;
   --color-accent-gold-dark: #a68b4b;
   --color-accent-green: #3d7a5f;
   --color-accent-green-light: #4a9070;
+
+  /* ── Borders ───────────────────────────────────────────────────── */
   --color-border: #d8d0c4;
   --color-border-light: #e4ded4;
-  --color-text-primary: #2c2c2c;
-  --color-text-secondary: #6b6560;
+  --color-border-warm: #d8c79a;
+
+  /* ── Text ──────────────────────────────────────────────────────── */
+  --color-text-primary: #1f1d1a;
+  --color-text-secondary: #5a5550;
   --color-text-muted: #9b9590;
-  --font-heading: 'DM Serif Display', Georgia, serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --color-text-ghost: #b0a99e;
+
+  /* ── Dark stage (Trial / Studio) ───────────────────────────────── */
+  --color-stage-bg: #0f1a15;
+  --color-stage-surface: #162b22;
+  --color-stage-text: #f5e8c8;
+  --color-stage-text-dim: rgba(240, 232, 216, 0.55);
+  --color-stage-border: rgba(200, 169, 110, 0.2);
+
+  /* ── Typography ────────────────────────────────────────────────── */
+  --font-heading: 'Cairo', 'IBM Plex Sans Arabic', sans-serif;
+  --font-body: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-wordmark: 'DM Serif Display', Georgia, serif;
 }
 
 * {
@@ -43,79 +63,52 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  direction: rtl;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 4px;
-}
+/* ── Scrollbar ───────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(200, 169, 110, 0.18); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(200, 169, 110, 0.35); }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(200, 169, 110, 0.2);
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(200, 169, 110, 0.35);
-}
-
-/* Selection styling */
 ::selection {
   background: rgba(200, 169, 110, 0.25);
-  color: #2c2c2c;
+  color: #1f1d1a;
 }
 
-/* Utility animations */
+/* ── Animations ──────────────────────────────────────────────────── */
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(3px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+.animate-fade-in { animation: fadeIn 0.25s ease-out forwards; }
 
 @keyframes slideInRight {
   from { opacity: 0; transform: translateX(8px); }
-  to { opacity: 1; transform: translateX(0); }
+  to   { opacity: 1; transform: translateX(0); }
 }
+.animate-slide-in-right { animation: slideInRight 0.3s ease-out forwards; }
 
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
+  50%      { opacity: 0.5; transform: scale(0.85); }
 }
-
-@keyframes subtleFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.25s ease-out forwards;
-}
-
-.animate-slide-in-right {
-  animation: slideInRight 0.3s ease-out forwards;
-}
-
-.animate-pulse-dot {
-  animation: pulse-dot 2.5s ease-in-out infinite;
-}
+.animate-pulse-dot { animation: pulse-dot 2.5s ease-in-out infinite; }
 
 @keyframes phaseEnter {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(12px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-
 .animate-phase-enter {
-  animation: phaseEnter 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  animation: phaseEnter 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
 }
 
 @keyframes riseIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
 .animate-rise-in {
   opacity: 0;
   animation: riseIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
@@ -123,59 +116,121 @@ html, body {
 
 @keyframes signalPulse {
   0%, 100% { opacity: 0.55; }
-  50% { opacity: 1; }
+  50%      { opacity: 1; }
 }
+.animate-signal-pulse { animation: signalPulse 2.4s ease-in-out infinite; }
 
-.animate-signal-pulse {
-  animation: signalPulse 2.4s ease-in-out infinite;
-}
-
-/* Score bar fill — animates the width of a sub-score bar from 0 to its final value */
 @keyframes scoreFill {
   from { transform: scaleX(0); }
   to   { transform: scaleX(1); }
 }
-
 .animate-score-fill {
   transform-origin: left center;
   animation: scoreFill 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
 }
 
-/* Soft score-tick — gentle attention pulse for evolving scores */
 @keyframes scoreTick {
   0%   { transform: translateY(2px); opacity: 0; }
   60%  { transform: translateY(-1px); opacity: 1; }
   100% { transform: translateY(0); opacity: 1; }
 }
+.animate-score-tick { animation: scoreTick 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) forwards; }
 
-.animate-score-tick {
-  animation: scoreTick 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
-}
-
-/* Slow ambient drift used on critic shimmer accents */
 @keyframes ambientDrift {
   0%, 100% { transform: translateX(0); opacity: 0.55; }
   50%      { transform: translateX(6px); opacity: 1; }
 }
+.animate-ambient-drift { animation: ambientDrift 4s ease-in-out infinite; }
 
-.animate-ambient-drift {
-  animation: ambientDrift 4s ease-in-out infinite;
+@keyframes phaseSlideRtl {
+  from { opacity: 0; transform: translateX(18px) scale(0.99); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+.animate-phase-slide-rtl { animation: phaseSlideRtl 0.42s cubic-bezier(0.22, 0.61, 0.36, 1) forwards; }
+
+@keyframes signalSweep {
+  from { transform: translateY(-40%); opacity: 0; }
+  30% { opacity: 0.45; }
+  to { transform: translateY(120%); opacity: 0; }
+}
+.animate-signal-sweep { animation: signalSweep 1.2s ease-out forwards; }
+
+@keyframes arcProgress {
+  from { stroke-dashoffset: 42; }
+  to { stroke-dashoffset: 0; }
+}
+.animate-arc-progress { animation: arcProgress 1.6s linear infinite; }
+
+@keyframes backdropFloat {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(-12px, 8px, 0); }
+}
+.animate-backdrop-float { animation: backdropFloat 12s ease-in-out infinite; }
+
+@keyframes curtainRise {
+  from { opacity: 0; transform: translateY(28px); filter: brightness(0.75); }
+  to { opacity: 1; transform: translateY(0); filter: brightness(1); }
+}
+.animate-curtain-rise { animation: curtainRise 0.7s ease-out forwards; }
+
+@keyframes artboardDraw {
+  from { opacity: 0; clip-path: inset(0 100% 0 0); }
+  to { opacity: 1; clip-path: inset(0 0 0 0); }
+}
+.animate-artboard-draw { animation: artboardDraw 0.7s ease-out forwards; }
+
+@keyframes galleryLights {
+  from { opacity: 0; transform: scale(0.96) translateY(6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-gallery-lights { animation: galleryLights 0.75s cubic-bezier(0.22, 0.61, 0.36, 1) forwards; }
+
+@keyframes emberDrift {
+  from { transform: translateY(10px); opacity: 0; }
+  30% { opacity: 0.18; }
+  to { transform: translateY(-80px); opacity: 0; }
+}
+.animate-ember-drift { animation: emberDrift 2.2s ease-out infinite; }
+
+/* New — theatrical glow for Trial */
+@keyframes stageGlow {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+.animate-stage-glow { animation: stageGlow 3s ease-in-out infinite; }
+
+@keyframes spotlightPulse {
+  0%, 100% { transform: scale(1); opacity: 0.15; }
+  50%      { transform: scale(1.05); opacity: 0.25; }
+}
+.animate-spotlight { animation: spotlightPulse 4s ease-in-out infinite; }
+
+/* Card entrance for staggered layouts */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-card-in {
+  opacity: 0;
+  animation: cardIn 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
 }
 
-/* Focus styles for accessibility */
+/* Focus / a11y */
 button:focus-visible {
   outline: 2px solid rgba(200, 169, 110, 0.5);
   outline-offset: 2px;
 }
+textarea:focus-visible, input:focus-visible, select:focus-visible { outline: none; }
 
-textarea:focus-visible {
-  outline: none;
+[dir="ltr"] {
+  direction: ltr;
 }
 
-input:focus-visible {
-  outline: none;
-}
-
-select:focus-visible {
-  outline: none;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

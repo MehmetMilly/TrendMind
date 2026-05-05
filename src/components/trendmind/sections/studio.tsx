@@ -1,322 +1,271 @@
-'use client';
+"use client";
 
-// Studio — the visual production stage.
-// Shows the composed ad preview (canvas left) and its layer stack
-// (right). Clicking a layer opens it in the Inspector.
+import { AGENTS } from "@/lib/campaign-data";
+import { useStore } from "@/lib/workspace-store";
 
-import React from 'react';
-import { SectionShell, Attribution } from './section-shell';
-import {
-  AGENTS,
-  DRAFT_ATOMS,
-  DRAFT_VARIANTS,
-  STUDIO_LAYERS,
-} from '@/lib/campaign-data';
-import { useStore } from '@/lib/workspace-store';
+import { SectionShell } from "./section-shell";
 
 export function StudioSection() {
-  const { selectedVariantId, openInspector, inspector } = useStore();
-  const variant = DRAFT_VARIANTS.find((v) => v.id === selectedVariantId) ?? DRAFT_VARIANTS[0];
-  const hook = DRAFT_ATOMS.find((a) => a.id === variant.hookId);
-  const cta = DRAFT_ATOMS.find((a) => a.id === variant.ctaId);
+  const { campaign, inspector, openInspector, rerunPhase, runPending } = useStore();
+  const studio = campaign?.phases.studio.data;
+  const draft = campaign?.phases.draft.data;
+  const variant =
+    draft?.variants.find((entry) => entry.id === studio?.selectedVariantId) ??
+    draft?.variants.find((entry) => entry.id === campaign?.selectedVariantId) ??
+    draft?.variants[0];
+  const hook = draft?.atoms.find((atom) => atom.id === variant?.hookId)?.text ?? "";
+  const cta = draft?.atoms.find((atom) => atom.id === variant?.ctaId)?.text ?? "";
 
   return (
     <SectionShell
       id="studio"
-      tagline="Visual production — composed from the elevated variant, layer by layer"
-      rightSlot={<Attribution agentShort={AGENTS.visual.short} accent={AGENTS.visual.accent} extra="composing" />}
-    >
-      <div className="grid grid-cols-[1.4fr_1fr] gap-4">
-        {/* Left: the preview canvas */}
-        <div
-          className="rounded-2xl overflow-hidden relative"
-          style={{
-            background: 'linear-gradient(180deg, #1a1612 0%, #242019 100%)',
-            border: '1px solid #e4ded4',
-            boxShadow: '0 12px 36px rgba(0,0,0,0.2)',
-            minHeight: '420px',
-          }}
-        >
-          {/* The composed "ad" */}
-          <AdCanvas hook={hook?.text ?? ''} cta={cta?.text ?? ''} />
-          {/* Canvas chrome */}
-          <div
-            className="absolute top-2.5 left-3 flex items-center gap-1.5 z-20"
-            style={{ color: 'rgba(245,232,200,0.8)' }}
+      rightSlot={
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-[0.08em]" style={{ color: "#9b9590" }}>
+            <span className="h-[3px] w-[3px] rounded-full" style={{ background: AGENTS.visual.accent }} />
+            <span style={{ color: AGENTS.visual.accent }}>{AGENTS.visual.short}</span>
+            <span>· composing</span>
+          </span>
+          <button
+            onClick={() => void rerunPhase("studio")}
+            disabled={runPending}
+            className="rounded-md px-2 py-[4px] text-[10px] font-medium"
+            style={{
+              color: "#1e3a2f",
+              border: "1px solid rgba(30,58,47,0.18)",
+              opacity: runPending ? 0.6 : 1,
+            }}
           >
-            <span className="w-2 h-2 rounded-full" style={{ background: '#c8a96e' }} />
-            <span className="text-[10px] tracking-[0.18em] uppercase font-medium">Preview · 4:5</span>
-          </div>
-          <div className="absolute bottom-3 right-3 flex items-center gap-1 z-20">
-            <CanvasBtn>Refresh</CanvasBtn>
-            <CanvasBtn>Focus mode</CanvasBtn>
-          </div>
+            Re-run
+          </button>
         </div>
-
-        {/* Right: the layer stack */}
-        <div
-          className="rounded-2xl overflow-hidden flex flex-col"
-          style={{
-            background: '#fbf8f2',
-            border: '1px solid #e4ded4',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-          }}
-        >
-          <div
-            className="px-4 py-2.5 flex items-center justify-between"
-            style={{ borderBottom: '1px solid #eae3d6', background: '#f5f1ea' }}
-          >
-            <span
-              className="text-[10px] tracking-[0.18em] uppercase font-semibold"
-              style={{ color: '#a68b4b' }}
+      }
+    >
+      {studio ? (
+        <>
+          <div className="grid grid-cols-[1.6fr_1fr] gap-3">
+            <div
+              className="relative overflow-hidden rounded-2xl"
+              style={{
+                background: "linear-gradient(180deg, #1a1612 0%, #242019 100%)",
+                border: "1px solid rgba(200,169,110,0.15)",
+                boxShadow:
+                  "0 16px 48px rgba(0,0,0,0.25), inset 0 1px 0 rgba(200,169,110,0.08)",
+                minHeight: "460px",
+              }}
             >
-              Layers
-            </span>
-            <span className="text-[10px]" style={{ color: '#9b9590' }}>
-              {STUDIO_LAYERS.length} · top to bottom
-            </span>
-          </div>
-          <div className="flex-1 divide-y" style={{ borderColor: '#eae3d6' }}>
-            {[...STUDIO_LAYERS].reverse().map((l) => {
-              const selected = inspector.kind === 'layer' && inspector.id === l.id;
-              return (
-                <button
-                  key={l.id}
-                  onClick={() => openInspector('layer', l.id)}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all"
-                  style={{
-                    background: selected ? 'rgba(200,169,110,0.08)' : 'transparent',
-                    borderLeft: selected ? '2px solid #c8a96e' : '2px solid transparent',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!selected) e.currentTarget.style.background = 'rgba(200,169,110,0.04)';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!selected) e.currentTarget.style.background = 'transparent';
-                  }}
-                >
-                  <LayerIcon kind={l.kind} />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[12.5px] font-medium" style={{ color: '#2c2c2c' }}>
-                      {l.name}
+              <AdCanvas hook={hook} cta={cta} palette={studio.palette} />
+              <div className="absolute left-3 top-2.5 z-20 flex items-center gap-1.5" style={{ color: "rgba(245,232,200,0.7)" }}>
+                <span className="h-[5px] w-[5px] rounded-full" style={{ background: "#c8a96e" }} />
+                <span className="text-[9px] font-medium uppercase tracking-[0.2em]">Preview · 4:5</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <div className="rounded-xl border p-3" style={{ borderColor: "#e4ded4", background: "#fdfaf5" }}>
+                <div className="text-[8.5px] uppercase tracking-[0.18em]" style={{ color: "#a68b4b" }}>
+                  Visual direction
+                </div>
+                <p className="mt-1 text-[12px] leading-[1.6]" style={{ color: "#3a3631" }}>
+                  {studio.summary}
+                </p>
+                <p className="mt-2 text-[11px] leading-[1.55]" style={{ color: "#5a5550" }}>
+                  {studio.composition}
+                </p>
+              </div>
+
+              <div className="rounded-xl border overflow-hidden" style={{ borderColor: "#e4ded4", background: "#fdfaf5" }}>
+                <div className="flex items-center justify-between border-b px-3 py-2" style={{ borderColor: "#ece5d8", background: "#f5f1ea" }}>
+                  <span className="text-[8.5px] font-bold uppercase tracking-[0.2em]" style={{ color: "#a68b4b" }}>
+                    Layers
+                  </span>
+                  <span className="text-[9px] tabular-nums" style={{ color: "#b0a99e" }}>
+                    {studio.layers.length}
+                  </span>
+                </div>
+                <div>
+                  {[...studio.layers].reverse().map((layer) => {
+                    const selected = inspector.kind === "layer" && inspector.id === layer.id;
+                    return (
+                      <button
+                        key={layer.id}
+                        onClick={() => openInspector("layer", layer.id)}
+                        className="flex w-full items-center gap-2.5 border-b px-3 py-2 text-left transition-all"
+                        style={{
+                          borderColor: "#ece5d8",
+                          background: selected ? "rgba(200,169,110,0.07)" : "transparent",
+                          borderLeft: selected ? "2px solid #c8a96e" : "2px solid transparent",
+                        }}
+                      >
+                        <div
+                          className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-[9px] font-medium"
+                          style={{ background: "rgba(200,169,110,0.08)", color: "#a68b4b" }}
+                        >
+                          {layer.kind[0].toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[11.5px] font-medium" style={{ color: "#1f1d1a" }}>
+                            {layer.name}
+                          </div>
+                          <div className="truncate text-[10px]" style={{ color: "#9b9590" }}>
+                            {layer.note}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-xl border p-3" style={{ borderColor: "#e4ded4", background: "#fdfaf5" }}>
+                <div className="text-[8.5px] uppercase tracking-[0.18em]" style={{ color: "#a68b4b" }}>
+                  Palette & prompt
+                </div>
+                <div className="mt-2 flex gap-2">
+                  {studio.palette.map((color) => (
+                    <div key={color} className="flex flex-col items-center gap-1">
+                      <span
+                        className="h-7 w-7 rounded-full border"
+                        style={{ background: color, borderColor: "rgba(0,0,0,0.08)" }}
+                      />
+                      <span className="text-[9px]" style={{ color: "#9b9590" }}>
+                        {color}
+                      </span>
                     </div>
-                    <div className="text-[11px] leading-[1.4] truncate" style={{ color: '#6b6560' }}>
-                      {l.note}
+                  ))}
+                </div>
+                <p className="mt-3 text-[10.5px] leading-[1.55]" style={{ color: "#5a5550" }}>
+                  {studio.imagePrompt}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="rounded-xl border p-3" style={{ borderColor: "#e4ded4", background: "#fdfaf5" }}>
+              <div className="text-[8.5px] uppercase tracking-[0.18em]" style={{ color: "#a68b4b" }}>
+                Formats
+              </div>
+              <div className="mt-2 grid grid-cols-1 gap-2">
+                {studio.formats.map((format) => (
+                  <div
+                    key={format.id}
+                    className="rounded-lg border px-3 py-2"
+                    style={{ borderColor: "#ece5d8", background: "#faf7f2" }}
+                  >
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span style={{ color: "#1f1d1a", fontWeight: 500 }}>{format.name}</span>
+                      <span style={{ color: "#9b9590" }}>{format.size}</span>
+                    </div>
+                    <div className="mt-1 text-[10px]" style={{ color: "#5a5550" }}>
+                      {format.layoutNote}
                     </div>
                   </div>
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#b0a99e" strokeWidth="1.3" strokeLinecap="round">
-                    <path d="M3.5 2L6.5 5L3.5 8" />
-                  </svg>
-                </button>
-              );
-            })}
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-xl border p-3" style={{ borderColor: "#e4ded4", background: "#fdfaf5" }}>
+              <div className="text-[8.5px] uppercase tracking-[0.18em]" style={{ color: "#a68b4b" }}>
+                Asset checklist
+              </div>
+              <div className="mt-2 space-y-2">
+                {studio.assetChecklist.map((item, index) => (
+                  <div key={`${item}-${index}`} className="flex gap-2 text-[11px]" style={{ color: "#5a5550" }}>
+                    <span style={{ color: "#3d7a5f" }}>•</span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-          <div
-            className="px-4 py-2.5 flex items-center justify-between"
-            style={{ borderTop: '1px solid #eae3d6', background: '#f0ebe1' }}
-          >
-            <span className="text-[11px]" style={{ color: '#6b6560' }}>
-              Built from <span style={{ color: '#1e3a2f', fontWeight: 500 }}>Variant {variant.id.replace('v', '')}</span>
-            </span>
-            <button
-              className="text-[11px] font-medium tracking-[0.04em]"
-              style={{ color: '#3d7a5f' }}
-            >
-              Generate alt →
-            </button>
-          </div>
-        </div>
-      </div>
+        </>
+      ) : (
+        <EmptyState
+          title="No studio direction yet"
+          body="Run Trial and Studio to turn the winning message into a visual system with prompt, palette, and format guidance."
+        />
+      )}
     </SectionShell>
   );
 }
 
-// ── The ad canvas (CSS-composed preview) ─────────────────────────────
+function AdCanvas({
+  hook,
+  cta,
+  palette,
+}: {
+  hook: string;
+  cta: string;
+  palette: string[];
+}) {
+  const [light, gold, dark] = [palette[0] ?? "#F4EADB", palette[1] ?? "#C8A96E", palette[2] ?? "#18251F"];
 
-function AdCanvas({ hook, cta }: { hook: string; cta: string }) {
   return (
     <div
       className="absolute inset-0 overflow-hidden"
       style={{
-        // Warm linen background — layered gradients to avoid needing image assets
-        background:
-          'radial-gradient(520px 260px at 60% 30%, rgba(236,214,164,0.45), transparent 70%), ' +
-          'radial-gradient(420px 240px at 30% 80%, rgba(107,86,53,0.35), transparent 70%), ' +
-          'linear-gradient(160deg, #403226 0%, #2a1f16 100%)',
+        background: `radial-gradient(520px 260px at 58% 28%, ${light}66, transparent 70%), radial-gradient(420px 240px at 28% 78%, ${gold}40, transparent 70%), linear-gradient(160deg, ${dark} 0%, #2a1f16 100%)`,
       }}
     >
-      {/* Linen texture — cross-hatched repeating gradient */}
       <div
-        className="absolute inset-0 opacity-[0.18] mix-blend-soft-light"
+        className="absolute inset-0 opacity-[0.15] mix-blend-soft-light"
         style={{
           backgroundImage:
-            'repeating-linear-gradient(92deg, rgba(255,230,180,0.8) 0, rgba(255,230,180,0.8) 1px, transparent 1px, transparent 3px), ' +
-            'repeating-linear-gradient(2deg, rgba(255,230,180,0.8) 0, rgba(255,230,180,0.8) 1px, transparent 1px, transparent 3px)',
+            "repeating-linear-gradient(92deg, rgba(255,230,180,0.7) 0, rgba(255,230,180,0.7) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(2deg, rgba(255,230,180,0.7) 0, rgba(255,230,180,0.7) 1px, transparent 1px, transparent 3px)",
         }}
       />
-      {/* Subject — a stylized wrapped object (pure CSS shape) */}
-      <div className="absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2">
-        <div
-          className="relative w-[160px] h-[140px]"
-          style={{ filter: 'drop-shadow(0 30px 30px rgba(0,0,0,0.35))' }}
-        >
-          {/* Box body */}
+      <div className="absolute left-1/2 top-[36%] -translate-x-1/2 -translate-y-1/2">
+        <div className="relative h-[155px] w-[180px]" style={{ filter: "drop-shadow(0 32px 32px rgba(0,0,0,0.4))" }}>
           <div
-            className="absolute inset-x-6 bottom-0 top-6 rounded-[6px]"
+            className="absolute inset-x-6 top-6 rounded-[6px]"
             style={{
-              background:
-                'linear-gradient(180deg, #e8d4a8 0%, #d4bb85 60%, #ab8d5a 100%)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -4px 8px rgba(0,0,0,0.12)',
+              bottom: 0,
+              background: `linear-gradient(180deg, ${light} 0%, ${gold} 60%, #ab8d5a 100%)`,
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -4px 8px rgba(0,0,0,0.12)",
             }}
           />
-          {/* Ribbon vertical */}
-          <div
-            className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[18px]"
-            style={{
-              background:
-                'linear-gradient(90deg, #6d4f33 0%, #8c6a45 50%, #6d4f33 100%)',
-              boxShadow: '0 0 12px rgba(0,0,0,0.25)',
-            }}
-          />
-          {/* Ribbon horizontal */}
-          <div
-            className="absolute left-0 right-0 top-[48%] -translate-y-1/2 h-[14px]"
-            style={{
-              background:
-                'linear-gradient(180deg, #6d4f33 0%, #8c6a45 50%, #6d4f33 100%)',
-              boxShadow: '0 0 12px rgba(0,0,0,0.25)',
-            }}
-          />
-          {/* Bow loops */}
-          <div
-            className="absolute left-1/2 top-[10px] -translate-x-1/2 w-[60px] h-[24px] rounded-full"
-            style={{
-              background:
-                'linear-gradient(180deg, #8c6a45 0%, #6d4f33 100%)',
-              clipPath: 'ellipse(50% 50% at 25% 50%) , ellipse(50% 50% at 75% 50%)',
-              boxShadow: '0 4px 10px rgba(0,0,0,0.25)',
-            }}
-          />
+          <div className="absolute bottom-0 left-1/2 top-0 w-[18px] -translate-x-1/2" style={{ background: "linear-gradient(90deg, #6d4f33 0%, #8c6a45 50%, #6d4f33 100%)" }} />
+          <div className="absolute left-0 right-0 top-[48%] h-[14px] -translate-y-1/2" style={{ background: "linear-gradient(180deg, #6d4f33 0%, #8c6a45 50%, #6d4f33 100%)" }} />
+          <div className="absolute left-1/2 top-[8px] h-[26px] w-[65px] -translate-x-1/2 rounded-full" style={{ background: "linear-gradient(180deg, #8c6a45 0%, #6d4f33 100%)" }} />
         </div>
       </div>
-
-      {/* Headline */}
-      <div className="absolute left-0 right-0 bottom-28 flex justify-center px-8">
+      <div className="absolute bottom-28 left-0 right-0 flex justify-center px-8">
         <p
-          className="text-center text-[28px] leading-[1.2] tracking-[-0.01em] italic max-w-[420px]"
-          style={{
-            fontFamily: 'var(--font-heading)',
-            color: '#f5e8c8',
-            textShadow: '0 2px 8px rgba(0,0,0,0.35)',
-          }}
+          className="max-w-[440px] text-center text-[30px] italic leading-[1.15] tracking-[-0.015em]"
+          style={{ fontFamily: "var(--font-heading)", color: "#f5e8c8", textShadow: "0 2px 10px rgba(0,0,0,0.4)" }}
         >
           “{hook}”
         </p>
       </div>
-
-      {/* CTA */}
-      <div className="absolute left-0 right-0 bottom-14 flex justify-center">
+      <div className="absolute bottom-12 left-0 right-0 flex justify-center">
         <div
-          className="px-4 py-2 rounded-full text-[12px] font-medium tracking-[0.08em]"
+          className="rounded-full px-4 py-2 text-[11.5px] font-medium tracking-[0.06em]"
           style={{
-            color: '#1e3a2f',
-            background: 'linear-gradient(160deg, #dcc487, #a68b4b)',
-            boxShadow: '0 6px 18px rgba(200,169,110,0.35), inset 0 1px 0 rgba(255,255,255,0.3)',
+            color: "#162b22",
+            background: "linear-gradient(160deg, #dcc487, #a68b4b)",
+            boxShadow: "0 6px 20px rgba(200,169,110,0.35), inset 0 1px 0 rgba(255,255,255,0.3)",
           }}
         >
           {cta}
         </div>
       </div>
-
-      {/* Mark */}
-      <div className="absolute bottom-4 right-4 flex items-center gap-1.5">
-        <div
-          className="w-5 h-5 rounded-[5px] flex items-center justify-center"
-          style={{
-            background: 'linear-gradient(145deg, #dcc487, #a68b4b)',
-            opacity: 0.75,
-          }}
-        >
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M2 7L4 5L6 6L8 3" stroke="#1e3a2f" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-        <span className="text-[9.5px] tracking-[0.18em] uppercase" style={{ color: 'rgba(220,196,135,0.7)' }}>
-          Northfield
-        </span>
-      </div>
-
-      {/* Vignette */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(1000px 600px at 50% 40%, transparent 60%, rgba(0,0,0,0.35) 100%)',
-        }}
-      />
     </div>
   );
 }
 
-function CanvasBtn({ children }: { children: React.ReactNode }) {
+function EmptyState({ title, body }: { title: string; body: string }) {
   return (
-    <button
-      className="px-2 py-1 rounded-md text-[10.5px] tracking-[0.08em] font-medium"
-      style={{
-        color: '#dcc487',
-        background: 'rgba(0,0,0,0.25)',
-        border: '1px solid rgba(200,169,110,0.25)',
-      }}
+    <div
+      className="rounded-xl border px-4 py-6 text-center"
+      style={{ borderColor: "#e4ded4", background: "#fdfaf5" }}
     >
-      {children}
-    </button>
-  );
-}
-
-function LayerIcon({ kind }: { kind: string }) {
-  const common = 'w-7 h-7 rounded-md flex-shrink-0 flex items-center justify-center';
-  if (kind === 'bg') {
-    return (
-      <div className={common} style={{ background: 'linear-gradient(160deg, #d4bb85, #8c6a45)' }}>
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#fff" strokeWidth="1.3" strokeLinecap="round">
-          <rect x="1.5" y="1.5" width="9" height="9" rx="1" />
-        </svg>
-      </div>
-    );
-  }
-  if (kind === 'subject') {
-    return (
-      <div className={common} style={{ background: 'linear-gradient(160deg, #6d4f33, #3b2d1e)' }}>
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#dcc487" strokeWidth="1.3" strokeLinecap="round">
-          <rect x="2" y="3" width="8" height="7" rx="0.5" />
-          <path d="M2 6H10M6 3V10" />
-        </svg>
-      </div>
-    );
-  }
-  if (kind === 'headline') {
-    return (
-      <div className={common} style={{ background: '#1e3a2f' }}>
-        <span className="text-[12px]" style={{ color: '#dcc487', fontFamily: 'var(--font-heading)', fontStyle: 'italic' }}>
-          T
-        </span>
-      </div>
-    );
-  }
-  if (kind === 'cta') {
-    return (
-      <div className={common} style={{ background: 'linear-gradient(160deg, #dcc487, #a68b4b)' }}>
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#1e3a2f" strokeWidth="1.5" strokeLinecap="round">
-          <path d="M3 6H9M9 6L7 4M9 6L7 8" />
-        </svg>
-      </div>
-    );
-  }
-  return (
-    <div className={common} style={{ background: '#faf7f2', border: '1px solid #d8d0c4' }}>
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <path d="M2 8L4 5L6 6L8 3L10 5" stroke="#a68b4b" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+      <h3 className="text-[16px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
+        {title}
+      </h3>
+      <p className="mx-auto mt-2 max-w-xl text-[12px] leading-[1.6]" style={{ color: "#5a5550" }}>
+        {body}
+      </p>
     </div>
   );
 }
