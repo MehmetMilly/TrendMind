@@ -1,14 +1,11 @@
 "use client";
 
 import {
-  ChevronDown,
   Eye,
-  Layers,
   MessageSquare,
   Play,
   Radar,
   RefreshCw,
-  Sparkles,
 } from "lucide-react";
 import React from "react";
 
@@ -105,14 +102,17 @@ function PageShell({
   );
 }
 
+
 function BriefPage() {
   const { brief, savingBrief, startFullRun, updateBrief } = useStore();
   if (!brief) return null;
 
+  const mergedGuardrails = [...brief.avoid, ...(brief.guardrails ?? [])];
+
   return (
     <PageShell
       phase="brief"
-      line="ابدأ بإيجاز واضح. كل المراحل اللاحقة ستقرأ من هذه الصفحة فقط."
+      line="ابدأ بإيجاز واضح. كل المراحل التالية ستقرأ هذه المدخلات كمرجع للحملة."
       action={
         <button
           onClick={() => void startFullRun()}
@@ -125,27 +125,53 @@ function BriefPage() {
       }
     >
       <div className="grid gap-4">
-        <div className="grid grid-cols-[1.2fr_1fr_0.45fr] gap-3">
-          <Field label="الحملة" value={brief.campaignName} onChange={(value) => updateBrief("campaignName", value)} placeholder="حملة جديدة" strong />
-          <Field label="العلامة" value={brief.brandName} onChange={(value) => updateBrief("brandName", value)} placeholder="اسم العلامة" />
-          <Field label="المنصة" value={brief.platform} onChange={(value) => updateBrief("platform", value)} placeholder="X" />
+        <div className="grid grid-cols-[1.2fr_1fr_0.5fr] gap-3">
+          <Field label="الحملة" value={brief.campaignName} onChange={(value) => updateBrief("campaignName", value)} placeholder="حملة إطلاق أو موسم" strong />
+          <Field label="العلامة" value={brief.brandName} onChange={(value) => updateBrief("brandName", value)} placeholder="اسم البراند" />
+          <Field label="المنصة" value={brief.platform} onChange={(value) => updateBrief("platform", value)} placeholder="X / تيك توك" />
         </div>
-        <div className="grid grid-cols-[1fr_0.9fr] gap-4">
+
+        <div className="grid grid-cols-[1fr_0.92fr] gap-4">
           <Panel title="الصوت والهدف">
-            <TextArea label="الهدف" value={brief.goal} onChange={(value) => updateBrief("goal", value)} placeholder="ما النتيجة التي تريد الوصول إليها؟" />
-            <TextArea label="الجمهور" value={brief.audience} onChange={(value) => updateBrief("audience", value)} placeholder="من الذي نحاول تحريكه؟" />
-            <TextArea label="النبرة" value={brief.tone} onChange={(value) => updateBrief("tone", value)} placeholder="مثلا: ذكية، حادة، دافئة، موثوقة" />
+            <TextArea label="الهدف" value={brief.goal} onChange={(value) => updateBrief("goal", value)} placeholder="ما النتيجة التي تريدها الحملة؟" />
+            <TextArea label="الجمهور" value={brief.audience} onChange={(value) => updateBrief("audience", value)} placeholder="من نحاول إقناعه أو تحريكه؟" />
+            <TextArea label="النبرة" value={brief.tone} onChange={(value) => updateBrief("tone", value)} placeholder="مثال: ذكية، دافئة، واثقة، غير متكلفة" />
           </Panel>
-          <Panel title="القيود">
+
+          <Panel title="مدخلات الحملة">
             <Field label="المنتج" value={brief.productName} onChange={(value) => updateBrief("productName", value)} placeholder="اسم المنتج أو العرض" />
-            <TextArea label="القيمة المقترحة" value={brief.valueProposition} onChange={(value) => updateBrief("valueProposition", value)} placeholder="لماذا يهتم الجمهور؟" />
-            <ChipEditor label="الركائز" values={brief.pillars} onChange={(values) => updateBrief("pillars", values)} />
-            <Details title="تجنب وحواجز">
-              <ChipEditor label="تجنب" values={brief.avoid} onChange={(values) => updateBrief("avoid", values)} />
-              <ChipEditor label="حواجز" values={brief.guardrails} onChange={(values) => updateBrief("guardrails", values)} />
-            </Details>
+            <Field label="اللغة" value={brief.language} onChange={(value) => updateBrief("language", value)} placeholder="العربية، خليجية، عربي/إنجليزي..." />
+            <TextArea label="القيمة المقترحة" value={brief.valueProposition} onChange={(value) => updateBrief("valueProposition", value)} placeholder="لماذا سيهتم الجمهور؟" />
+            <ChipEditor label="روابط الموقع / البراند" values={brief.brandLinks} onChange={(values) => updateBrief("brandLinks", values)} placeholder="أضف رابط" />
+            <ChipEditor label="حسابات التواصل الاجتماعي" values={brief.socialAccounts ?? []} onChange={(values) => updateBrief("socialAccounts", values)} placeholder="@brand أو رابط الحساب" />
           </Panel>
         </div>
+
+        <Panel title="ركائز وحدود الحملة">
+          <div className="grid grid-cols-[0.85fr_1.15fr] gap-4">
+            <ChipEditor label="الركائز" values={brief.pillars} onChange={(values) => updateBrief("pillars", values)} placeholder="أضف ركيزة" />
+            <div className="rounded-2xl border p-4" style={{ background: "rgba(250,247,242,0.78)", borderColor: "#e4ded4" }}>
+              <div className="mb-1 text-[13px] font-bold" style={{ color: "#1f1d1a" }}>حدود ومحاذير</div>
+              <p className="mb-3 text-[12px] leading-[1.7]" style={{ color: "#6b6258" }}>
+                اجمع هنا ما يجب تجنبه: ادعاءات حساسة، حدود قانونية، مخاوف المنتج، كلمات لا تناسب العلامة، أو نبرة لا تريدها الحملة.
+              </p>
+              <ChipEditor
+                label="قيود الحملة"
+                values={mergedGuardrails}
+                onChange={(values) => {
+                  updateBrief("avoid", values);
+                  updateBrief("guardrails", []);
+                }}
+                placeholder="مثال: لا وعود طبية"
+              />
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <TextArea label="السياق" value={brief.context} onChange={(value) => updateBrief("context", value)} placeholder="خلفية السوق أو اللحظة أو البراند." />
+            <TextArea label="الدعوة إلى الإجراء" value={brief.callToAction} onChange={(value) => updateBrief("callToAction", value)} placeholder="ما الفعل المطلوب بعد رؤية الحملة؟" />
+          </div>
+        </Panel>
+
         <div className="flex items-center justify-between rounded-xl border px-4 py-3 text-[12px]" style={{ background: "#fffaf2", borderColor: "#e4ded4", color: "#867a6b" }}>
           <span>{savingBrief ? "جاري الحفظ..." : "الحفظ تلقائي"}</span>
           <span dir="ltr">TrendMind</span>
@@ -211,94 +237,138 @@ function ResearchPage() {
   );
 }
 
+
 function StrategyPage() {
   const { campaign, openInspector, setSelectedAngleId } = useStore();
   const data = campaign?.phases.strategy.data;
+  const recommended = data?.angles.find((angle) => angle.id === data.recommendedAngleId);
+
   return (
-    <PageShell phase="strategy" line={data?.campaignThesis || "حوّل البحث إلى ثلاث زوايا واضحة: آمنة، حادة، وقابلة للانتشار."}>
+    <PageShell phase="strategy" line={data?.campaignThesis || "تحويل البحث إلى خطة حملة بثلاث زوايا قابلة للمقارنة والاختبار."}>
       {!data ? <EmptyPhase /> : null}
       {data ? (
-        <div className="grid grid-cols-3 gap-4">
-          {data.angles.map((angle, index) => (
-            <AgentPeek key={angle.id} agent="strategist" reasoning={`يفضل المخطط هذه الزاوية لأنها تجمع وعد ${angle.promise || "واضح"} مع ملاءمة ${angle.fit || "قابلة للاختبار"}.`}>
-              <article className="min-h-[440px] rounded-2xl border p-5" style={{ background: "#fffaf2", borderColor: campaign?.selectedAngleId === angle.id ? "#c8a96e" : "#e4ded4" }}>
-                <div className="flex items-center justify-between">
-                  <span className="text-[42px]" style={{ fontFamily: "var(--font-heading)", color: "#d1b675" }}>{angle.letter}</span>
-                  <button onClick={() => openInspector("angle", angle.id)} className="rounded-lg p-2" style={{ background: "#f1e7d5", color: "#745f39" }} title="استعراض">
-                    <Eye size={15} />
-                  </button>
-                </div>
-                <h3 className="mt-3 text-[25px] leading-[1.2]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>{angle.title}</h3>
-                <p className="mt-3 text-[13px] leading-[1.8]" style={{ color: "#5f574e" }}>{angle.thesis}</p>
-                <div className="mt-5 space-y-2 text-[12px]">
-                  <Chip text={`الوعد: ${angle.promise}`} />
-                  <Chip text={`النبرة: ${angle.tone}`} />
-                  {angle.risks[0] ? <Chip text={`المخاطر: ${angle.risks[0]}`} /> : null}
-                </div>
-                <button onClick={() => void setSelectedAngleId(angle.id)} className="mt-6 w-full rounded-lg px-3 py-2 text-[12px] font-bold" style={{ color: "#f8f1df", background: index === 1 ? "#163326" : "#6f5a34" }}>
-                  اعتماد
-                </button>
-              </article>
-            </AgentPeek>
-          ))}
+        <div className="space-y-4">
+          <section className="grid grid-cols-[1.15fr_0.85fr] gap-4 rounded-3xl border p-5" style={{ background: "linear-gradient(180deg, #fffaf2, #f4ead8)", borderColor: "#d8bd7c", boxShadow: "0 18px 52px rgba(91,68,34,0.09)" }}>
+            <div>
+              <div className="mb-2 text-[11px] font-bold" style={{ color: "#a68b4b" }}>خطة الحملة</div>
+              <h2 className="text-[30px] leading-[1.18]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>{data.campaignThesis}</h2>
+              <p className="mt-3 text-[13px] leading-[1.8]" style={{ color: "#5f574e" }}>{data.decisionFrame}</p>
+              <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] leading-[1.6]">
+                <div className="rounded-2xl border p-3" style={{ borderColor: "#e4ded4", background: "rgba(255,250,242,0.72)" }}>كل زاوية تبقى مسارًا نشطًا في الصياغة والاختبار.</div>
+                <div className="rounded-2xl border p-3" style={{ borderColor: "#e4ded4", background: "rgba(255,250,242,0.72)" }}>TrendMind يقارن الوضوح، الرنين، المخاطر، وقابلية التحويل.</div>
+                <div className="rounded-2xl border p-3" style={{ borderColor: "#e4ded4", background: "rgba(255,250,242,0.72)" }}>الترشيح الحالي يوجه الأولوية، ولا يلغي بقية المسارات.</div>
+              </div>
+            </div>
+            <div className="rounded-3xl border p-4" style={{ borderColor: "#d8bd7c", background: "#163326", color: "#f7ead0" }}>
+              <div className="text-[11px] font-bold" style={{ color: "#d9bf82" }}>الزاوية الموصى بها</div>
+              <h3 className="mt-3 text-[28px] leading-[1.15]" style={{ fontFamily: "var(--font-heading)" }}>{recommended?.title}</h3>
+              <p className="mt-3 text-[13px] leading-[1.8]" style={{ color: "rgba(247,234,208,0.78)" }}>{recommended?.fit}</p>
+              <div className="mt-4 inline-flex rounded-full px-3 py-1 text-[12px] font-bold" style={{ background: "rgba(217,191,130,0.14)", color: "#d9bf82" }}>{recommended?.score}% جاهزية مبدئية</div>
+            </div>
+          </section>
+          <div className="grid grid-cols-3 gap-4">
+            {data.angles.map((angle) => {
+              const selected = campaign?.selectedAngleId === angle.id;
+              return (
+                <article key={angle.id} className="min-h-[390px] rounded-3xl border p-5 transition-all" style={{ background: selected ? "linear-gradient(180deg, #fffaf2, #f1e5c9)" : "#fffaf2", borderColor: selected ? "#c8a96e" : "#e4ded4", boxShadow: selected ? "0 18px 42px rgba(166,139,75,0.16)" : "0 10px 34px rgba(31,29,26,0.04)" }}>
+                  <div className="flex items-start justify-between"><div><span className="text-[38px]" style={{ fontFamily: "var(--font-heading)", color: "#d1b675" }}>{angle.letter}</span><span className="mr-2 rounded-full px-2 py-1 text-[10px] font-bold" style={{ color: selected ? "#163326" : "#7c6a48", background: selected ? "rgba(61,122,95,0.12)" : "rgba(200,169,110,0.13)" }}>{selected ? "مرشح" : "مسار نشط"}</span></div><button onClick={() => openInspector("angle", angle.id)} className="rounded-lg p-2" style={{ background: "#f1e7d5", color: "#745f39" }} title="استعراض"><Eye size={15} /></button></div>
+                  <h3 className="mt-3 text-[25px] leading-[1.2]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>{angle.title}</h3>
+                  <p className="mt-3 text-[13px] leading-[1.8]" style={{ color: "#5f574e" }}>{angle.thesis}</p>
+                  <div className="mt-5 space-y-2 text-[12px]"><Chip text={"الوعد: " + angle.promise} /><Chip text={"النبرة: " + angle.tone} /><Chip text={"سبب الاختبار: " + angle.rationale[0]} />{angle.risks[0] ? <Chip text={"محاذير: " + angle.risks[0]} /> : null}</div>
+                  <button onClick={() => void setSelectedAngleId(angle.id)} className="mt-6 w-full rounded-lg px-3 py-2 text-[12px] font-bold" style={{ color: selected ? "#f8f1df" : "#163326", background: selected ? "#163326" : "#efe5d2" }}>{selected ? "زاوية مرشحة" : "تعيين كمرشح"}</button>
+                </article>
+              );
+            })}
+          </div>
         </div>
       ) : null}
     </PageShell>
   );
 }
 
+
 function DraftPage() {
   const { campaign, openInspector, setSelectedVariantId } = useStore();
   const data = campaign?.phases.draft.data;
-  const [tab, setTab] = React.useState<"hook" | "body" | "cta">("hook");
-  const labels = { hook: "الخطافات", body: "المحتوى", cta: "الدعوات" };
+  const strategy = campaign?.phases.strategy.data;
 
   return (
-    <PageShell phase="draft" line={data?.summary || "صياغة متعددة المسارات: خطافات، محتوى، ودعوات تتحول إلى نسخ قابلة للاختبار."}>
+    <PageShell phase="draft" line={data?.summary || "صياغة متعددة المسارات: لكل زاوية خطافات، أجسام، دعوات، ونسخة مركبة قابلة للاختبار."}>
       {!data ? <EmptyPhase /> : null}
       {data ? (
-        <div className="grid grid-cols-[0.8fr_1.2fr] gap-4">
-          <Panel title="عدة الصياغة">
-            <div className="mb-3 flex gap-2">
-              {(["hook", "body", "cta"] as const).map((kind) => (
-                <button key={kind} onClick={() => setTab(kind)} className="rounded-lg px-3 py-2 text-[12px] font-bold" style={{ background: tab === kind ? "#163326" : "#efe5d2", color: tab === kind ? "#f8f1df" : "#6f5a34" }}>
-                  {labels[kind]}
-                </button>
-              ))}
-            </div>
-            <div className="space-y-2">
-              {data.atoms.filter((atom) => atom.kind === tab).map((atom) => (
-                <AgentPeek key={atom.id} agent="architect" reasoning="اختاره مهندس المحتوى لأنه يخدم زاوية الحملة دون إغراق النسخة بالتفاصيل.">
-                  <button onClick={() => openInspector("draft-atom", atom.id)} className="w-full rounded-xl border p-3 text-start text-[13px] leading-[1.7]" style={{ background: "#fffaf2", borderColor: "#e4ded4", color: "#38332e" }}>
-                    {atom.text}
-                  </button>
-                </AgentPeek>
-              ))}
-            </div>
-          </Panel>
-          <div className="grid gap-3">
-            {data.variants.map((variant) => (
-              <AgentPeek key={variant.id} agent="critic" reasoning={`منحها الناقد ${variant.score}% لأنها توازن بين الوضوح والشد العاطفي.`}>
-                <article className="rounded-2xl border p-5" style={{ background: "#fffaf2", borderColor: campaign?.selectedVariantId === variant.id ? "#c8a96e" : "#e4ded4" }}>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-[22px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>{variant.name}</h3>
-                    <span className="text-[13px] font-bold tabular-nums" style={{ color: "#a68b4b" }}>{variant.score}%</span>
+        <div className="grid grid-cols-3 gap-3">
+          {(strategy?.angles ?? []).map((angle) => {
+            const hooks = data.atoms.filter((atom) => atom.angleId === angle.id && atom.kind === "hook");
+            const bodies = data.atoms.filter((atom) => atom.angleId === angle.id && atom.kind === "body");
+            const ctas = data.atoms.filter((atom) => atom.angleId === angle.id && atom.kind === "cta");
+            const laneHooks = hooks.length > 0 ? hooks : [
+              { id: angle.id + "_hook_1", text: angle.hook },
+              { id: angle.id + "_hook_2", text: angle.promise },
+              { id: angle.id + "_hook_3", text: angle.title },
+            ];
+            const laneBodies = bodies.length > 0 ? bodies : [
+              { id: angle.id + "_body_1", text: angle.thesis },
+              { id: angle.id + "_body_2", text: angle.fit },
+              { id: angle.id + "_body_3", text: angle.stance },
+            ];
+            const laneCtas = ctas.length > 0 ? ctas : [
+              { id: angle.id + "_cta_1", text: "ابدأ الآن" },
+              { id: angle.id + "_cta_2", text: "اكتشف التفاصيل" },
+              { id: angle.id + "_cta_3", text: "انضم إلى قائمة الانتظار" },
+            ];
+            const variant = data.variants.find((entry) => entry.angleId === angle.id) ?? {
+              id: angle.id + "_assembled",
+              angleId: angle.id,
+              name: angle.title,
+              hookId: laneHooks[0].id,
+              bodyId: laneBodies[0].id,
+              ctaId: laneCtas[0].id,
+              tone: angle.tone,
+              length: "medium" as const,
+              score: angle.score,
+              critique: [{ agent: "critic" as const, note: "مسار جاهز للمقارنة في الاختبار." }],
+              fullText: laneHooks[0].text + "\n\n" + laneBodies[0].text + "\n\n" + laneCtas[0].text,
+            };
+            const selected = campaign?.selectedVariantId === variant?.id;
+            return (
+              <article key={angle.id} className="rounded-3xl border p-4" style={{ background: "#fffaf2", borderColor: selected ? "#c8a96e" : "#e4ded4", boxShadow: selected ? "0 16px 42px rgba(166,139,75,0.16)" : "0 10px 34px rgba(31,29,26,0.04)" }}>
+                <div className="flex items-start justify-between gap-3"><div><div className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>مسار {angle.letter}</div><h3 className="mt-1 text-[22px] leading-[1.15]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>{angle.title}</h3></div><span className="rounded-full px-2 py-1 text-[11px] font-bold tabular-nums" style={{ color: selected ? "#163326" : "#a68b4b", background: selected ? "rgba(61,122,95,0.12)" : "rgba(200,169,110,0.12)" }}>{variant?.score}%</span></div>
+                <DraftList title="الخطافات" items={laneHooks} onOpen={openInspector} />
+                <DraftList title="الأجسام" items={laneBodies} onOpen={openInspector} />
+                <DraftList title="الدعوات" items={laneCtas} onOpen={openInspector} />
+                {variant ? (
+                  <div className="mt-4 rounded-2xl border p-4" style={{ borderColor: selected ? "#c8a96e" : "#e4ded4", background: selected ? "linear-gradient(180deg, #f6ecd2, #fffaf2)" : "#faf7f0" }}>
+                    <div className="mb-2 flex items-center justify-between"><span className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>النسخة المركبة الأقوى</span><button onClick={() => openInspector("variant", variant.id)} className="text-[11px] font-bold" style={{ color: "#6f5a34" }}>تفاصيل</button></div>
+                    <p className="whitespace-pre-line text-[13px] leading-[1.75]" style={{ color: "#514a42" }}>{variant.fullText}</p>
+                    <div className="mt-3 flex flex-wrap gap-1.5">{variant.critique.slice(0, 2).map((note, index) => <Chip key={index} text={note.note} />)}</div>
+                    <button onClick={() => void setSelectedVariantId(variant.id)} className="mt-4 w-full rounded-lg px-3 py-2 text-[12px] font-bold" style={{ color: "#f8f1df", background: selected ? "#163326" : "#6f5a34" }}>{selected ? "مختارة للاختبار" : "اعتماد النسخة"}</button>
                   </div>
-                  <p className="mt-3 whitespace-pre-line text-[13px] leading-[1.8]" style={{ color: "#514a42" }}>{variant.fullText}</p>
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {variant.critique.slice(0, 2).map((note, index) => <Chip key={index} text={note.note} />)}
-                    {variant.critique.length > 2 ? <Chip text={`+${variant.critique.length - 2}`} /> : null}
-                  </div>
-                  <button onClick={() => void setSelectedVariantId(variant.id)} className="mt-4 rounded-lg px-3 py-2 text-[12px] font-bold" style={{ color: "#f8f1df", background: "#163326" }}>
-                    اعتماد النسخة
-                  </button>
-                </article>
-              </AgentPeek>
-            ))}
-          </div>
+                ) : null}
+              </article>
+            );
+          })}
         </div>
       ) : null}
     </PageShell>
+  );
+}
+
+
+function DraftList({ title, items, onOpen }: { title: string; items: Array<{ id: string; text: string; note?: string }>; onOpen: (kind: "draft-atom", id: string) => void }) {
+  return (
+    <div className="mt-4">
+      <div className="mb-2 flex items-center justify-between text-[11px] font-bold" style={{ color: "#a68b4b" }}>
+        <span>{title}</span>
+        <span className="tabular-nums" style={{ color: "#b0a99e" }}>{items.length}</span>
+      </div>
+      <div className="space-y-1.5">
+        {items.slice(0, 5).map((item) => (
+          <button key={item.id} onClick={() => onOpen("draft-atom", item.id)} className="w-full rounded-xl border px-3 py-2 text-start text-[12px] leading-[1.55]" style={{ background: "#fdf8ee", borderColor: "#e7decc", color: "#3f3932" }}>
+            {item.text}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -354,89 +424,132 @@ function TrialPage() {
   );
 }
 
+
 function StudioPage() {
   const { campaign, openInspector } = useStore();
   const data = campaign?.phases.studio.data;
-  const [layersOpen, setLayersOpen] = React.useState(false);
+  const draft = campaign?.phases.draft.data;
+  const variant = draft?.variants.find((entry) => entry.id === data?.selectedVariantId) ?? draft?.variants.find((entry) => entry.id === campaign?.selectedVariantId) ?? draft?.variants[0];
+  const hook = draft?.atoms.find((atom) => atom.id === variant?.hookId)?.text ?? "الفكرة تتحول إلى مشهد";
+  const cta = draft?.atoms.find((atom) => atom.id === variant?.ctaId)?.text ?? campaign?.brief.callToAction ?? "اكتشف الآن";
+
   return (
-    <PageShell phase="studio" line={data?.summary || "حوّل النسخة المختارة إلى لوحة تنفيذية واضحة للأصول البصرية."}>
+    <PageShell phase="studio" line={data?.summary || "تحويل النسخة المختارة إلى لوحة اتجاه بصري قابلة للإنتاج."}>
       {!data ? <EmptyPhase /> : null}
       {data ? (
-        <div className="grid grid-cols-[1fr_auto] gap-4">
-          <div className="rounded-3xl border p-5 animate-artboard-draw" style={{ background: "#fffaf2", borderColor: "#e4ded4" }}>
-            <div className="aspect-[16/9] rounded-2xl border p-8" style={{ background: "linear-gradient(135deg, #efe5d2, #f9f5ec)", borderColor: "#dccaa7" }}>
-              <div className="h-full rounded-xl border border-dashed p-6" style={{ borderColor: "#c8a96e66" }}>
-                <h3 className="max-w-xl text-[38px] leading-[1.18]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>{data.composition}</h3>
-                <p className="mt-5 max-w-2xl text-[14px] leading-[1.8]" style={{ color: "#5b534a" }}>{data.imagePrompt}</p>
-              </div>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {data.assetChecklist.map((item) => <Chip key={item} text={item} />)}
-              {data.palette.map((color) => <span key={color} className="h-7 w-7 rounded-full border" style={{ background: color, borderColor: "#d8d0c4" }} title={color} />)}
+        <div className="grid grid-cols-[1.12fr_0.88fr] gap-4">
+          <div className="relative min-h-[560px] overflow-hidden rounded-3xl border" style={{ background: "linear-gradient(160deg, #18251f 0%, #312719 100%)", borderColor: "rgba(200,169,110,0.28)", boxShadow: "0 24px 72px rgba(31,29,26,0.22)" }}>
+            <div className="absolute inset-0 opacity-[0.16]" style={{ backgroundImage: "repeating-linear-gradient(90deg, rgba(244,234,219,.42) 0, rgba(244,234,219,.42) 1px, transparent 1px, transparent 4px), repeating-linear-gradient(0deg, rgba(244,234,219,.24) 0, rgba(244,234,219,.24) 1px, transparent 1px, transparent 4px)" }} />
+            <div className="absolute right-5 top-4 z-10 flex items-center gap-2 text-[11px] font-bold" style={{ color: "rgba(247,234,208,0.72)" }}><span className="h-2 w-2 rounded-full" style={{ background: "#c8a96e" }} /> معاينة 4:5</div>
+            <div className="absolute left-1/2 top-[33%] h-[152px] w-[152px] -translate-x-1/2 -translate-y-1/2 rounded-[36px]" style={{ background: "linear-gradient(180deg, #f4eadb, #c8a96e)", boxShadow: "0 34px 60px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.38)" }} />
+            <div className="absolute left-1/2 top-[33%] h-[192px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: "linear-gradient(90deg, #6d4f33, #9d7a4c, #6d4f33)" }} />
+            <div className="absolute left-1/2 top-[33%] h-[18px] w-[245px] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: "linear-gradient(180deg, #6d4f33, #9d7a4c, #6d4f33)" }} />
+            <div className="absolute bottom-24 left-8 right-8 text-center">
+              <h3 className="text-[36px] italic leading-[1.15]" style={{ fontFamily: "var(--font-heading)", color: "#f7ead0", textShadow: "0 8px 28px rgba(0,0,0,.38)" }}>?{hook}?</h3>
+              <div className="mt-7 inline-flex rounded-full px-5 py-2 text-[13px] font-bold" style={{ background: "linear-gradient(160deg, #dcc487, #a68b4b)", color: "#162b22", boxShadow: "0 10px 28px rgba(200,169,110,.28)" }}>{cta}</div>
             </div>
           </div>
-          <button onClick={() => setLayersOpen((value) => !value)} className="h-fit rounded-xl px-3 py-3" style={{ background: "#163326", color: "#f8f1df" }}>
-            <Layers size={18} />
-          </button>
-          {layersOpen ? (
-            <aside className="absolute left-6 top-24 z-20 w-[320px] rounded-2xl border p-4 shadow-2xl" style={{ background: "#fffaf2", borderColor: "#e4ded4" }}>
-              <h3 className="mb-3 text-[18px]" style={{ fontFamily: "var(--font-heading)" }}>الطبقات</h3>
-              <div className="space-y-2">
-                {data.layers.map((layer) => (
-                  <button key={layer.id} onClick={() => openInspector("layer", layer.id)} className="w-full rounded-xl border p-3 text-start" style={{ borderColor: "#e4ded4" }}>
-                    <div className="text-[13px] font-bold">{layer.name}</div>
-                    <div className="text-[11px]" style={{ color: "#8f877b" }}>{layer.note}</div>
-                  </button>
-                ))}
-              </div>
-            </aside>
-          ) : null}
+
+          <div className="space-y-4">
+            <Panel title="الاتجاه البصري">
+              <p className="text-[13px] leading-[1.8]" style={{ color: "#514a42" }}>{data.summary}</p>
+              <p className="text-[12px] leading-[1.75]" style={{ color: "#6b6258" }}>{data.composition}</p>
+            </Panel>
+            <section className="overflow-hidden rounded-2xl border" style={{ background: "#fffaf2", borderColor: "#e4ded4" }}>
+              <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: "#ece5d8", background: "#f5efe4" }}><span className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>الطبقات</span><span className="text-[11px] tabular-nums" style={{ color: "#b0a99e" }}>{data.layers.length}</span></div>
+              {data.layers.map((layer) => (
+                <button key={layer.id} onClick={() => openInspector("layer", layer.id)} className="flex w-full gap-3 border-b px-4 py-3 text-start last:border-b-0" style={{ borderColor: "#ece5d8" }}>
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold" style={{ background: "rgba(200,169,110,.12)", color: "#a68b4b" }}>{layer.kind.slice(0, 1)}</span>
+                  <span><span className="block text-[13px] font-bold" style={{ color: "#1f1d1a" }}>{layer.name}</span><span className="mt-1 block text-[11px] leading-[1.55]" style={{ color: "#766d62" }}>{layer.note}</span></span>
+                </button>
+              ))}
+            </section>
+            <Panel title="لوحة الألوان والموجه">
+              <div className="flex flex-wrap gap-2">{data.palette.map((color) => <span key={color} className="h-9 w-9 rounded-full border" style={{ background: color, borderColor: "rgba(0,0,0,.1)" }} title={color} />)}</div>
+              <div className="rounded-2xl border p-3 text-[12px] leading-[1.8]" style={{ background: "#faf7f0", borderColor: "#e4ded4", color: "#514a42" }}>{data.imagePrompt}</div>
+            </Panel>
+          </div>
         </div>
       ) : null}
     </PageShell>
   );
 }
 
+
 function LaunchPage() {
   const { campaign } = useStore();
   const data = campaign?.phases.launch.data;
-  const [open, setOpen] = React.useState(false);
-  const [replayKey, setReplayKey] = React.useState(0);
-  const pack = data?.packages[0];
+  const draft = campaign?.phases.draft.data;
+  const strategy = campaign?.phases.strategy.data;
+  const posts = (strategy?.angles ?? []).map((angle) => {
+    const variant = draft?.variants.find((entry) => entry.angleId === angle.id) ?? {
+      fullText: angle.hook + "\n\n" + angle.thesis + "\n\nابدأ الآن",
+      score: angle.score,
+    };
+    const pkg = data?.packages.find((entry) => entry.id.includes(angle.id) || entry.headline === angle.hook);
+    return { angle, variant, pkg, score: variant?.score ?? angle.score };
+  }).sort((a, b) => {
+    const winner = data?.winningAngleId;
+    if (a.angle.id === winner) return -1;
+    if (b.angle.id === winner) return 1;
+    return b.score - a.score;
+  });
+  const ordered = posts.length === 3 ? [posts[1], posts[0], posts[2]].filter(Boolean) : posts;
+  const defaultId = data?.winningAngleId ?? ordered[1]?.angle.id ?? ordered[0]?.angle.id;
+  const [selectedId, setSelectedId] = React.useState(defaultId);
+  const selected = ordered.find((post) => post.angle.id === selectedId) ?? ordered[1] ?? ordered[0];
 
   return (
-    <PageShell
-      phase="launch"
-      line={data?.summary || "النتيجة النهائية: نسخة رابحة، حزمة إطلاق، وخطة ردود جاهزة."}
-      action={data ? <button onClick={() => setReplayKey((value) => value + 1)} className="rounded-lg px-3 py-2 text-[12px] font-bold" style={{ background: "#efe5d2", color: "#6f5a34" }}>إعادة العرض</button> : null}
-    >
+    <PageShell phase="launch" line={data?.summary || "لوحة قرار نهائية: ثلاث منشورات جاهزة، فائز واضح، وخطة إطلاق وردود."}>
       {!data ? <EmptyPhase /> : null}
-      {data ? (
-        <div key={replayKey} className="relative">
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            {Array.from({ length: 12 }).map((_, index) => (
-              <span key={index} className="absolute h-1 w-1 rounded-full animate-ember-drift" style={{ right: `${8 + index * 7}%`, bottom: `${8 + (index % 4) * 5}%`, background: "#c8a96e", animationDelay: `${index * 0.12}s` }} />
-            ))}
+      {data && selected ? (
+        <div className="space-y-5">
+          <div className="grid grid-cols-3 items-center gap-4">
+            {ordered.map((post, index) => {
+              const isWinner = post.angle.id === data.winningAngleId;
+              const isSelected = post.angle.id === selectedId;
+              return <LaunchPost key={post.angle.id} post={post} centered={index === 1} winner={isWinner} selected={isSelected} onClick={() => setSelectedId(post.angle.id)} />;
+            })}
           </div>
-          <article className="mx-auto max-w-[760px] rounded-3xl border p-7 text-center animate-gallery-lights" style={{ background: "#fffaf2", borderColor: "#d8bd7c", boxShadow: "0 24px 70px rgba(91,68,34,0.18)" }}>
-            <Sparkles className="mx-auto" color="#c8a96e" />
-            <h2 className="mt-4 text-[40px] leading-[1.14]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>{pack?.headline || "الحزمة الفائزة"}</h2>
-            <p className="mx-auto mt-4 max-w-[620px] whitespace-pre-line text-[15px] leading-[1.9]" style={{ color: "#514a42" }}>{data.finalCaption}</p>
-            <button className="mt-6 rounded-lg px-5 py-2.5 text-[13px] font-bold" style={{ color: "#f8f1df", background: "#163326" }}>{pack?.cta || "إطلاق"}</button>
-          </article>
-          <button onClick={() => setOpen((value) => !value)} className="mx-auto mt-5 flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-bold" style={{ background: "#efe5d2", color: "#6f5a34" }}>
-            بدائل ومخاطر <ChevronDown size={14} />
-          </button>
-          {open ? (
-            <div className="mt-4 grid grid-cols-3 gap-3">
-              <Panel title="بدائل">{data.alternates.map((item) => <p key={item} className="mb-2 text-[12px] leading-[1.7]">{item}</p>)}</Panel>
-              <Panel title="خطة الرد">{data.responsePlan.map((item) => <Details key={item.scenario} title={item.scenario}><p className="text-[12px] leading-[1.7]">{item.response}</p></Details>)}</Panel>
-              <Panel title="المخاطر">{data.riskNotes.map((item) => <Chip key={item} text={item} />)}</Panel>
+          <section className="grid grid-cols-[1fr_1fr] gap-4 rounded-3xl border p-5" style={{ background: "#fffaf2", borderColor: "#d8bd7c", boxShadow: "0 18px 52px rgba(91,68,34,0.09)" }}>
+            <div>
+              <div className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>تفاصيل المنشور المختار</div>
+              <h2 className="mt-2 text-[30px] leading-[1.15]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>{selected.angle.title}</h2>
+              <p className="mt-3 text-[13px] leading-[1.8]" style={{ color: "#514a42" }}>{selected.angle.fit}</p>
+              <div className="mt-4 flex flex-wrap gap-2"><Chip text={"التقييم: " + selected.score + "%"} /><Chip text={"المخاطر: " + (selected.angle.risks[0] ?? "منخفضة")} /><Chip text={"النبرة: " + selected.angle.tone} /></div>
             </div>
-          ) : null}
+            <div className="grid grid-cols-2 gap-3 text-[12px] leading-[1.7]">
+              <Panel title="خطة الرد">{data.responsePlan.slice(0, 2).map((item) => <Details key={item.scenario} title={item.scenario}><p>{item.response}</p></Details>)}</Panel>
+              <Panel title="خطوات الإطلاق">{data.launchChecklist.slice(0, 4).map((item) => <Chip key={item} text={item} />)}</Panel>
+            </div>
+            <div className="col-span-2 grid grid-cols-2 gap-4">
+              <Panel title="بدائل سريعة">{data.alternates.slice(0, 2).map((item) => <p key={item} className="whitespace-pre-line text-[12px] leading-[1.7]" style={{ color: "#514a42" }}>{item}</p>)}</Panel>
+              <Panel title="المخاطر التالية">{data.riskNotes.map((item) => <Chip key={item} text={item} />)}{data.nextSteps.slice(0, 2).map((item) => <Chip key={item} text={item} />)}</Panel>
+            </div>
+          </section>
         </div>
       ) : null}
     </PageShell>
+  );
+}
+
+
+function LaunchPost({ post, centered, winner, selected, onClick }: { post: { angle: { id: string; title: string; hook: string; letter: string }; variant?: { fullText: string; score: number }; pkg?: { cta: string } }; centered: boolean; winner: boolean; selected: boolean; onClick: () => void }) {
+  const caption = post.variant?.fullText ?? post.angle.hook;
+  return (
+    <button onClick={onClick} className="relative w-full rounded-3xl border p-4 text-start transition-all" style={{ background: "#fffaf2", borderColor: selected || winner ? "#c8a96e" : "#e4ded4", transform: centered ? "translateY(-14px)" : "translateY(0)", boxShadow: winner ? "0 24px 70px rgba(166,139,75,0.24), 0 0 0 6px rgba(200,169,110,0.08)" : selected ? "0 16px 42px rgba(91,68,34,0.14)" : "0 10px 34px rgba(31,29,26,0.04)" }}>
+      <div className="mb-3 flex items-center justify-between">
+        <span className="rounded-full px-2 py-1 text-[10px] font-bold" style={{ color: winner ? "#163326" : "#7c6a48", background: winner ? "rgba(61,122,95,0.12)" : "rgba(200,169,110,0.13)" }}>{winner ? "الأقوى" : "زاوية " + post.angle.letter}</span>
+        <span dir="ltr" className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>X post</span>
+      </div>
+      <div className="rounded-2xl border p-4" style={{ background: "linear-gradient(180deg, #fdf8ee, #f4ead8)", borderColor: "#e4ded4" }}>
+        <div className="flex items-center gap-2"><div className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: "#163326", color: "#f8f1df" }}>T</div><div><div className="text-[13px] font-bold" style={{ color: "#1f1d1a" }}>TrendMind</div><div dir="ltr" className="text-[11px]" style={{ color: "#8f877b" }}>@campaign_lab</div></div></div>
+        <h3 className="mt-4 text-[22px] leading-[1.18]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>{post.angle.hook}</h3>
+        <p className="mt-3 line-clamp-6 whitespace-pre-line text-[12px] leading-[1.7]" style={{ color: "#514a42" }}>{caption}</p>
+        <div className="mt-4 flex items-center justify-between border-t pt-3" style={{ borderColor: "#e4ded4" }}><span className="text-[12px] font-bold" style={{ color: "#a68b4b" }}>{post.pkg?.cta ?? "ابدأ الآن"}</span><span className="tabular-nums text-[12px] font-bold" style={{ color: "#163326" }}>{post.variant?.score ?? 0}%</span></div>
+      </div>
+      <div className="mt-3 text-[12px] font-bold" style={{ color: selected ? "#163326" : "#8f7d59" }}>{post.angle.title}</div>
+    </button>
   );
 }
 
@@ -476,14 +589,14 @@ function Details({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function ChipEditor({ label, values, onChange }: { label: string; values: string[]; onChange: (values: string[]) => void }) {
+function ChipEditor({ label, values, onChange, placeholder = "+" }: { label: string; values: string[]; onChange: (values: string[]) => void; placeholder?: string }) {
   const [draft, setDraft] = React.useState("");
   return (
     <div>
       <div className="mb-1 text-[10px] font-bold" style={{ color: "#a68b4b" }}>{label}</div>
       <div className="flex flex-wrap gap-1.5">
         {values.map((value, index) => <Chip key={`${value}-${index}`} text={value} onRemove={() => onChange(values.filter((_, itemIndex) => itemIndex !== index))} />)}
-        <input value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && draft.trim()) { event.preventDefault(); onChange([...values, draft.trim()]); setDraft(""); } }} placeholder="+" className="w-12 bg-transparent text-[12px] outline-none" />
+        <input value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && draft.trim()) { event.preventDefault(); onChange([...values, draft.trim()]); setDraft(""); } }} placeholder={placeholder} className="min-w-12 flex-1 bg-transparent text-[12px] outline-none" />
       </div>
     </div>
   );

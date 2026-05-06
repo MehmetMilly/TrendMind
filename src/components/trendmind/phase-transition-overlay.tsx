@@ -32,9 +32,7 @@ export function PhaseTransitionOverlay() {
         className="w-full max-w-[520px] rounded-2xl border p-8 text-center shadow-2xl animate-gallery-lights"
         style={{ background: "linear-gradient(180deg, #fff8eb, #f2eadb)", borderColor: "rgba(200,169,110,0.35)" }}
       >
-        <p className="text-[13px] font-semibold" style={{ color: "#7c6a48" }}>
-          اكتملت مرحلة {current}
-        </p>
+        <p className="text-[13px] font-semibold" style={{ color: "#7c6a48" }}>اكتملت مرحلة {current}</p>
         <h2
           className="mt-3 text-[38px] leading-[1.15]"
           style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}

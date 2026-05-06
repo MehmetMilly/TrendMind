@@ -111,6 +111,7 @@ export const DEFAULT_BRIEF: CampaignBrief = {
   avoid: [],
   guardrails: [],
   brandLinks: [],
+  socialAccounts: [],
   references: [],
   context: "",
 };

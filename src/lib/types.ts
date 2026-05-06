@@ -60,6 +60,7 @@ export interface CampaignBrief {
   avoid: string[];
   guardrails: string[];
   brandLinks: string[];
+  socialAccounts: string[];
   references: string[];
   context: string;
 }

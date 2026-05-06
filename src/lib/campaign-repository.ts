@@ -78,6 +78,7 @@ const demoBrief: CampaignBrief = {
   avoid: ["الوعود الطبية", "المبالغة في الخوف", "لغة تقنية باردة"],
   guardrails: ["كل ادعاء صحي يحتاج صياغة حذرة", "لا نعد بتشخيص أو علاج", "نحافظ على لهجة عربية طبيعية"],
   brandLinks: ["https://example.com/nabd"],
+  socialAccounts: ["@nabd.sa", "instagram.com/nabd"],
   references: ["تعليقات مستخدمين عن تتبع النوم", "مقارنات بين الساعات والسوارات الذكية"],
   context: "الفئة مزدحمة، لكن الناس لا يريدون لوحة أرقام معقدة. يريدون إشارة واضحة: ماذا أفعل اليوم؟",
 };
@@ -526,6 +527,7 @@ export async function updateCampaignBrief(campaignId: string, patch: BriefPatch)
     avoid: patch.avoid ?? workspace.brief.avoid,
     guardrails: patch.guardrails ?? workspace.brief.guardrails,
     brandLinks: patch.brandLinks ?? workspace.brief.brandLinks,
+    socialAccounts: patch.socialAccounts ?? workspace.brief.socialAccounts,
     references: patch.references ?? workspace.brief.references,
   };
   workspace.name = workspace.brief.campaignName || "حملة عربية تجريبية";

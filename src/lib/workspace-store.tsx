@@ -338,6 +338,7 @@ export function WorkspaceProvider({
         if (!current) return current;
         const next = structuredClone(current) as CampaignWorkspace;
         next.brief[key] = value;
+        next.brief.socialAccounts = next.brief.socialAccounts ?? [];
         next.name = next.brief.campaignName || "حملة جديدة";
         next.brandName = next.brief.brandName;
         next.phases.brief.data = next.brief;

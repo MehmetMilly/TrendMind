@@ -614,34 +614,48 @@ Rules:
   };
 }
 
+
 function fallbackDraft(strategy: StrategyOutput): DraftOutput {
   const atoms: DraftAtom[] = [];
   const variants: DraftVariant[] = strategy.angles.map((angle, index) => {
-    const hookId = `hook_${index + 1}`;
-    const bodyId = `body_${index + 1}`;
-    const ctaId = `cta_${index + 1}`;
-    const hook = angle.hook;
-    const body =
+    const hookTexts = [
+      angle.hook,
+      angle.lane === "safe" ? "اختيار هادئ يقول الكثير." : angle.lane === "sharp" ? "الهدية تبدأ قبل أن تفتح." : "الذوق ليس صاخبا.",
+      angle.promise,
+      angle.lane === "viral" ? "لمن يفهمون الإشارة قبل الشرح." : "لمن يريدون معنى بلا مبالغة.",
+    ];
+    const bodyTexts = [
       angle.lane === "safe"
-        ? `${angle.promise} ${angle.thesis} The copy should sound like it knows exactly who it is talking to and why the product matters now.`
+        ? angle.promise + " " + angle.thesis + " النسخة يجب أن تبدو مطمئنة وواضحة، وتترك المنتج يثبت قيمته بدون ضغط."
         : angle.lane === "sharp"
-          ? `${angle.promise} ${angle.thesis} Let the language carry a little more emotional movement without losing clarity.`
-          : `${angle.promise} ${angle.thesis} Make the point with confidence, but keep the product legible.`;
-    const cta =
+          ? angle.promise + " " + angle.thesis + " امنح اللغة حركة عاطفية محسوبة، مع جملة إثبات واحدة تجعل الفكرة قابلة للتصديق."
+          : angle.promise + " " + angle.thesis + " اجعل الموقف واثقا وقابلا للمشاركة، لكن اربطه بسبب ملموس يجعل المنتج حاضرا.",
+      angle.stance,
+      angle.fit,
+    ];
+    const ctaTexts = [
       angle.lane === "viral"
-        ? "See the take that is worth reposting."
+        ? "شاهد الاختيار الذي يستحق المشاركة."
         : angle.lane === "sharp"
-          ? "Choose the gift that feels intentional."
-          : "Browse the considered selects.";
+          ? "اختر ما يبدو مقصودا."
+          : "تصفح الاختيارات الهادئة.",
+      "اكتشف المجموعة الآن.",
+      "ابدأ من الاختيار الأقرب لك.",
+    ];
 
-    atoms.push(
-      { id: hookId, angleId: angle.id, kind: "hook", text: hook },
-      { id: bodyId, angleId: angle.id, kind: "body", text: body },
-      { id: ctaId, angleId: angle.id, kind: "cta", text: cta },
-    );
+    hookTexts.forEach((itemText, itemIndex) => atoms.push({ id: "hook_" + (index + 1) + "_" + (itemIndex + 1), angleId: angle.id, kind: "hook", text: itemText }));
+    bodyTexts.forEach((itemText, itemIndex) => atoms.push({ id: "body_" + (index + 1) + "_" + (itemIndex + 1), angleId: angle.id, kind: "body", text: itemText }));
+    ctaTexts.forEach((itemText, itemIndex) => atoms.push({ id: "cta_" + (index + 1) + "_" + (itemIndex + 1), angleId: angle.id, kind: "cta", text: itemText }));
+
+    const hookId = "hook_" + (index + 1) + "_1";
+    const bodyId = "body_" + (index + 1) + "_1";
+    const ctaId = "cta_" + (index + 1) + "_1";
+    const hook = hookTexts[0];
+    const body = bodyTexts[0];
+    const cta = ctaTexts[0];
 
     return {
-      id: `variant_${index + 1}`,
+      id: "variant_" + (index + 1),
       angleId: angle.id,
       name: angle.title,
       hookId,
@@ -655,30 +669,29 @@ function fallbackDraft(strategy: StrategyOutput): DraftOutput {
           agent: "critic",
           note:
             angle.lane === "viral"
-              ? "High upside, but it needs product grounding."
+              ? "قابلة للانتشار، لكنها تحتاج إثباتا واضحا للمنتج."
               : angle.lane === "sharp"
-                ? "Most emotionally persuasive if the middle sentence stays specific."
-                : "Very clear and brand-safe. Could push the opening slightly harder.",
+                ? "الأقوى عاطفيا إذا بقيت الجملة الوسطى محددة."
+                : "واضحة وآمنة للبراند، ويمكن دفع الافتتاح قليلا.",
         },
         {
           agent: "architect",
           note:
             angle.lane === "safe"
-              ? "Cleanest choice for a premium launch-ready lane."
-              : "The core line is strong enough to carry into Trial.",
+              ? "أنظف مسار لإطلاق Premium مفهوم بسرعة."
+              : "الفكرة المركزية قوية بما يكفي للانتقال إلى الاختبار.",
         },
       ],
-      fullText: `${hook}\n\n${body}\n\n${cta}`,
+      fullText: hook + "\n\n" + body + "\n\n" + cta,
     };
   });
 
   const recommendedVariantId =
-    variants.find((variant) => variant.angleId === strategy.recommendedAngleId)?.id ??
-    variants[0].id;
+    variants.find((variant) => variant.angleId === strategy.recommendedAngleId)?.id ?? variants[0].id;
 
   return {
     summary:
-      "TrendMind translated the three strategy lanes into concrete copy variants with different emotional weights and risk profiles.",
+      "TrendMind وسع كل زاوية إلى عدة خطافات وأجسام ودعوات، ثم ركب أفضل نسخة مبدئية لكل مسار قبل الاختبار.",
     atoms,
     variants,
     recommendedVariantId,
