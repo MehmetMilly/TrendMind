@@ -258,11 +258,30 @@ function StrategyPage() {
                 <div className="rounded-2xl border p-3" style={{ borderColor: "#e4ded4", background: "rgba(255,250,242,0.72)" }}>TrendMind يقارن الوضوح، الرنين، المخاطر، وقابلية التحويل.</div>
                 <div className="rounded-2xl border p-3" style={{ borderColor: "#e4ded4", background: "rgba(255,250,242,0.72)" }}>الترشيح الحالي يوجه الأولوية، ولا يلغي بقية المسارات.</div>
               </div>
+              <div className="mt-4 grid grid-cols-3 gap-3 text-[11px] leading-[1.7]">
+                <div className="rounded-2xl border p-3" style={{ borderColor: "#e4ded4", background: "rgba(255,255,255,0.44)" }}>
+                  <div className="mb-1 font-bold" style={{ color: "#a68b4b" }}>اتجاه الرسالة</div>
+                  <div style={{ color: "#5f574e" }}>{data.messageDirection}</div>
+                </div>
+                <div className="rounded-2xl border p-3" style={{ borderColor: "#e4ded4", background: "rgba(255,255,255,0.44)" }}>
+                  <div className="mb-1 font-bold" style={{ color: "#a68b4b" }}>منطق التمركز</div>
+                  <div style={{ color: "#5f574e" }}>{data.positioningLogic}</div>
+                </div>
+                <div className="rounded-2xl border p-3" style={{ borderColor: "#e4ded4", background: "rgba(255,255,255,0.44)" }}>
+                  <div className="mb-1 font-bold" style={{ color: "#a68b4b" }}>قيود الاستراتيجية</div>
+                  <div className="space-y-1">
+                    {data.strategicConstraints.slice(0, 3).map((item) => (
+                      <div key={item} style={{ color: "#5f574e" }}>{item}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="rounded-3xl border p-4" style={{ borderColor: "#d8bd7c", background: "#163326", color: "#f7ead0" }}>
               <div className="text-[11px] font-bold" style={{ color: "#d9bf82" }}>الزاوية الموصى بها</div>
               <h3 className="mt-3 text-[28px] leading-[1.15]" style={{ fontFamily: "var(--font-heading)" }}>{recommended?.title}</h3>
               <p className="mt-3 text-[13px] leading-[1.8]" style={{ color: "rgba(247,234,208,0.78)" }}>{recommended?.fit}</p>
+              <p className="mt-3 text-[12px] leading-[1.75]" style={{ color: "rgba(247,234,208,0.68)" }}>{data.toneDirection}</p>
               <div className="mt-4 inline-flex rounded-full px-3 py-1 text-[12px] font-bold" style={{ background: "rgba(217,191,130,0.14)", color: "#d9bf82" }}>{recommended?.score}% جاهزية مبدئية</div>
             </div>
           </section>
@@ -316,7 +335,7 @@ function DraftPage() {
               { id: angle.id + "_cta_2", text: "اكتشف التفاصيل" },
               { id: angle.id + "_cta_3", text: "انضم إلى قائمة الانتظار" },
             ];
-            const variant = data.variants.find((entry) => entry.angleId === angle.id) ?? {
+            const variant = data.variants.filter((entry) => entry.angleId === angle.id).sort((left, right) => right.score - left.score)[0] ?? {
               id: angle.id + "_assembled",
               angleId: angle.id,
               name: angle.title,

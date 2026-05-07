@@ -11,7 +11,7 @@ if (!global.__trendmindEnvLoaded) {
 }
 
 const serverEnvSchema = z.object({
-  DATABASE_URL: z.string().optional().default("pglite://local"),
+  DATABASE_URL: z.string().optional(),
   DIRECT_URL: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
   OPENROUTER_BASE_URL: z
@@ -24,7 +24,7 @@ const serverEnvSchema = z.object({
   OPENROUTER_FALLBACK_MODEL: z
     .string()
     .default("inclusionai/ling-2.6-1t:free"),
-  TRENDMIND_DB_MODE: z.enum(["pglite", "pg", "auto"]).default("pglite"),
+  TRENDMIND_DB_MODE: z.enum(["pglite", "pg", "auto"]).default("auto"),
   TAVILY_API_KEY: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z
     .string()

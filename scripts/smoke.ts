@@ -7,6 +7,7 @@ import {
 import {
   createCampaign,
   getCampaign,
+  updateSelection,
   updateCampaignBrief,
 } from "../src/lib/campaign-repository";
 import {
@@ -18,15 +19,22 @@ async function main() {
   await ensureDatabase();
 
   const created = await createCampaign({
-    campaignName: `Smoke Test ${Date.now()}`,
-    brandName: "TrendMind QA",
-    productName: "Demo workflow kit",
-    platform: "X",
+    campaignName: `اختبار دخان ${Date.now()}`,
+    brandName: "تمرة",
+    productName: "اشتراك تمور فاخرة موسمي",
+    platform: "إنستغرام",
   });
 
   await updateCampaignBrief(created.id, {
-    goal: "Prove the end-to-end campaign workflow works and persists.",
-    context: "This is a smoke test that should exercise every major phase.",
+    goal: "إثبات أن مسار الحملة الكامل يعمل ويحفظ الحالة ويولّد مخرجات عربية قوية.",
+    audience:
+      "عائلات وموظفون في السعودية والخليج يبحثون عن هدية أو اشتراك فاخر بطابع محلي أنيق.",
+    tone: "دافئة، عربية طبيعية، واثقة، غير متكلّفة.",
+    valueProposition:
+      "تمور مختارة بعناية تصل كهدية أو اشتراك يشعر أنه فاخر ومقصود لا مجرد شراء اعتيادي.",
+    callToAction: "سجّل اهتمامك الآن",
+    context:
+      "هذا اختبار دخان يجب أن يمر على جميع المراحل ويثبت أن TrendMind يختبر الزوايا قبل الإطلاق.",
   });
 
   await startCampaignRun(created.id, { startPhase: "research", mode: "full" });
@@ -41,11 +49,27 @@ async function main() {
   assert.equal(workspace.phases.studio.status, "ready");
   assert.equal(workspace.phases.launch.status, "ready");
   assert.ok(workspace.phases.launch.data?.finalCaption);
+  assert.equal(workspace.phases.strategy.data?.angles.length, 3);
+  assert.ok((workspace.phases.draft.data?.atoms.length ?? 0) >= 27);
+  assert.ok((workspace.phases.draft.data?.variants.length ?? 0) >= 9);
+  assert.ok((workspace.phases.trial.data?.personas.length ?? 0) >= 100);
+  assert.equal(workspace.phases.trial.data?.angleWinners.length, 3);
+  assert.ok(/[ء-ي]/.test(workspace.phases.launch.data?.finalCaption ?? ""));
+
+  const selectedWinner = workspace.phases.trial.data?.angleWinners[1];
+  assert.ok(selectedWinner);
+
+  await updateSelection(created.id, {
+    selectedVariantId: selectedWinner?.variantId,
+  });
+
+  workspace = await getCampaign(created.id);
+  assert.equal(workspace.selectedVariantId, selectedWinner?.variantId);
 
   await startCampaignRun(created.id, {
-    startPhase: "trial",
+    startPhase: "studio",
     mode: "phase",
-    note: "Warm the winning variant slightly and keep the CTA specific.",
+    note: "اجعل الاتجاه البصري أدفأ قليلاً وأبرز ملمس المنتج في المشهد الرئيسي.",
   });
   await waitForInFlightRuns();
 
@@ -55,8 +79,16 @@ async function main() {
   assert.ok(workspace.revisions.length >= 1);
   assert.ok(workspace.activities.length > 0);
   assert.ok(
-    workspace.phases.trial.version >= 2,
-    "Targeted rerun should increment the trial version.",
+    workspace.phases.studio.version >= 2,
+    "Targeted rerun should increment the studio version.",
+  );
+  assert.ok(
+    workspace.revisions.some(
+      (revision) =>
+        revision.note.includes("أدفأ") &&
+        revision.phase === "studio" &&
+        revision.status === "applied",
+    ),
   );
 
   console.log(

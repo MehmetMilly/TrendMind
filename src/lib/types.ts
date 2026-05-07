@@ -111,6 +111,10 @@ export interface StrategyAngle {
 
 export interface StrategyOutput {
   campaignThesis: string;
+  messageDirection: string;
+  positioningLogic: string;
+  toneDirection: string;
+  strategicConstraints: string[];
   angles: StrategyAngle[];
   recommendedAngleId: string;
   decisionFrame: string;
@@ -175,9 +179,17 @@ export interface TrialReaction {
 
 export interface TrialScore {
   variantId: string;
+  angleId: string;
   average: number;
   resonance: number;
   risk: number;
+  verdict: string;
+}
+
+export interface TrialAngleWinner {
+  angleId: string;
+  variantId: string;
+  average: number;
   verdict: string;
 }
 
@@ -186,9 +198,11 @@ export interface TrialOutput {
   personas: Persona[];
   reactions: TrialReaction[];
   scoreboard: TrialScore[];
+  angleWinners: TrialAngleWinner[];
   winningVariantId: string;
   recommendedEdits: string[];
   responseRisks: string[];
+  audienceSummary: string[];
 }
 
 export interface StudioLayer {

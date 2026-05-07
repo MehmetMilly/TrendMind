@@ -43,6 +43,9 @@ function resolvePGliteDataDir() {
 export function getPool() {
   if (!global.__trendmindPool) {
     const env = getServerEnv();
+    if (!env.DATABASE_URL) {
+      throw new Error("DATABASE_URL is not configured.");
+    }
 
     global.__trendmindPool = new Pool({
       connectionString: env.DATABASE_URL,
@@ -70,6 +73,12 @@ async function resolveDbMode() {
   const env = getServerEnv();
 
   if (env.TRENDMIND_DB_MODE === "pglite") {
+    global.__trendmindDbMode = "pglite";
+    await getPGlite();
+    return global.__trendmindDbMode;
+  }
+
+  if (!env.DATABASE_URL) {
     global.__trendmindDbMode = "pglite";
     await getPGlite();
     return global.__trendmindDbMode;
