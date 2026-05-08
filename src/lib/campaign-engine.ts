@@ -5,7 +5,10 @@ import {
   buildLaunchPrompt,
   buildResearchPrompt,
   buildStrategyPrompt,
+  buildTrialPersonaRepairPrompt,
+  buildStudioPrompt,
   buildTrialPrompt,
+  buildTrialReactionRepairPrompt,
 } from "@/lib/campaign-prompts";
 import { PHASE_SEQUENCE } from "@/lib/campaign-data";
 import {
@@ -30,6 +33,8 @@ import type {
   DraftOutput,
   DraftVariant,
   LaunchOutput,
+  LaunchPackage,
+  LaunchResponse,
   Persona,
   PhaseId,
   ResearchItem,
@@ -39,6 +44,7 @@ import type {
   StrategyAngle,
   StrategyOutput,
   StudioLayer,
+  StudioFormat,
   StudioOutput,
   TrialAngleWinner,
   TrialOutput,
@@ -76,6 +82,10 @@ function getRunMap() {
   }
 
   return global.__trendmindActiveRuns;
+}
+
+function allowSyntheticFallbacks() {
+  return getServerEnv().TRENDMIND_ALLOW_SYNTHETIC_FALLBACKS === "true";
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -159,13 +169,19 @@ async function callOpenRouter({
   label: string;
 }) {
   const env = getServerEnv();
-  if (!env.OPENROUTER_API_KEY) return null;
+  if (!env.OPENROUTER_API_KEY) {
+    if (allowSyntheticFallbacks()) return null;
+    throw new Error(
+      "OpenRouter API key is missing. Set OPENROUTER_API_KEY to run campaigns with real AI output.",
+    );
+  }
 
   const models = [env.OPENROUTER_MODEL, env.OPENROUTER_FALLBACK_MODEL].filter(Boolean);
+  let lastError: string | null = null;
 
   for (const model of models) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12_000);
+    const timeout = setTimeout(() => controller.abort(), env.OPENROUTER_TIMEOUT_MS);
 
     try {
       const response = await fetch(`${env.OPENROUTER_BASE_URL}/chat/completions`, {
@@ -187,7 +203,11 @@ async function callOpenRouter({
         signal: controller.signal,
       });
 
-      if (!response.ok) continue;
+      if (!response.ok) {
+        const body = await response.text();
+        lastError = `OpenRouter ${label} failed on ${model} with ${response.status}: ${body.slice(0, 240).trim()}`;
+        continue;
+      }
 
       const payload = (await response.json()) as {
         choices?: Array<{ message?: { content?: string | Array<{ text?: string }> } }>;
@@ -202,11 +222,19 @@ async function callOpenRouter({
           .trim();
         if (merged) return merged;
       }
-    } catch {
-      // try the next model
+      lastError = `OpenRouter ${label} on ${model} returned no usable content.`;
+    } catch (error) {
+      lastError =
+        error instanceof Error
+          ? `OpenRouter ${label} on ${model} failed: ${error.message}`
+          : `OpenRouter ${label} on ${model} failed unexpectedly.`;
     } finally {
       clearTimeout(timeout);
     }
+  }
+
+  if (!allowSyntheticFallbacks() && lastError) {
+    throw new Error(lastError);
   }
 
   console.warn(`TrendMind: ${label} fell back to deterministic generation.`);
@@ -494,7 +522,12 @@ async function generateResearch(workspace: CampaignWorkspace, note?: string | nu
   });
 
   const parsed = aiText ? extractJsonObject(aiText) : null;
-  const output = normalizeResearchOutput(parsed, fallback);
+  if (!parsed && !allowSyntheticFallbacks()) {
+    throw new Error("Research AI output was not returned.");
+  }
+  const output = allowSyntheticFallbacks()
+    ? normalizeResearchOutput(parsed, fallback)
+    : (parsed as ResearchOutput);
 
   return {
     output,
@@ -772,7 +805,12 @@ async function generateStrategy(workspace: CampaignWorkspace, note?: string | nu
   });
 
   const parsed = aiText ? extractJsonObject(aiText) : null;
-  const output = normalizeStrategyOutput(parsed, fallback);
+  if (!parsed && !allowSyntheticFallbacks()) {
+    throw new Error("Strategy AI output was not returned.");
+  }
+  const output = allowSyntheticFallbacks()
+    ? normalizeStrategyOutput(parsed, fallback)
+    : (parsed as StrategyOutput);
 
   return {
     output,
@@ -1091,7 +1129,12 @@ async function generateDraft(workspace: CampaignWorkspace, note?: string | null)
   });
 
   const parsed = aiText ? extractJsonObject(aiText) : null;
-  const output = normalizeDraftOutput(parsed, fallback);
+  if (!parsed && !allowSyntheticFallbacks()) {
+    throw new Error("Draft AI output was not returned.");
+  }
+  const output = allowSyntheticFallbacks()
+    ? normalizeDraftOutput(parsed, fallback)
+    : (parsed as DraftOutput);
 
   return {
     output,
@@ -1427,6 +1470,102 @@ function reactionCopy(
   return `${persona.name} would feel the message overreaches before it persuades.`;
 }
 
+function buildTrialOutputFromReactions(
+  brief: CampaignBrief,
+  strategy: StrategyOutput,
+  draft: DraftOutput,
+  personas: Persona[],
+  reactions: TrialReaction[],
+  aiSuggestion: {
+    summary: string;
+    recommendedEdits: string[];
+    responseRisks: string[];
+    audienceSummary: string[];
+  },
+): TrialOutput {
+  const scoreboard: TrialScore[] = draft.variants.map((variant) => {
+    const related = reactions.filter((reaction) => reaction.variantId === variant.id);
+    const angleId = variant.angleId;
+    const averageScore = Math.round(
+      average(
+        related.map((reaction) =>
+          average([
+            reaction.subScores.clarity,
+            reaction.subScores.resonance,
+            reaction.subScores.intent,
+          ]),
+        ),
+      ),
+    );
+    const resonance = Math.round(
+      average(related.map((reaction) => reaction.subScores.resonance)),
+    );
+    const risk = clamp(
+      100 -
+        averageScore +
+        Math.max(
+          0,
+          5 -
+            variantSignals(
+              variant,
+              strategy.angles.find((entry) => entry.id === angleId) ?? strategy.angles[0],
+            ).proofSignal,
+        ),
+      8,
+      42,
+    );
+
+    return {
+      variantId: variant.id,
+      angleId,
+      average: averageScore,
+      resonance,
+      risk,
+      verdict: prefersArabic(brief)
+        ? averageScore >= 88
+          ? "ط¬ط§ظ‡ط²ط© ظ„ظ„ط¥ط·ظ„ط§ظ‚ ظ…ط¹ ظ…ط³ط§ط­ط© طھط­ط³ظٹظ† ط¨ط³ظٹط·ط© ظپظ‚ط·."
+          : averageScore >= 80
+            ? "ظ‚ظˆظٹط©طŒ ظ„ظƒظ†ظ‡ط§ طھط­طھط§ط¬ طµظ‚ظ„ط§ظ‹ طµط؛ظٹط±ط§ظ‹ ظ‚ط¨ظ„ ط§ظ„ط§ط¹طھظ…ط§ط¯."
+            : "ط§ظ„ظپظƒط±ط© ظ…ط«ظٹط±ط©طŒ ظ„ظƒظ† ط§ظ„ظ†ط³ط®ط© ظ„ظٹط³طھ ط¬ط§ظ‡ط²ط© ط¨ط¹ط¯."
+        : averageScore >= 88
+          ? "Strong enough to launch with minor refinement only."
+          : averageScore >= 80
+            ? "Strong, but still wants one more tightening pass."
+            : "Interesting, but not launch-ready yet.",
+    };
+  });
+
+  const angleWinners: TrialAngleWinner[] = strategy.angles.map((angle) => {
+    const winner =
+      scoreboard
+        .filter((entry) => entry.angleId === angle.id)
+        .toSorted((left, right) => right.average - left.average)[0] ?? scoreboard[0];
+
+    return {
+      angleId: angle.id,
+      variantId: winner.variantId,
+      average: winner.average,
+      verdict: winner.verdict,
+    };
+  });
+
+  const winningVariantId =
+    angleWinners.toSorted((left, right) => right.average - left.average)[0]?.variantId ??
+    draft.recommendedVariantId;
+
+  return {
+    summary: aiSuggestion.summary,
+    personas,
+    reactions,
+    scoreboard,
+    angleWinners,
+    winningVariantId,
+    recommendedEdits: aiSuggestion.recommendedEdits.slice(0, 4),
+    responseRisks: aiSuggestion.responseRisks.slice(0, 4),
+    audienceSummary: aiSuggestion.audienceSummary.slice(0, 4),
+  };
+}
+
 function deterministicTrial(
   brief: CampaignBrief,
   strategy: StrategyOutput,
@@ -1638,6 +1777,167 @@ function deterministicTrial(
   };
 }
 
+function parseTrialPersonas(value: unknown) {
+  return Array.isArray(value)
+    ? value
+        .map((item) => {
+          if (!item || typeof item !== "object") return null;
+          const record = item as Record<string, unknown>;
+          return {
+            id: typeof record.id === "string" ? record.id.trim() : "",
+            name: typeof record.name === "string" ? record.name.trim() : "",
+            archetype:
+              typeof record.archetype === "string" ? record.archetype.trim() : "",
+            oneLiner:
+              typeof record.oneLiner === "string" ? record.oneLiner.trim() : "",
+            glyph: typeof record.glyph === "string" ? record.glyph.trim() : "",
+            accent: typeof record.accent === "string" ? record.accent.trim() : "",
+          } satisfies Persona;
+        })
+        .filter((item): item is Persona =>
+          Boolean(item && item.id && item.name && item.archetype && item.oneLiner),
+        )
+    : [];
+}
+
+function parseTrialReactions(value: unknown) {
+  return Array.isArray(value)
+    ? value
+        .map((item) => {
+          if (!item || typeof item !== "object") return null;
+          const record = item as Record<string, unknown>;
+          const sentiment = record.sentiment;
+          if (
+            sentiment !== "love" &&
+            sentiment !== "warm" &&
+            sentiment !== "neutral" &&
+            sentiment !== "cold"
+          ) {
+            return null;
+          }
+
+          const scores = record.subScores as Record<string, unknown> | undefined;
+          const clarity = typeof scores?.clarity === "number" ? scores.clarity : NaN;
+          const resonance = typeof scores?.resonance === "number" ? scores.resonance : NaN;
+          const intent = typeof scores?.intent === "number" ? scores.intent : NaN;
+
+          return {
+            id: typeof record.id === "string" ? record.id.trim() : makeId("reaction"),
+            personaId:
+              typeof record.personaId === "string" ? record.personaId.trim() : "",
+            variantId:
+              typeof record.variantId === "string" ? record.variantId.trim() : "",
+            sentiment,
+            quote: typeof record.quote === "string" ? record.quote.trim() : "",
+            why: typeof record.why === "string" ? record.why.trim() : "",
+            subScores: {
+              clarity: Number.isFinite(clarity) ? clamp(clarity, 0, 100) : 0,
+              resonance: Number.isFinite(resonance) ? clamp(resonance, 0, 100) : 0,
+              intent: Number.isFinite(intent) ? clamp(intent, 0, 100) : 0,
+            },
+          } satisfies TrialReaction;
+        })
+        .filter(
+          (item): item is TrialReaction =>
+            Boolean(item?.personaId && item?.variantId && item?.quote && item?.why),
+        )
+    : [];
+}
+
+function mergeTrialReactions(existing: TrialReaction[], incoming: TrialReaction[]) {
+  const merged = new Map<string, TrialReaction>();
+
+  for (const reaction of existing) {
+    merged.set(`${reaction.personaId}::${reaction.variantId}`, reaction);
+  }
+
+  for (const reaction of incoming) {
+    merged.set(`${reaction.personaId}::${reaction.variantId}`, reaction);
+  }
+
+  return Array.from(merged.values());
+}
+
+async function completeTrialCoverageWithAi(
+  workspace: CampaignWorkspace,
+  strategy: StrategyOutput,
+  draft: DraftOutput,
+  initialPersonas: Persona[],
+  initialReactions: TrialReaction[],
+) {
+  let personas = [...initialPersonas];
+  let reactions = [...initialReactions];
+
+  if (personas.length < 8) {
+    const aiText = await callOpenRouter({
+      label: "trial persona completion",
+      system:
+        "You are TrendMind's Audience Simulator. Return only valid JSON and generate only missing personas.",
+      prompt: buildTrialPersonaRepairPrompt(
+        workspace.brief,
+        strategy,
+        draft,
+        personas,
+        8 - personas.length,
+      ),
+    });
+
+    const parsed = aiText ? extractJsonObject(aiText) : null;
+    const additions = parseTrialPersonas(
+      parsed && typeof parsed === "object"
+        ? (parsed as Record<string, unknown>).personas
+        : null,
+    );
+
+    for (const persona of additions) {
+      if (personas.length >= 8) break;
+      if (personas.some((entry) => entry.id === persona.id)) continue;
+      personas.push(persona);
+    }
+  }
+
+  if (personas.length < 8) {
+    throw new Error("Trial AI output did not provide enough personas.");
+  }
+
+  personas = personas.slice(0, 8);
+  const personaIds = new Set(personas.map((persona) => persona.id));
+  reactions = reactions.filter(
+    (reaction) => personaIds.has(reaction.personaId) && draft.variants.some((variant) => variant.id === reaction.variantId),
+  );
+
+  for (const variant of draft.variants) {
+    const coveredPersonaIds = new Set(
+      reactions
+        .filter((reaction) => reaction.variantId === variant.id)
+        .map((reaction) => reaction.personaId),
+    );
+    const missingPersonas = personas.filter((persona) => !coveredPersonaIds.has(persona.id));
+    if (missingPersonas.length === 0) continue;
+
+    const aiText = await callOpenRouter({
+      label: `trial reaction completion for ${variant.id}`,
+      system:
+        "You are TrendMind's Audience Simulator. Return only valid JSON and generate only the missing reactions.",
+      prompt: buildTrialReactionRepairPrompt(workspace.brief, variant, missingPersonas),
+    });
+
+    const parsed = aiText ? extractJsonObject(aiText) : null;
+    const additions = parseTrialReactions(
+      parsed && typeof parsed === "object"
+        ? (parsed as Record<string, unknown>).reactions
+        : null,
+    ).filter(
+      (reaction) =>
+        reaction.variantId === variant.id && missingPersonas.some((persona) => persona.id === reaction.personaId),
+    );
+
+    reactions = mergeTrialReactions(reactions, additions);
+  }
+
+  return { personas, reactions };
+}
+
 async function generateTrial(workspace: CampaignWorkspace) {
   const strategy = workspace.phases.strategy.data;
   const draft = workspace.phases.draft.data;
@@ -1653,26 +1953,82 @@ async function generateTrial(workspace: CampaignWorkspace) {
   });
 
   const parsed = aiText ? extractJsonObject(aiText) : null;
-  const aiSuggestion =
-    parsed && typeof parsed === "object"
-      ? {
-          summary:
-            typeof (parsed as Record<string, unknown>).summary === "string"
-              ? ((parsed as Record<string, unknown>).summary as string).trim()
-              : undefined,
-          recommendedEdits: toArrayOfStrings(
-            (parsed as Record<string, unknown>).recommendedEdits,
-          ),
-          responseRisks: toArrayOfStrings(
-            (parsed as Record<string, unknown>).responseRisks,
-          ),
-          audienceSummary: toArrayOfStrings(
-            (parsed as Record<string, unknown>).audienceSummary,
-          ),
-        }
-      : null;
+  if (!parsed || typeof parsed !== "object") {
+    if (allowSyntheticFallbacks()) {
+      const fallbackOutput = deterministicTrial(workspace.brief, strategy, draft);
+      return {
+        output: fallbackOutput,
+        headline: prefersArabic(workspace.brief) ? "ط§ظƒطھظ…ظ„ ط§ظ„ط§ط®طھط¨ط§ط±" : "Trial complete",
+        summary: firstSentence(fallbackOutput.summary),
+        generatedBy: "simulator" as AgentId,
+      };
+    }
 
-  const output = deterministicTrial(workspace.brief, strategy, draft, aiSuggestion);
+    throw new Error("Trial AI output was not returned.");
+  }
+
+  const parsedRecord = parsed as Record<string, unknown>;
+  const summary =
+    typeof parsedRecord.summary === "string" ? parsedRecord.summary.trim() : "";
+  const recommendedEdits = toArrayOfStrings(parsedRecord.recommendedEdits);
+  const responseRisks = toArrayOfStrings(parsedRecord.responseRisks);
+  const audienceSummary = toArrayOfStrings(parsedRecord.audienceSummary);
+  let personas = parseTrialPersonas(parsedRecord.personas);
+  let reactions = parseTrialReactions(parsedRecord.reactions);
+
+  if (summary && (personas.length < 8 || reactions.length < draft.variants.length * 8)) {
+    const completed = await completeTrialCoverageWithAi(
+      workspace,
+      strategy,
+      draft,
+      personas,
+      reactions,
+    );
+    personas = completed.personas;
+    reactions = completed.reactions;
+  }
+
+  const personaIds = new Set(personas.map((persona) => persona.id));
+  const variantIds = new Set(draft.variants.map((variant) => variant.id));
+  const hasInvalidReaction = reactions.some(
+    (reaction) => !personaIds.has(reaction.personaId) || !variantIds.has(reaction.variantId),
+  );
+  if (hasInvalidReaction) {
+    throw new Error("Trial AI output referenced an unknown persona or variant.");
+  }
+
+  if (!summary || personas.length < 8 || reactions.length < draft.variants.length * personas.length) {
+    if (allowSyntheticFallbacks()) {
+      const fallbackOutput = deterministicTrial(workspace.brief, strategy, draft, {
+        summary,
+        recommendedEdits,
+        responseRisks,
+        audienceSummary,
+      });
+      return {
+        output: fallbackOutput,
+        headline: prefersArabic(workspace.brief) ? "ط§ظƒطھظ…ظ„ ط§ظ„ط§ط®طھط¨ط§ط±" : "Trial complete",
+        summary: firstSentence(fallbackOutput.summary),
+        generatedBy: "simulator" as AgentId,
+      };
+    }
+
+    throw new Error("Trial AI output was incomplete.");
+  }
+
+  const output = buildTrialOutputFromReactions(
+    workspace.brief,
+    strategy,
+    draft,
+    personas,
+    reactions,
+    {
+      summary,
+      recommendedEdits,
+      responseRisks,
+      audienceSummary,
+    },
+  );
 
   return {
     output,
@@ -1682,7 +2038,7 @@ async function generateTrial(workspace: CampaignWorkspace) {
   };
 }
 
-function generateStudio(workspace: CampaignWorkspace): GeneratedPhase {
+async function generateStudio(workspace: CampaignWorkspace): Promise<GeneratedPhase> {
   const strategy = workspace.phases.strategy.data;
   const draft = workspace.phases.draft.data;
   const trial = workspace.phases.trial.data;
@@ -1693,6 +2049,111 @@ function generateStudio(workspace: CampaignWorkspace): GeneratedPhase {
   const selectedVariantId = workspace.selectedVariantId ?? trial.winningVariantId;
   const variant = draft.variants.find((entry) => entry.id === selectedVariantId) ?? draft.variants[0];
   const angle = strategy.angles.find((entry) => entry.id === variant.angleId) ?? strategy.angles[0];
+
+  if (!allowSyntheticFallbacks()) {
+    const aiText = await callOpenRouter({
+      label: "studio direction generation",
+      system:
+        "You are TrendMind's Visual Director. Return only valid JSON and make the direction production-ready.",
+      prompt: buildStudioPrompt(workspace.brief, strategy, draft, trial, selectedVariantId),
+    });
+
+    const parsed = aiText ? extractJsonObject(aiText) : null;
+    if (!parsed || typeof parsed !== "object") {
+      throw new Error("Studio AI output was not returned.");
+    }
+
+    const record = parsed as Record<string, unknown>;
+    const summary =
+      typeof record.summary === "string" && record.summary.trim()
+        ? record.summary.trim()
+        : "";
+    const imagePrompt =
+      typeof record.imagePrompt === "string" && record.imagePrompt.trim()
+        ? record.imagePrompt.trim()
+        : "";
+    const composition =
+      typeof record.composition === "string" && record.composition.trim()
+        ? record.composition.trim()
+        : "";
+    const palette = toArrayOfStrings(record.palette);
+    const typography = toArrayOfStrings(record.typography);
+    const assetChecklist = toArrayOfStrings(record.assetChecklist);
+    const layers = Array.isArray(record.layers)
+      ? record.layers
+          .map((item) => {
+            if (!item || typeof item !== "object") return null;
+            const layer = item as Record<string, unknown>;
+            const kind = layer.kind;
+            if (
+              kind !== "background" &&
+              kind !== "subject" &&
+              kind !== "headline" &&
+              kind !== "body" &&
+              kind !== "cta" &&
+              kind !== "logo"
+            ) {
+              return null;
+            }
+
+            return {
+              id: typeof layer.id === "string" ? layer.id.trim() : "",
+              kind,
+              name: typeof layer.name === "string" ? layer.name.trim() : "",
+              note: typeof layer.note === "string" ? layer.note.trim() : "",
+            } satisfies StudioLayer;
+          })
+          .filter((item): item is StudioLayer =>
+            Boolean(item && item.id && item.name && item.note),
+          )
+      : [];
+    const formats = Array.isArray(record.formats)
+      ? record.formats
+          .map((item) => {
+            if (!item || typeof item !== "object") return null;
+            const format = item as Record<string, unknown>;
+            return {
+              id: typeof format.id === "string" ? format.id.trim() : "",
+              name: typeof format.name === "string" ? format.name.trim() : "",
+              ratio: typeof format.ratio === "string" ? format.ratio.trim() : "",
+              size: typeof format.size === "string" ? format.size.trim() : "",
+              layoutNote:
+                typeof format.layoutNote === "string" ? format.layoutNote.trim() : "",
+            } satisfies StudioFormat;
+          })
+          .filter(
+            (item): item is StudioFormat =>
+              Boolean(item && item.id && item.name && item.ratio && item.size && item.layoutNote),
+          )
+      : [];
+
+    if (!summary || !imagePrompt || !composition || palette.length === 0 || typography.length === 0 || layers.length === 0 || formats.length === 0) {
+      throw new Error("Studio AI output was incomplete.");
+    }
+
+    const output: StudioOutput = {
+      summary,
+      selectedVariantId:
+        typeof record.selectedVariantId === "string" && record.selectedVariantId.trim()
+          ? record.selectedVariantId.trim()
+          : selectedVariantId,
+      imagePrompt,
+      composition,
+      palette,
+      typography,
+      layers,
+      formats,
+      assetChecklist,
+    };
+
+    return {
+      output,
+      headline: prefersArabic(workspace.brief) ? "ط§ظ„ط§طھط¬ط§ظ‡ ط§ظ„ط¨طµط±ظٹ ط¬ط§ظ‡ط²" : "Studio direction ready",
+      summary: firstSentence(output.summary),
+      generatedBy: "visual",
+    };
+  }
+
   const headline = variant.fullText.split("\n")[0] ?? angle.hook;
 
   const layers: StudioLayer[] = prefersArabic(workspace.brief)
@@ -2018,6 +2479,124 @@ async function generateLaunch(workspace: CampaignWorkspace) {
   const trial = workspace.phases.trial.data;
   if (!strategy || !draft || !trial) {
     throw new Error("Strategy, Draft, and Trial outputs are required before Launch can run.");
+  }
+
+  if (!allowSyntheticFallbacks()) {
+    const winningVariantId = trial.winningVariantId;
+    const winningAngle =
+      strategy.angles.find((entry) => entry.id === draft.variants.find((variant) => variant.id === winningVariantId)?.angleId) ??
+      strategy.angles[0];
+    const aiText = await callOpenRouter({
+      label: "launch enhancement",
+      system:
+        "You are TrendMind's Launch Packager. Return only valid JSON and make the launch pack production-ready.",
+      prompt: buildLaunchPrompt(workspace.brief, strategy, draft, trial),
+    });
+    const parsed = aiText ? extractJsonObject(aiText) : null;
+    if (!parsed || typeof parsed !== "object") {
+      throw new Error("Launch AI output was not returned.");
+    }
+
+    const record = parsed as Record<string, unknown>;
+    const summary =
+      typeof record.summary === "string" && record.summary.trim()
+        ? record.summary.trim()
+        : "";
+    const finalCaption =
+      typeof record.finalCaption === "string" && record.finalCaption.trim()
+        ? record.finalCaption.trim()
+        : "";
+    const alternates = toArrayOfStrings(record.alternates);
+    const riskNotes = toArrayOfStrings(record.riskNotes);
+    const launchChecklist = toArrayOfStrings(record.launchChecklist);
+    const nextSteps = toArrayOfStrings(record.nextSteps);
+    const responsePlan = Array.isArray(record.responsePlan)
+      ? record.responsePlan
+          .map((item) => {
+            if (!item || typeof item !== "object") return null;
+            const response = item as Record<string, unknown>;
+            return {
+              scenario:
+                typeof response.scenario === "string" ? response.scenario.trim() : "",
+              response:
+                typeof response.response === "string" ? response.response.trim() : "",
+              tone: typeof response.tone === "string" ? response.tone.trim() : "",
+            } satisfies LaunchResponse;
+          })
+          .filter((item): item is LaunchResponse =>
+            Boolean(item && item.scenario && item.response && item.tone),
+          )
+      : [];
+    const packages = Array.isArray(record.packages)
+      ? record.packages
+          .map((item) => {
+            if (!item || typeof item !== "object") return null;
+            const pkg = item as Record<string, unknown>;
+            return {
+              id: typeof pkg.id === "string" ? pkg.id.trim() : "",
+              name: typeof pkg.name === "string" ? pkg.name.trim() : "",
+              ratio: typeof pkg.ratio === "string" ? pkg.ratio.trim() : "",
+              headline: typeof pkg.headline === "string" ? pkg.headline.trim() : "",
+              caption: typeof pkg.caption === "string" ? pkg.caption.trim() : "",
+              cta: typeof pkg.cta === "string" ? pkg.cta.trim() : "",
+              visualCue: typeof pkg.visualCue === "string" ? pkg.visualCue.trim() : "",
+            } satisfies LaunchPackage;
+          })
+          .filter(
+            (item): item is LaunchPackage =>
+              Boolean(
+                item && item.id &&
+                  item.name &&
+                  item.ratio &&
+                  item.headline &&
+                  item.caption &&
+                  item.cta &&
+                  item.visualCue,
+              ),
+          )
+      : [];
+    const winningAngleId =
+      typeof record.winningAngleId === "string" && record.winningAngleId.trim()
+        ? record.winningAngleId.trim()
+        : winningAngle.id;
+    const selectedVariant =
+      draft.variants.find((entry) => entry.id === winningVariantId) ?? draft.variants[0];
+
+    if (
+      !summary ||
+      !finalCaption ||
+      alternates.length === 0 ||
+      responsePlan.length === 0 ||
+      riskNotes.length === 0 ||
+      launchChecklist.length === 0 ||
+      packages.length === 0 ||
+      nextSteps.length === 0
+    ) {
+      throw new Error("Launch AI output was incomplete.");
+    }
+
+    const output: LaunchOutput = {
+      summary,
+      winningAngleId,
+      winningVariantId:
+        typeof record.winningVariantId === "string" && record.winningVariantId.trim()
+          ? record.winningVariantId.trim()
+          : selectedVariant.id,
+      finalCaption,
+      alternates,
+      responsePlan,
+      riskNotes,
+      launchChecklist,
+      packages,
+      nextSteps,
+    };
+
+    return {
+      output,
+      headline: prefersArabic(workspace.brief) ? "ط­ط²ظ…ط© ط§ظ„ط¥ط·ظ„ط§ظ‚ ط¬ط§ظ‡ط²ط©" : "Launch package ready",
+      summary: firstSentence(output.summary),
+      generatedBy: "director" as AgentId,
+    };
   }
 
   const fallback = buildLaunchOutput(workspace);

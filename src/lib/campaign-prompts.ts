@@ -1,6 +1,8 @@
 import type {
   CampaignBrief,
+  DraftVariant,
   DraftOutput,
+  Persona,
   ResearchOutput,
   StrategyOutput,
   TrialOutput,
@@ -219,7 +221,7 @@ You are TrendMind's Audience Simulator and Performance Critic.
 ${languageDirection(brief)}
 
 You are validating message performance, not inventing new strategy.
-Read the strategy and draft space, then evaluate what would likely resonate, stall, or trigger resistance.
+Read the strategy and draft space, then model how a real audience sample would likely respond.
 
 Brief:
 ${roleContext(brief)}
@@ -233,10 +235,203 @@ ${JSON.stringify(draft, null, 2)}
 Return only JSON:
 {
   "summary": "string",
+  "personas": [
+    {
+      "id": "string",
+      "name": "string",
+      "archetype": "string",
+      "oneLiner": "string",
+      "glyph": "string",
+      "accent": "string"
+    }
+  ],
+  "reactions": [
+    {
+      "id": "string",
+      "personaId": "string",
+      "variantId": "string",
+      "sentiment": "love|warm|neutral|cold",
+      "quote": "string",
+      "why": "string",
+      "subScores": {
+        "clarity": 0,
+        "resonance": 0,
+        "intent": 0
+      }
+    }
+  ],
   "recommendedEdits": ["string"],
   "responseRisks": ["string"],
   "audienceSummary": ["string"]
 }
+
+Rules:
+- Create exactly 8 personas with distinct buying attitudes.
+- Write one reaction for each persona against every draft variant.
+- Keep each reaction concrete, short, and readable.
+- Sub-scores should be integers from 0 to 100.
+`.trim();
+}
+
+export function buildTrialPersonaRepairPrompt(
+  brief: CampaignBrief,
+  strategy: StrategyOutput,
+  draft: DraftOutput,
+  existingPersonas: Persona[],
+  missingCount: number,
+) {
+  return `
+You are TrendMind's Audience Simulator.
+
+${languageDirection(brief)}
+
+You already created part of the audience set. Generate only the missing personas.
+
+Brief:
+${roleContext(brief)}
+
+Strategy:
+${JSON.stringify(strategy, null, 2)}
+
+Draft:
+${JSON.stringify(draft, null, 2)}
+
+Existing personas:
+${JSON.stringify(existingPersonas, null, 2)}
+
+Return only JSON:
+{
+  "personas": [
+    {
+      "id": "string",
+      "name": "string",
+      "archetype": "string",
+      "oneLiner": "string",
+      "glyph": "string",
+      "accent": "string"
+    }
+  ]
+}
+
+Rules:
+- Return exactly ${missingCount} new personas.
+- Do not reuse any existing id, name, or archetype.
+- Keep the same campaign context and audience quality bar.
+`.trim();
+}
+
+export function buildTrialReactionRepairPrompt(
+  brief: CampaignBrief,
+  variant: DraftVariant,
+  personas: Persona[],
+) {
+  return `
+You are TrendMind's Audience Simulator.
+
+${languageDirection(brief)}
+
+Generate only the missing reactions for this one draft variant.
+
+Brief:
+${roleContext(brief)}
+
+Variant:
+${JSON.stringify(variant, null, 2)}
+
+Personas that still need reactions:
+${JSON.stringify(personas, null, 2)}
+
+Return only JSON:
+{
+  "reactions": [
+    {
+      "id": "string",
+      "personaId": "string",
+      "variantId": "${variant.id}",
+      "sentiment": "love|warm|neutral|cold",
+      "quote": "string",
+      "why": "string",
+      "subScores": {
+        "clarity": 0,
+        "resonance": 0,
+        "intent": 0
+      }
+    }
+  ]
+}
+
+Rules:
+- Return exactly one reaction for each listed persona.
+- Every reaction must use variantId "${variant.id}".
+- personaId values must match the listed personas exactly.
+- Keep each reaction concrete, short, and readable.
+- Sub-scores should be integers from 0 to 100.
+`.trim();
+}
+
+export function buildStudioPrompt(
+  brief: CampaignBrief,
+  strategy: StrategyOutput,
+  draft: DraftOutput,
+  trial: TrialOutput,
+  selectedVariantId: string,
+) {
+  return `
+You are TrendMind's Visual Director.
+
+${languageDirection(brief)}
+
+Turn the winning variant into a production-ready visual direction.
+This should feel like a real art direction pass, not a generic prompt.
+
+Brief:
+${roleContext(brief)}
+
+Strategy:
+${JSON.stringify(strategy, null, 2)}
+
+Draft:
+${JSON.stringify(draft, null, 2)}
+
+Trial:
+${JSON.stringify(trial, null, 2)}
+
+Current selected variant:
+${selectedVariantId}
+
+Return only JSON:
+{
+  "summary": "string",
+  "selectedVariantId": "string",
+  "imagePrompt": "string",
+  "composition": "string",
+  "palette": ["string"],
+  "typography": ["string"],
+  "layers": [
+    {
+      "id": "string",
+      "kind": "background|subject|headline|body|cta|logo",
+      "name": "string",
+      "note": "string"
+    }
+  ],
+  "formats": [
+    {
+      "id": "string",
+      "name": "string",
+      "ratio": "string",
+      "size": "string",
+      "layoutNote": "string"
+    }
+  ],
+  "assetChecklist": ["string"]
+}
+
+Rules:
+- Make the composition feel production-ready and specific.
+- Keep the palette and typography concise but deliberate.
+- Describe a scene that could actually be designed.
+- Keep the output platform-aware and launch-oriented.
 `.trim();
 }
 
@@ -264,5 +459,41 @@ ${JSON.stringify(draft, null, 2)}
 
 Trial:
 ${JSON.stringify(trial, null, 2)}
+
+Return only JSON:
+{
+  "summary": "string",
+  "winningAngleId": "string",
+  "winningVariantId": "string",
+  "finalCaption": "string",
+  "alternates": ["string"],
+  "responsePlan": [
+    {
+      "scenario": "string",
+      "response": "string",
+      "tone": "string"
+    }
+  ],
+  "riskNotes": ["string"],
+  "launchChecklist": ["string"],
+  "packages": [
+    {
+      "id": "string",
+      "name": "string",
+      "ratio": "string",
+      "headline": "string",
+      "caption": "string",
+      "cta": "string",
+      "visualCue": "string"
+    }
+  ],
+  "nextSteps": ["string"]
+}
+
+Rules:
+- Keep the launch pack concise but complete.
+- Preserve the winning angle and variant logic from the trial.
+- Make every package feel immediately usable.
+- Ensure the response plan sounds like a real team handoff.
 `.trim();
 }

@@ -209,15 +209,15 @@ export function TrialSection() {
               </span>
               <span>{trial.scoreboard.length} variants scored</span>
             </div>
-            <span className="text-[9px]" style={{ color: "rgba(220,196,135,0.35)" }}>
-              Synthetic persona model · not real users
+              <span className="text-[9px]" style={{ color: "rgba(220,196,135,0.35)" }}>
+              AI-modeled audience sample · not real users
             </span>
           </div>
         </div>
       ) : (
         <EmptyState
           title="No audience simulation yet"
-          body="Run Draft and Trial to pressure-test your variants against synthetic audience personas and reveal the strongest angle."
+          body="Run Draft and Trial to pressure-test your variants against an AI-modeled audience sample and reveal the strongest angle."
         />
       )}
     </SectionShell>

@@ -104,15 +104,24 @@ test("TrendMind supports the Arabic-first campaign workflow", async ({
     phases: {
       strategy: { data: { angles: Array<{ id: string }> } };
       draft: { data: { atoms: unknown[]; variants: Array<{ id: string; angleId: string }> } };
-      trial: { data: { personas: unknown[]; angleWinners: Array<{ angleId: string; variantId: string }> } };
+      trial: {
+        data: {
+          personas: unknown[];
+          reactions: unknown[];
+          angleWinners: Array<{ angleId: string; variantId: string }>;
+        };
+      };
       launch: { data: { finalCaption: string } };
     };
   };
 
   expect(workspace.phases.strategy.data.angles).toHaveLength(3);
-  expect(workspace.phases.draft.data.atoms.length).toBeGreaterThanOrEqual(27);
-  expect(workspace.phases.draft.data.variants.length).toBeGreaterThanOrEqual(9);
-  expect(workspace.phases.trial.data.personas.length).toBeGreaterThanOrEqual(100);
+  expect(workspace.phases.draft.data.atoms.length).toBeGreaterThanOrEqual(9);
+  expect(workspace.phases.draft.data.variants.length).toBeGreaterThanOrEqual(3);
+  expect(workspace.phases.trial.data.personas.length).toBeGreaterThanOrEqual(8);
+  expect(workspace.phases.trial.data.reactions.length).toBeGreaterThanOrEqual(
+    workspace.phases.draft.data.variants.length * workspace.phases.trial.data.personas.length,
+  );
   expect(workspace.phases.trial.data.angleWinners).toHaveLength(3);
   expect(workspace.phases.launch.data.finalCaption).toMatch(/[ء-ي]/);
 

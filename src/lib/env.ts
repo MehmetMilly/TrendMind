@@ -20,11 +20,15 @@ const serverEnvSchema = z.object({
     .default("https://openrouter.ai/api/v1"),
   OPENROUTER_MODEL: z
     .string()
-    .default("minimax/minimax-m2.5:free"),
+    .default("google/gemini-3-flash-preview"),
   OPENROUTER_FALLBACK_MODEL: z
     .string()
-    .default("inclusionai/ling-2.6-1t:free"),
+    .default("google/gemini-2.5-flash"),
+  OPENROUTER_TIMEOUT_MS: z.coerce.number().int().positive().default(240000),
   TRENDMIND_DB_MODE: z.enum(["pglite", "pg", "auto"]).default("auto"),
+  TRENDMIND_ALLOW_SYNTHETIC_FALLBACKS: z
+    .enum(["true", "false"])
+    .default("false"),
   TAVILY_API_KEY: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z
     .string()
@@ -54,7 +58,11 @@ export function getServerEnv(): ServerEnv {
     OPENROUTER_FALLBACK_MODEL: normalizeOptional(
       process.env.OPENROUTER_FALLBACK_MODEL,
     ),
+    OPENROUTER_TIMEOUT_MS: normalizeOptional(process.env.OPENROUTER_TIMEOUT_MS),
     TRENDMIND_DB_MODE: normalizeOptional(process.env.TRENDMIND_DB_MODE),
+    TRENDMIND_ALLOW_SYNTHETIC_FALLBACKS: normalizeOptional(
+      process.env.TRENDMIND_ALLOW_SYNTHETIC_FALLBACKS,
+    ),
     TAVILY_API_KEY: normalizeOptional(process.env.TAVILY_API_KEY),
     NEXT_PUBLIC_APP_URL: normalizeOptional(process.env.NEXT_PUBLIC_APP_URL),
   });

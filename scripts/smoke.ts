@@ -50,9 +50,14 @@ async function main() {
   assert.equal(workspace.phases.launch.status, "ready");
   assert.ok(workspace.phases.launch.data?.finalCaption);
   assert.equal(workspace.phases.strategy.data?.angles.length, 3);
-  assert.ok((workspace.phases.draft.data?.atoms.length ?? 0) >= 27);
-  assert.ok((workspace.phases.draft.data?.variants.length ?? 0) >= 9);
-  assert.ok((workspace.phases.trial.data?.personas.length ?? 0) >= 100);
+  assert.ok((workspace.phases.draft.data?.atoms.length ?? 0) >= 9);
+  assert.ok((workspace.phases.draft.data?.variants.length ?? 0) >= 3);
+  assert.ok((workspace.phases.trial.data?.personas.length ?? 0) >= 8);
+  assert.ok(
+    (workspace.phases.trial.data?.reactions.length ?? 0) >=
+      (workspace.phases.draft.data?.variants.length ?? 0) *
+        (workspace.phases.trial.data?.personas.length ?? 0),
+  );
   assert.equal(workspace.phases.trial.data?.angleWinners.length, 3);
   assert.ok(/[ء-ي]/.test(workspace.phases.launch.data?.finalCaption ?? ""));
 
