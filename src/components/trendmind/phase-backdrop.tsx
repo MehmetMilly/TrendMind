@@ -12,7 +12,7 @@ const BACKDROPS: Record<PhaseId, string> = {
   draft:
     "linear-gradient(rgba(31,29,26,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(31,29,26,0.025) 1px, transparent 1px), #f7f1e7",
   trial:
-    "radial-gradient(680px 380px at 50% 8%, rgba(200,169,110,0.22), transparent 62%), linear-gradient(180deg, #0d1812, #101c16)",
+    "radial-gradient(720px 380px at 84% 4%, rgba(61,122,95,0.13), transparent 60%), radial-gradient(620px 360px at 18% 18%, rgba(200,169,110,0.16), transparent 64%), linear-gradient(rgba(31,29,26,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(31,29,26,0.022) 1px, transparent 1px), #f7f1e7",
   studio:
     "linear-gradient(rgba(61,122,95,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(61,122,95,0.06) 1px, transparent 1px), radial-gradient(760px 460px at 50% 18%, rgba(255,255,255,0.8), transparent 62%), #efe9df",
   launch:
@@ -27,8 +27,8 @@ export function PhaseBackdrop({ phase }: { phase: PhaseId }) {
         className="absolute inset-0 animate-backdrop-float"
         style={{
           background: BACKDROPS[phase],
-          backgroundSize: phase === "studio" || phase === "draft" ? "36px 36px, 36px 36px, auto, auto" : undefined,
-          opacity: phase === "trial" ? 1 : 0.92,
+          backgroundSize: phase === "studio" || phase === "draft" || phase === "trial" ? "auto, auto, 36px 36px, 36px 36px, auto" : undefined,
+          opacity: 0.92,
         }}
       />
     </div>

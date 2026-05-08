@@ -941,7 +941,7 @@ function buildFallbackDraft(brief: CampaignBrief, strategy: StrategyOutput): Dra
 
   return {
     summary: prefersArabic(brief)
-      ? "تم بناء مساحة صياغة حقيقية: لكل زاوية عدة خطافات وأجسام ودعوات، ثم نُسخت مركبة جاهزة للاختبار."
+      ? "جهّزنا لكل زاوية أكثر من عنوان وجسم ودعوة، ثم اعتمدنا ثلاث صيغ جاهزة للاختبار."
       : "A real variation space was built for every angle, with multiple hooks, bodies, CTAs, and composed variants.",
     atoms,
     variants,

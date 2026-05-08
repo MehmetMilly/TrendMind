@@ -6,6 +6,8 @@ export type AgentId =
   | "simulator"
   | "critic"
   | "factChecker"
+  | "influencer"
+  | "packaging"
   | "visual";
 
 export interface AgentMeta {

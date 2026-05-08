@@ -64,6 +64,22 @@ export const AGENTS: Record<string, AgentMeta> = {
     accent: "#6b6560",
     role: "يراجع الادعاءات ويقلل مخاطر الوعود غير المدعومة.",
   },
+  influencer: {
+    id: "influencer",
+    name: "Influencer Agent",
+    short: "Influencer",
+    initials: "IA",
+    accent: "#3d7a5f",
+    role: "يحلل المنتج والجمهور ثم يرشح المؤثرين الأعلى توافقًا مع الحملة.",
+  },
+  packaging: {
+    id: "packaging",
+    name: "Packaging Agent",
+    short: "Packaging",
+    initials: "PA",
+    accent: "#a68b4b",
+    role: "يطور اتجاه التغليف والمواد والنصوص وتكلفة الإنتاج وموجهات الموك أب.",
+  },
   visual: {
     id: "visual",
     name: "المخرج البصري",
