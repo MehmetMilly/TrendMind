@@ -51,6 +51,7 @@ interface StoreValue {
   brief: CampaignBrief | null;
   phaseStatus: Record<PhaseId, PhaseStatus>;
   activePhase: PhaseId;
+  workspaceView: "phase" | "logo";
   savingBrief: boolean;
   runPending: boolean;
   campaignDrawerOpen: boolean;
@@ -84,6 +85,7 @@ interface StoreValue {
   setSelectedVariantId: (variantId: string) => Promise<void>;
   refreshCampaign: (silent?: boolean) => Promise<void>;
   setActivePhase: (phase: PhaseId) => void;
+  openLogoStudio: () => void;
   scrollToPhase: (phase: PhaseId) => void;
   registerSectionRef: (phase: PhaseId, node: HTMLElement | null) => void;
   acceptPhaseTransition: () => void;
@@ -98,6 +100,44 @@ interface StoreValue {
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
+const mojibakePattern = new RegExp("[\\u0637\\u0638][\\u00a0-\\u2026]|\\u0622[\\u00a0-\\u00ff]|\\u00c3|\\u00e2");
+let cp1256ReverseMap: Map<string, number> | null = null;
+
+function getCp1256ReverseMap() {
+  if (cp1256ReverseMap) return cp1256ReverseMap;
+  cp1256ReverseMap = new Map<string, number>();
+  const decoder = new TextDecoder("windows-1256");
+  for (let byte = 0; byte <= 255; byte += 1) {
+    cp1256ReverseMap.set(decoder.decode(new Uint8Array([byte])), byte);
+  }
+  return cp1256ReverseMap;
+}
+
+function repairMojibakeText(value: string) {
+  let current = value;
+  const map = getCp1256ReverseMap();
+  for (let pass = 0; pass < 3 && mojibakePattern.test(current); pass += 1) {
+    const bytes: number[] = [];
+    for (const char of current) {
+      const byte = map.get(char);
+      if (byte === undefined) return current;
+      bytes.push(byte);
+    }
+    const repaired = new TextDecoder("utf-8", { fatal: false }).decode(new Uint8Array(bytes));
+    if (repaired.includes("\uFFFD") || repaired === current) return current;
+    current = repaired;
+  }
+  return current;
+}
+
+function sanitizeTextPayload<T>(value: T): T {
+  if (typeof value === "string") return repairMojibakeText(value) as T;
+  if (!value || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map((item) => sanitizeTextPayload(item)) as T;
+  return Object.fromEntries(
+    Object.entries(value).map(([key, entry]) => [key, sanitizeTextPayload(entry)]),
+  ) as T;
+}
 const LOCAL_BOOTSTRAP_KEY = "trendmind.localBootstrap.v1";
 
 async function readJson<T>(input: RequestInfo, init?: RequestInit) {
@@ -240,10 +280,10 @@ export function WorkspaceProvider({
   initialBootstrap?: CampaignBootstrap;
 }) {
   const [campaigns, setCampaigns] = useState<CampaignSummary[]>(
-    () => initialBootstrap?.campaigns ?? [],
+    () => sanitizeTextPayload(initialBootstrap?.campaigns ?? []),
   );
   const [campaign, setCampaign] = useState<CampaignWorkspace | null>(
-    () => initialBootstrap?.activeCampaign ?? null,
+    () => sanitizeTextPayload(initialBootstrap?.activeCampaign ?? null),
   );
   const [activeCampaignId, setActiveCampaignId] = useState<string | null>(
     () => initialBootstrap?.activeCampaignId ?? null,
@@ -258,6 +298,7 @@ export function WorkspaceProvider({
   const [directorDraft, setDirectorDraft] = useState<DirectorDraft>({ phase: "draft", note: "" });
   const [inspector, setInspector] = useState<InspectorSelection>({ kind: null, id: null });
   const [activePhase, setActivePhaseRaw] = useState<PhaseId>("brief");
+  const [workspaceView, setWorkspaceView] = useState<"phase" | "logo">("phase");
   const [trialPlaybackState, setTrialPlaybackState] = useState<"idle" | "running" | "complete">("idle");
   const [trialPlaybackTick, setTrialPlaybackTick] = useState(0);
   const [phaseTransitionTarget, setPhaseTransitionTarget] = useState<PhaseId | null>(null);
@@ -299,17 +340,51 @@ export function WorkspaceProvider({
         const bootstrap = await readJson<CampaignBootstrap>(
           `/api/campaigns${requestedCampaignId ? `?campaignId=${requestedCampaignId}` : ""}`,
         );
-        setCampaigns(bootstrap.campaigns);
-        setCampaign(bootstrap.activeCampaign);
+        setCampaigns(sanitizeTextPayload(bootstrap.campaigns));
+        setCampaign(sanitizeTextPayload(bootstrap.activeCampaign));
         setActiveCampaignId(bootstrap.activeCampaignId);
+        if (bootstrap.activeCampaign) {
+          const activeCampaign = bootstrap.activeCampaign;
+          setVisitedPhases((current) => {
+            const next = new Set(current);
+            for (const phase of PHASE_SEQUENCE) {
+              const phaseRecord = activeCampaign.phases[phase];
+              if (phase === "brief" || phaseRecord.status === "ready" || phaseRecord.status === "running") {
+                next.add(phase);
+              }
+            }
+            next.add(activeCampaign.activePhase);
+            return next;
+          });
+        }
+        if (!silent && bootstrap.activeCampaign) {
+          setActivePhaseRaw(bootstrap.activeCampaign.activePhase);
+        }
         setError(null);
         if (bootstrap.activeCampaignId) updateUrl(bootstrap.activeCampaignId);
       } catch (nextError) {
         const localBootstrap = readLocalBootstrap();
         if (localBootstrap) {
-          setCampaigns(localBootstrap.campaigns);
-          setCampaign(localBootstrap.activeCampaign);
+          setCampaigns(sanitizeTextPayload(localBootstrap.campaigns));
+          setCampaign(sanitizeTextPayload(localBootstrap.activeCampaign));
           setActiveCampaignId(localBootstrap.activeCampaignId);
+          if (localBootstrap.activeCampaign) {
+            const activeCampaign = localBootstrap.activeCampaign;
+            setVisitedPhases((current) => {
+              const next = new Set(current);
+              for (const phase of PHASE_SEQUENCE) {
+                const phaseRecord = activeCampaign.phases[phase];
+                if (phase === "brief" || phaseRecord.status === "ready" || phaseRecord.status === "running") {
+                  next.add(phase);
+                }
+              }
+              next.add(activeCampaign.activePhase);
+              return next;
+            });
+          }
+          if (!silent && localBootstrap.activeCampaign) {
+            setActivePhaseRaw(localBootstrap.activeCampaign.activePhase);
+          }
           if (localBootstrap.activeCampaignId) updateUrl(localBootstrap.activeCampaignId);
         }
         setError(nextError instanceof Error ? nextError.message : "تعذر تحديث TrendMind.");
@@ -388,6 +463,8 @@ export function WorkspaceProvider({
     if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || (activeEl as HTMLElement).isContentEditable)) return;
     const nextPhase = PHASE_SEQUENCE[PHASE_SEQUENCE.indexOf(activePhase) + 1];
     if (!nextPhase) return;
+    const nextRecord = campaign.phases[nextPhase];
+    if (nextRecord.status !== "running" && nextRecord.status !== "ready") return;
     const handle = window.setTimeout(() => setPhaseTransitionTarget(nextPhase), 600);
     return () => window.clearTimeout(handle);
   }, [activePhase, campaign, suppressTransitionFrom]);
@@ -483,8 +560,10 @@ export function WorkspaceProvider({
       setRefreshing(true);
       try {
         const nextCampaign = await readJson<CampaignWorkspace>(`/api/campaigns/${campaignId}`);
-        setCampaign(nextCampaign);
+        setCampaign(sanitizeTextPayload(nextCampaign));
         setActiveCampaignId(campaignId);
+        setActivePhaseRaw(nextCampaign.activePhase);
+        setVisitedPhases((current) => new Set(current).add(nextCampaign.activePhase));
         lastReadyVersionsRef.current = null;
         updateUrl(campaignId);
         setCampaignDrawerOpen(false);
@@ -507,8 +586,10 @@ export function WorkspaceProvider({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(input),
         });
-        setCampaign(nextCampaign);
+        setCampaign(sanitizeTextPayload(nextCampaign));
         setActiveCampaignId(nextCampaign.id);
+        setActivePhaseRaw(nextCampaign.activePhase);
+        setVisitedPhases((current) => new Set(current).add(nextCampaign.activePhase));
         lastReadyVersionsRef.current = null;
         setCampaigns((current) => [
           {
@@ -526,8 +607,10 @@ export function WorkspaceProvider({
         updateUrl(nextCampaign.id);
       } catch (nextError) {
         const localCampaign = createLocalCampaign(input);
-        setCampaign(localCampaign);
+        setCampaign(sanitizeTextPayload(localCampaign));
         setActiveCampaignId(localCampaign.id);
+        setActivePhaseRaw(localCampaign.activePhase);
+        setVisitedPhases((current) => new Set(current).add(localCampaign.activePhase));
         lastReadyVersionsRef.current = null;
         setCampaigns((current) => [campaignToSummary(localCampaign), ...current]);
         setCampaignDrawerOpen(false);
@@ -558,7 +641,9 @@ export function WorkspaceProvider({
             }),
           },
         );
-        setCampaign(payload.campaign);
+        setCampaign(sanitizeTextPayload(payload.campaign));
+        setActivePhaseRaw(payload.campaign.activePhase);
+        setVisitedPhases((current) => new Set(current).add(payload.campaign.activePhase));
         setError(null);
       } catch (nextError) {
         setError(nextError instanceof Error ? nextError.message : "تعذر بدء التشغيل.");
@@ -580,7 +665,7 @@ export function WorkspaceProvider({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(directorDraft),
       });
-      setCampaign(nextCampaign);
+      setCampaign(sanitizeTextPayload(nextCampaign));
       setDirectorDraft((current) => ({ ...current, note: "" }));
       setError(null);
     } catch (nextError) {
@@ -603,7 +688,7 @@ export function WorkspaceProvider({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
       });
-      setCampaign(nextCampaign);
+      setCampaign(sanitizeTextPayload(nextCampaign));
       setError(null);
     },
     [campaign],
@@ -624,6 +709,7 @@ export function WorkspaceProvider({
 
   const setActivePhase = useCallback(
     (phase: PhaseId) => {
+      setWorkspaceView("phase");
       if (phaseTransitionTarget) {
         setSuppressTransitionFrom(activePhase);
         setPhaseTransitionTarget(null);
@@ -634,6 +720,10 @@ export function WorkspaceProvider({
     },
     [activePhase, phaseTransitionTarget, suppressTransitionFrom],
   );
+
+  const openLogoStudio = useCallback(() => {
+    setWorkspaceView("logo");
+  }, []);
 
   const acceptPhaseTransition = useCallback(() => {
     if (!phaseTransitionTarget) return;
@@ -731,6 +821,7 @@ export function WorkspaceProvider({
       brief: campaign?.brief ?? null,
       phaseStatus: derivePhaseStatus(campaign),
       activePhase,
+      workspaceView,
       savingBrief,
       runPending,
       campaignDrawerOpen,
@@ -767,6 +858,7 @@ export function WorkspaceProvider({
       setSelectedVariantId,
       refreshCampaign,
       setActivePhase,
+      openLogoStudio,
       scrollToPhase: setActivePhase,
       registerSectionRef: () => undefined,
       acceptPhaseTransition,
@@ -782,6 +874,7 @@ export function WorkspaceProvider({
     [
       activeCampaignId,
       activePhase,
+      workspaceView,
       applyDirectorRun,
       campaign,
       campaignDrawerOpen,
@@ -798,6 +891,7 @@ export function WorkspaceProvider({
       openInspector,
       phaseTransitionTarget,
       refreshCampaign,
+      openLogoStudio,
       rerunPhase,
       runPending,
       savingBrief,

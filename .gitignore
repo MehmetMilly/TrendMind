@@ -29,6 +29,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+dev-server*.log
+
+# local agent / test / db artifacts
+.claude/
+.trendmind-pglite/
+test-results/
 
 # env files (can opt-in for committing if needed)
 .env*

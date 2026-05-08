@@ -85,7 +85,7 @@ function getRunMap() {
 }
 
 function allowSyntheticFallbacks() {
-  return getServerEnv().TRENDMIND_ALLOW_SYNTHETIC_FALLBACKS === "true";
+  return false;
 }
 
 function clamp(value: number, min: number, max: number) {

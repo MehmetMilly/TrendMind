@@ -129,7 +129,8 @@ function PhaseTab({
   index: number;
   onClick: () => void;
 }) {
-  const running = status === "running" || status === "pending";
+  const running = status === "running";
+  const pending = status === "pending";
   const ready = status === "ready";
   const stale = status === "stale";
 
@@ -166,6 +167,7 @@ function PhaseTab({
           />
         </svg>
       ) : null}
+      {pending ? <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#c8a96e" }} /> : null}
       {ready ? <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#3d7a5f" }} /> : null}
       {stale ? <span className="h-1.5 w-1.5 rounded-full animate-pulse-dot" style={{ background: "#b7863f" }} /> : null}
     </button>

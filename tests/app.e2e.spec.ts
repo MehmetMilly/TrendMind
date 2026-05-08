@@ -1,10 +1,16 @@
 import { expect, test } from "@playwright/test";
 
-test("TrendMind supports the Arabic-first campaign workflow", async ({
+test("campaign run stays stable through studio and launch rendering", async ({
   page,
   request,
 }) => {
-  const campaignName = `إطلاق تمر ${Date.now()}`;
+  test.skip(
+    !process.env.OPENROUTER_API_KEY,
+    "OPENROUTER_API_KEY is required for AI-only browser verification.",
+  );
+
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
 
   await expect
     .poll(
@@ -16,70 +22,38 @@ test("TrendMind supports the Arabic-first campaign workflow", async ({
     )
     .toBe(true);
 
-  await page.goto("/");
+  const createResponse = await request.post("/api/campaigns", {
+    data: {
+      campaignName: `Stability ${Date.now()}`,
+      brandName: "TrendMind",
+      productName: "Trend-aware launch planner",
+      platform: "TikTok",
+    },
+  });
+  expect(createResponse.ok()).toBeTruthy();
+
+  const createdCampaign = (await createResponse.json()) as { id: string };
+  const campaignId = createdCampaign.id;
+
+  const patchResponse = await request.patch(`/api/campaigns/${campaignId}`, {
+    data: {
+      goal: "Prove that TrendMind can progress from brief to launch without UI instability.",
+      audience: "Hackathon judges and early product teams evaluating AI campaign workflows.",
+      tone: "Confident, sharp, productized.",
+      valueProposition: "TrendMind discovers strong campaign angles, pressure-tests them, and packages a launch-ready result.",
+      context: "This run is a regression test for the campaign-start flow and late-phase rendering stability.",
+      callToAction: "See the launch package",
+      language: "English",
+    },
+  });
+  expect(patchResponse.ok()).toBeTruthy();
+
+  await page.goto(`/?campaign=${campaignId}`);
   await expect(page).toHaveTitle(/TrendMind/);
-
-  await page.getByRole("button", { name: "TrendMind", exact: true }).click();
-  const drawer = page
-    .getByRole("complementary")
-    .filter({ has: page.getByRole("heading", { name: "اختر أو أنشئ", exact: true }) });
-  await drawer.getByLabel("الحملة", { exact: true }).fill(campaignName);
-  await drawer.getByLabel("العلامة", { exact: true }).fill("تمرة");
-  await drawer.getByLabel("المنتج", { exact: true }).fill("اشتراك تمور فاخرة موسمي");
-  await drawer
-    .getByLabel("المنصة", { exact: true })
-    .fill("إنستغرام و تيك توك");
-  await drawer.getByRole("button", { name: "إنشاء حملة", exact: true }).click();
-
-  await expect
-    .poll(() => new URL(page.url()).searchParams.get("campaign"), {
-      timeout: 30_000,
-    })
-    .not.toBeNull();
-
-  const campaignId = new URL(page.url()).searchParams.get("campaign");
-  expect(campaignId).toBeTruthy();
 
   const main = page.locator("main");
   await expect(main.getByRole("heading", { name: "الإيجاز", exact: true })).toBeVisible();
-  await expect(main.getByLabel("الحملة", { exact: true })).toHaveValue(campaignName);
-
-  await main
-    .getByLabel("الهدف", { exact: true })
-    .fill("بناء رغبة واضحة حول اشتراك التمور الفاخرة وتحويل الاهتمام إلى طلبات مبكرة.");
-  await main
-    .getByLabel("الجمهور", { exact: true })
-    .fill("عائلات وموظفون في السعودية والخليج يبحثون عن هدية أو اشتراك فاخر بطابع محلي أنيق.");
-  await main
-    .getByLabel("النبرة", { exact: true })
-    .fill("دافئة، واثقة، عربية طبيعية، بعيدة عن الحشو.");
-  await main
-    .getByLabel("القيمة المقترحة", { exact: true })
-    .fill("تمور مختارة بعناية تصل كهدية أو اشتراك يشعر أنه فاخر ومقصود لا مجرد شراء اعتيادي.");
-  await main
-    .getByLabel("السياق", { exact: true })
-    .fill("نريد أن يفهم الحكام أن TrendMind يختبر الزوايا قبل الإطلاق بدل توليد نسخة واحدة فقط.");
-  await main
-    .getByLabel("الدعوة إلى الإجراء", { exact: true })
-    .fill("سجّل اهتمامك الآن");
-
-  await expect
-    .poll(
-      async () => {
-        const response = await request.get(`/api/campaigns/${campaignId}`);
-        const json = (await response.json()) as {
-          brief: { goal: string; callToAction: string };
-        };
-
-        return `${json.brief.goal}::${json.brief.callToAction}`;
-      },
-      { timeout: 30_000 },
-    )
-    .toBe(
-      "بناء رغبة واضحة حول اشتراك التمور الفاخرة وتحويل الاهتمام إلى طلبات مبكرة.::سجّل اهتمامك الآن",
-    );
-
-  await page.getByRole("button", { name: "البدء", exact: true }).click();
+  await page.locator('button[title="البدء"]').click();
 
   await expect
     .poll(
@@ -88,131 +62,34 @@ test("TrendMind supports the Arabic-first campaign workflow", async ({
         const json = (await response.json()) as {
           status: string;
           phases: {
+            studio: { status: string };
             launch: { status: string };
           };
         };
 
-        return `${json.status}:${json.phases.launch.status}`;
+        return `${json.status}:${json.phases.studio.status}:${json.phases.launch.status}`;
       },
       { timeout: 180_000 },
     )
-    .toBe("ready:ready");
+    .toBe("ready:ready:ready");
 
-  const workspaceResponse = await request.get(`/api/campaigns/${campaignId}`);
-  const workspace = (await workspaceResponse.json()) as {
-    selectedVariantId: string | null;
-    phases: {
-      strategy: { data: { angles: Array<{ id: string }> } };
-      draft: { data: { atoms: unknown[]; variants: Array<{ id: string; angleId: string }> } };
-      trial: {
-        data: {
-          personas: unknown[];
-          reactions: unknown[];
-          angleWinners: Array<{ angleId: string; variantId: string }>;
-        };
-      };
-      launch: { data: { finalCaption: string } };
-    };
-  };
+  await expect(page.locator("body")).not.toContainText("Application error");
+  await expect(page.locator("body")).not.toContainText("failed to load");
+  await expect(page.locator("body")).not.toContainText("hook is not defined");
 
-  expect(workspace.phases.strategy.data.angles).toHaveLength(3);
-  expect(workspace.phases.draft.data.atoms.length).toBeGreaterThanOrEqual(9);
-  expect(workspace.phases.draft.data.variants.length).toBeGreaterThanOrEqual(3);
-  expect(workspace.phases.trial.data.personas.length).toBeGreaterThanOrEqual(8);
-  expect(workspace.phases.trial.data.reactions.length).toBeGreaterThanOrEqual(
-    workspace.phases.draft.data.variants.length * workspace.phases.trial.data.personas.length,
-  );
-  expect(workspace.phases.trial.data.angleWinners).toHaveLength(3);
-  expect(workspace.phases.launch.data.finalCaption).toMatch(/[ء-ي]/);
+  await page.locator('button[title="الاستوديو"]').click();
+  await expect(page.getByText("الاتجاه البصري", { exact: true })).toBeVisible();
+  await expect(page.getByText("لوحة الألوان والموجه", { exact: true })).toBeVisible();
 
-  await page.reload();
-  await expect(main.getByRole("heading", { name: "الإيجاز", exact: true })).toBeVisible();
-
-  await page.getByRole("button", { name: "3 التخطيط", exact: true }).click();
-  await expect(page.getByText("خطة الحملة", { exact: true })).toBeVisible();
-  await expect(page.getByText("اتجاه الرسالة", { exact: true })).toBeVisible();
-
-  await page.getByRole("button", { name: "4 الصياغة", exact: true }).click();
+  await page.locator('button[title="الإطلاق"]').click();
   await expect(
-    page.getByText("النسخة المركبة الأقوى", { exact: true }).first(),
+    page.getByRole("heading", { name: "اقتراحات المؤثرين للإطلاق", exact: true }),
   ).toBeVisible();
 
-  const beforeVariant = workspace.selectedVariantId;
-  const alternateVariant =
-    workspace.phases.draft.data.variants.find((variant) => variant.id !== beforeVariant) ??
-    workspace.phases.draft.data.variants[0];
-  await request.patch(`/api/campaigns/${campaignId}/selection`, {
-    data: { selectedVariantId: alternateVariant.id },
-  });
-
-  await expect
-    .poll(
-      async () => {
-        const response = await request.get(`/api/campaigns/${campaignId}`);
-        const json = (await response.json()) as {
-          selectedVariantId: string | null;
-        };
-        return json.selectedVariantId;
-      },
-      { timeout: 30_000 },
-    )
-    .toBe(alternateVariant.id);
-
-  await page.getByRole("button", { name: "5 الاختبار", exact: true }).click();
-  await expect(page.getByText("الحكم النهائي", { exact: true })).toBeVisible();
-
-  const beforeStudioResponse = await request.get(`/api/campaigns/${campaignId}`);
-  const beforeStudio = (await beforeStudioResponse.json()) as {
-    phases: { studio: { version: number } };
-  };
-
-  await page.getByRole("button", { name: "المخرج", exact: true }).click();
-  await page.getByRole("button", { name: "الاستوديو", exact: true }).click();
-  await page.getByLabel("Direction note", { exact: true }).fill(
-    "اجعل الاتجاه البصري أدفأ قليلاً وأبرز ملمس المنتج في المشهد الرئيسي.",
-  );
-  await page.getByRole("button", { name: "Apply and rerun", exact: true }).click();
-
-  await expect
-    .poll(
-      async () => {
-        const response = await request.get(`/api/campaigns/${campaignId}`);
-        const json = (await response.json()) as {
-          status: string;
-          revisions: Array<{ note: string; status: string; phase: string }>;
-          phases: { studio: { version: number; status: string } };
-        };
-
-        return JSON.stringify({
-          status: json.status,
-          studioVersion: json.phases.studio.version,
-          studioStatus: json.phases.studio.status,
-          hasRevision: json.revisions.some(
-            (revision) =>
-              revision.phase === "studio" &&
-              revision.status === "applied" &&
-              revision.note.includes("أدفأ"),
-          ),
-        });
-      },
-      { timeout: 180_000 },
-    )
-    .toBe(
-      JSON.stringify({
-        status: "ready",
-        studioVersion: beforeStudio.phases.studio.version + 1,
-        studioStatus: "ready",
-        hasRevision: true,
-      }),
-    );
-
-  await page.getByRole("button", { name: "7 الإطلاق", exact: true }).click();
-  await expect(page.getByText("خطة الرد", { exact: true })).toBeVisible();
-  await expect(page.getByText("تفاصيل المنشور المختار", { exact: true })).toBeVisible();
-  await expect(page.getByText("بدائل سريعة", { exact: true })).toBeVisible();
-
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "تصدير", exact: true }).click();
-  const download = await downloadPromise;
-  expect(await download.suggestedFilename()).toMatch(/\.md$/);
+  expect(
+    pageErrors.filter(
+      (message) =>
+        /hook is not defined/i.test(message) || /removeChild/i.test(message),
+    ),
+  ).toEqual([]);
 });

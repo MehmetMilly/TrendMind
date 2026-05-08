@@ -16,7 +16,7 @@ const BACKDROPS: Record<PhaseId, string> = {
   studio:
     "linear-gradient(rgba(61,122,95,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(61,122,95,0.06) 1px, transparent 1px), radial-gradient(760px 460px at 50% 18%, rgba(255,255,255,0.8), transparent 62%), #efe9df",
   launch:
-    "radial-gradient(760px 420px at 50% 4%, rgba(200,169,110,0.26), transparent 62%), linear-gradient(180deg, #211d18, #f2ece1 48%, #f5f1ea)",
+    "radial-gradient(720px 360px at 82% 6%, rgba(200,169,110,0.18), transparent 58%), linear-gradient(rgba(31,29,26,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(31,29,26,0.022) 1px, transparent 1px), #f7f1e7",
 };
 
 export function PhaseBackdrop({ phase }: { phase: PhaseId }) {

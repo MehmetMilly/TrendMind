@@ -3,6 +3,7 @@
 import {
   BarChart3,
   FolderKanban,
+  ImageUp,
   LayoutDashboard,
   Settings2,
 } from "lucide-react";
@@ -14,10 +15,11 @@ const ITEMS = [
   { id: "workspace", label: "مساحة العمل", icon: LayoutDashboard },
   { id: "campaigns", label: "الحملات", icon: FolderKanban },
   { id: "analytics", label: "التحليلات", icon: BarChart3 },
+  { id: "logo", label: "اللوقو", icon: ImageUp },
 ];
 
 export function NavRail() {
-  const { openCampaignDrawer } = useStore();
+  const { activePhase, openCampaignDrawer, openLogoStudio, setActivePhase, workspaceView } = useStore();
 
   return (
     <aside
@@ -69,8 +71,16 @@ export function NavRail() {
           <RailButton
             key={item.id}
             label={item.label}
-            active={item.id === "workspace"}
-            onClick={item.id === "campaigns" ? openCampaignDrawer : undefined}
+            active={item.id === "logo" ? workspaceView === "logo" : item.id === "workspace" && workspaceView === "phase"}
+            onClick={
+              item.id === "campaigns"
+                ? openCampaignDrawer
+                : item.id === "logo"
+                  ? openLogoStudio
+                  : item.id === "workspace"
+                    ? () => setActivePhase(activePhase)
+                    : undefined
+            }
           >
             <item.icon size={15} />
           </RailButton>

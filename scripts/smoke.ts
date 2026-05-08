@@ -14,8 +14,15 @@ import {
   closeDatabaseConnections,
   ensureDatabase,
 } from "../src/lib/db";
+import { getServerEnv } from "../src/lib/env";
 
 async function main() {
+  const env = getServerEnv();
+  assert.ok(
+    env.OPENROUTER_API_KEY,
+    "OPENROUTER_API_KEY is required for AI-only smoke tests.",
+  );
+
   await ensureDatabase();
 
   const created = await createCampaign({
