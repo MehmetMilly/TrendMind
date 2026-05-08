@@ -2,10 +2,17 @@
 
 import {
   Eye,
+  FileText,
+  Link2,
   MessageSquare,
+  Pencil,
   Play,
   Radar,
   RefreshCw,
+  Settings,
+  ShieldCheck,
+  Users,
+  Zap,
 } from "lucide-react";
 import React from "react";
 
@@ -22,7 +29,7 @@ export function CampaignWorkspace() {
     <main id="tm-phase-page" className="relative min-h-0 flex-1 overflow-hidden">
       <PhaseBackdrop phase={activePhase} />
       {loading ? <WorkspacePlaceholder label="جاري تحميل مساحة العمل..." /> : null}
-      {!loading && !campaign ? <WorkspacePlaceholder label={error ?? "لا توجد حملة بعد."} /> : null}
+      {!loading && !campaign ? <LandingPage errorMessage={error} /> : null}
       {campaign ? <PhaseRouter key={activePhase} phase={activePhase} /> : null}
     </main>
   );
@@ -104,7 +111,7 @@ function PageShell({
 
 
 function BriefPage() {
-  const { brief, savingBrief, startFullRun, updateBrief } = useStore();
+  const { brief, startFullRun, updateBrief } = useStore();
   if (!brief) return null;
 
   const mergedGuardrails = [...brief.avoid, ...(brief.guardrails ?? [])];
@@ -124,59 +131,147 @@ function BriefPage() {
         </button>
       }
     >
-      <div className="grid gap-4">
-        <div className="grid grid-cols-[1.2fr_1fr_0.5fr] gap-3">
-          <Field label="الحملة" value={brief.campaignName} onChange={(value) => updateBrief("campaignName", value)} placeholder="حملة إطلاق أو موسم" strong />
-          <Field label="العلامة" value={brief.brandName} onChange={(value) => updateBrief("brandName", value)} placeholder="اسم البراند" />
-          <Field label="المنصة" value={brief.platform} onChange={(value) => updateBrief("platform", value)} placeholder="X / تيك توك" />
+      {/* ── Top row: campaign / brand / platform ── */}
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="الحملة" value={brief.campaignName} onChange={(v) => updateBrief("campaignName", v)} placeholder="حملة إطلاق أو موسم" strong />
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="العلامة" value={brief.brandName} onChange={(v) => updateBrief("brandName", v)} placeholder="اسم البراند" />
+          <Field label="المنصة" value={brief.platform} onChange={(v) => updateBrief("platform", v)} placeholder="X / تيك توك" />
         </div>
+      </div>
 
-        <div className="grid grid-cols-[1fr_0.92fr] gap-4">
-          <Panel title="الصوت والهدف">
-            <TextArea label="الهدف" value={brief.goal} onChange={(value) => updateBrief("goal", value)} placeholder="ما النتيجة التي تريدها الحملة؟" />
-            <TextArea label="الجمهور" value={brief.audience} onChange={(value) => updateBrief("audience", value)} placeholder="من نحاول إقناعه أو تحريكه؟" />
-            <TextArea label="النبرة" value={brief.tone} onChange={(value) => updateBrief("tone", value)} placeholder="مثال: ذكية، دافئة، واثقة، غير متكلفة" />
-          </Panel>
+      {/* ── 2×2 card grid ── */}
+      <div className="mt-4 grid grid-cols-2 gap-4">
 
-          <Panel title="مدخلات الحملة">
-            <Field label="المنتج" value={brief.productName} onChange={(value) => updateBrief("productName", value)} placeholder="اسم المنتج أو العرض" />
-            <Field label="اللغة" value={brief.language} onChange={(value) => updateBrief("language", value)} placeholder="العربية، خليجية، عربي/إنجليزي..." />
-            <TextArea label="القيمة المقترحة" value={brief.valueProposition} onChange={(value) => updateBrief("valueProposition", value)} placeholder="لماذا سيهتم الجمهور؟" />
-            <ChipEditor label="روابط الموقع / البراند" values={brief.brandLinks} onChange={(values) => updateBrief("brandLinks", values)} placeholder="أضف رابط" />
-            <ChipEditor label="حسابات التواصل الاجتماعي" values={brief.socialAccounts ?? []} onChange={(values) => updateBrief("socialAccounts", values)} placeholder="@brand أو رابط الحساب" />
-          </Panel>
-        </div>
+        {/* ── إطار الحملة ── */}
+        <section className="overflow-hidden rounded-2xl border" style={{ background: "rgba(255,250,242,0.88)", borderColor: "#e4ded4", boxShadow: "0 10px 34px rgba(31,29,26,0.04)" }}>
+          <div className="relative flex items-center border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
+            <Settings size={18} color="#c8a96e" className="absolute right-5 top-1/2 -translate-y-1/2" />
+            <h2 className="w-full pr-8 text-right text-[20px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>إطار الحملة</h2>
+          </div>
+          <div className="space-y-0">
+            {/* الجمهور المستهدف */}
+            <div className="border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
+              <div className="mb-2 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>الجمهور المستهدف</div>
+              <div className="rounded-xl border px-4 py-3" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
+                <div className="flex items-center gap-2.5">
+                  <input
+                    value={brief.audience}
+                    onChange={(e) => updateBrief("audience", e.target.value)}
+                    placeholder="حدد الجمهور المستهدف وخصائصه الأساسية..."
+                    className="w-full bg-transparent text-[13px] leading-[1.55] outline-none"
+                    style={{ color: "#1f1d1a" }}
+                  />
+                  <Users size={16} color="#c8a96e" className="shrink-0" />
+                </div>
+              </div>
+            </div>
+            {/* جوهر الرسالة */}
+            <div className="px-5 py-4">
+              <div className="mb-2 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>جوهر الرسالة (الفكرة)</div>
+              <div className="rounded-xl border px-4 py-3" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
+                <div className="flex items-start gap-2.5">
+                  <textarea
+                    value={brief.valueProposition}
+                    onChange={(e) => updateBrief("valueProposition", e.target.value)}
+                    placeholder="ما الفكرة الأساسية التي تريد أن تصل إلى الجمهور؟"
+                    rows={2}
+                    maxLength={400}
+                    className="w-full resize-none bg-transparent text-[13px] leading-[1.6] outline-none"
+                    style={{ color: "#1f1d1a" }}
+                  />
+                  <Zap size={16} color="#c8a96e" className="mt-0.5 shrink-0" />
+                </div>
+                <div className="mt-1 flex items-center justify-between">
+                  <Pencil size={11} color="#b0a99e" />
+                  <span className="text-[10px] tabular-nums" style={{ color: "#b0a99e" }}>{brief.valueProposition.length}/400</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-        <Panel title="ركائز وحدود الحملة">
-          <div className="grid grid-cols-[0.85fr_1.15fr] gap-4">
-            <ChipEditor label="الركائز" values={brief.pillars} onChange={(values) => updateBrief("pillars", values)} placeholder="أضف ركيزة" />
-            <div className="rounded-2xl border p-4" style={{ background: "rgba(250,247,242,0.78)", borderColor: "#e4ded4" }}>
-              <div className="mb-1 text-[13px] font-bold" style={{ color: "#1f1d1a" }}>حدود ومحاذير</div>
-              <p className="mb-3 text-[12px] leading-[1.7]" style={{ color: "#6b6258" }}>
-                اجمع هنا ما يجب تجنبه: ادعاءات حساسة، حدود قانونية، مخاوف المنتج، كلمات لا تناسب العلامة، أو نبرة لا تريدها الحملة.
-              </p>
-              <ChipEditor
-                label="قيود الحملة"
-                values={mergedGuardrails}
-                onChange={(values) => {
+        {/* ── روابط البراند ── */}
+        <section className="overflow-hidden rounded-2xl border" style={{ background: "rgba(255,250,242,0.88)", borderColor: "#e4ded4", boxShadow: "0 10px 34px rgba(31,29,26,0.04)" }}>
+          <div className="relative flex items-center border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
+            <Link2 size={18} color="#c8a96e" className="absolute right-5 top-1/2 -translate-y-1/2" />
+            <h2 className="w-full pr-8 text-right text-[20px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>روابط البراند</h2>
+          </div>
+          <div className="space-y-0">
+            <div className="border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
+              <div className="mb-2 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>حسابات التواصل الاجتماعي</div>
+              <div className="rounded-xl border px-4 py-3" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
+                <ChipEditor label="" values={brief.socialAccounts ?? []} onChange={(values) => updateBrief("socialAccounts", values)} placeholder="أضف روابط حسابات التواصل الاجتماعي..." />
+                <div className="mt-1"><Pencil size={11} color="#b0a99e" /></div>
+              </div>
+            </div>
+            <div className="px-5 py-4">
+              <div className="mb-2 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>الموقع الرسمي</div>
+              <div className="rounded-xl border px-4 py-3" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
+                <ChipEditor label="" values={brief.brandLinks} onChange={(values) => updateBrief("brandLinks", values)} placeholder="أضف رابط الموقع الرسمي للبراند..." />
+                <div className="mt-1"><Pencil size={11} color="#b0a99e" /></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── سياق الحملة ── */}
+        <section className="overflow-hidden rounded-2xl border" style={{ background: "rgba(255,250,242,0.88)", borderColor: "#e4ded4", boxShadow: "0 10px 34px rgba(31,29,26,0.04)" }}>
+          <div className="relative flex items-center border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
+            <FileText size={18} color="#c8a96e" className="absolute right-5 top-1/2 -translate-y-1/2" />
+            <h2 className="w-full pr-8 text-right text-[20px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>سياق الحملة</h2>
+          </div>
+          <div className="px-5 py-4">
+            <div className="mb-2 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>وصف السياق</div>
+            <div className="rounded-xl border px-4 py-3" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
+              <textarea
+                value={brief.context}
+                onChange={(e) => updateBrief("context", e.target.value)}
+                placeholder="اكتب السياق العام للحملة والظروف المحيطة بها..."
+                rows={4}
+                maxLength={500}
+                className="w-full resize-none bg-transparent text-[13px] leading-[1.6] outline-none"
+                style={{ color: "#1f1d1a" }}
+              />
+              <div className="mt-1 flex items-center justify-between">
+                <Pencil size={11} color="#b0a99e" />
+                <span className="text-[10px] tabular-nums" style={{ color: "#b0a99e" }}>{brief.context.length}/500</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── المحظورات والقيود ── */}
+        <section className="overflow-hidden rounded-2xl border" style={{ background: "rgba(255,250,242,0.88)", borderColor: "#e4ded4", boxShadow: "0 10px 34px rgba(31,29,26,0.04)" }}>
+          <div className="relative flex items-center border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
+            <ShieldCheck size={18} color="#c8a96e" className="absolute right-5 top-1/2 -translate-y-1/2" />
+            <h2 className="w-full pr-8 text-right text-[20px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>المحظورات والقيود</h2>
+          </div>
+          <div className="px-5 py-4">
+            <p className="mb-3 text-right text-[12px] leading-[1.7]" style={{ color: "#6b6258" }}>ما يجب تجنبه وما هو متاح للاستخدام في الحملة</p>
+            <div className="rounded-xl border px-4 py-3" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
+              <textarea
+                value={mergedGuardrails.join("\n")}
+                onChange={(e) => {
+                  const values = e.target.value.split("\n").filter((s) => s.trim());
                   updateBrief("avoid", values);
                   updateBrief("guardrails", []);
                 }}
-                placeholder="مثال: لا وعود طبية"
+                placeholder="اذكر المحظورات، المواد الحساسة، والقيود القانونية أو الشرعية..."
+                rows={4}
+                maxLength={400}
+                className="w-full resize-none bg-transparent text-[13px] leading-[1.6] outline-none"
+                style={{ color: "#1f1d1a" }}
               />
+              <div className="mt-1 flex items-center justify-between">
+                <Pencil size={11} color="#b0a99e" />
+                <span className="text-[10px] tabular-nums" style={{ color: "#b0a99e" }}>{mergedGuardrails.join("\n").length}/400</span>
+              </div>
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-4">
-            <TextArea label="السياق" value={brief.context} onChange={(value) => updateBrief("context", value)} placeholder="خلفية السوق أو اللحظة أو البراند." />
-            <TextArea label="الدعوة إلى الإجراء" value={brief.callToAction} onChange={(value) => updateBrief("callToAction", value)} placeholder="ما الفعل المطلوب بعد رؤية الحملة؟" />
-          </div>
-        </Panel>
-
-        <div className="flex items-center justify-between rounded-xl border px-4 py-3 text-[12px]" style={{ background: "#fffaf2", borderColor: "#e4ded4", color: "#867a6b" }}>
-          <span>{savingBrief ? "جاري الحفظ..." : "الحفظ تلقائي"}</span>
-          <span dir="ltr">TrendMind</span>
-        </div>
+        </section>
       </div>
+
     </PageShell>
   );
 }
@@ -581,15 +676,6 @@ function Field({ label, value, onChange, placeholder, strong }: { label: string;
   );
 }
 
-function TextArea({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder: string }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-[10px] font-bold" style={{ color: "#a68b4b" }}>{label}</span>
-      <textarea value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} rows={3} className="w-full resize-none rounded-xl border bg-transparent px-3 py-2 text-[13px] leading-[1.7] outline-none" style={{ borderColor: "#e4ded4", color: "#1f1d1a" }} />
-    </label>
-  );
-}
-
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="rounded-2xl border p-4" style={{ background: "rgba(255,250,242,0.88)", borderColor: "#e4ded4", boxShadow: "0 10px 34px rgba(31,29,26,0.04)" }}>
@@ -646,6 +732,112 @@ function EmptyPhase({ dark }: { dark?: boolean }) {
         <button onClick={() => void rerunPhase(activePhase)} className="mt-5 rounded-lg px-4 py-2 text-[12px] font-bold" style={{ color: dark ? "#101c16" : "#f8f1df", background: dark ? "#d9bf82" : "#163326" }}>بدء المرحلة</button>
       </div>
     </div>
+  );
+}
+
+function LandingPage({ errorMessage }: { errorMessage: string | null }) {
+  const [showPopup, setShowPopup] = React.useState(false);
+
+  return (
+    <div className="relative flex h-full items-center justify-center px-6">
+      <div className="max-w-lg text-center animate-rise-in">
+        <div dir="ltr" className="text-[36px] leading-none" style={{ fontFamily: "var(--font-wordmark)", color: "#1f1d1a" }}>
+          TrendMind
+        </div>
+        <p className="mx-auto mt-4 max-w-[320px] text-[14px] leading-[1.7]" style={{ color: "#6b6258" }}>
+          منصة ذكية لبناء حملات تسويقية متكاملة تبدأ من الإيجاز وتنتهي بالإطلاق.
+        </p>
+        {errorMessage ? (
+          <p className="mt-3 text-[12px]" style={{ color: "#b25b50" }}>{errorMessage}</p>
+        ) : null}
+        <button
+          onClick={() => setShowPopup(true)}
+          className="mt-8 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[14px] font-bold transition-all hover:scale-[1.02]"
+          style={{
+            color: "#f0e8d8",
+            background: "linear-gradient(160deg, #3d7a5f, #163326)",
+            boxShadow: "0 8px 28px rgba(22,51,38,0.28), 0 2px 6px rgba(0,0,0,0.08)",
+          }}
+        >
+          <span className="text-[16px]">+</span>
+          إنشاء حملة جديدة
+        </button>
+      </div>
+      {showPopup ? <CreateCampaignPopup onClose={() => setShowPopup(false)} /> : null}
+    </div>
+  );
+}
+
+function CreateCampaignPopup({ onClose }: { onClose: () => void }) {
+  const { createCampaign, runPending } = useStore();
+  const [form, setForm] = React.useState({
+    campaignName: "",
+    brandName: "",
+    productName: "",
+    platform: "X",
+  });
+  const valid = form.campaignName.trim() && form.brandName.trim() && form.productName.trim();
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#12100d]/60 p-6 backdrop-blur-md" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-[480px] rounded-2xl border p-6 shadow-2xl animate-gallery-lights"
+        style={{ background: "linear-gradient(180deg, #fff8eb, #f2eadb)", borderColor: "rgba(200,169,110,0.35)" }}
+      >
+        <h2 className="text-center text-[24px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
+          إنشاء حملة جديدة
+        </h2>
+        <p className="mt-2 text-center text-[13px]" style={{ color: "#6b6258" }}>
+          أدخل التفاصيل الأساسية للحملة لبدء العمل
+        </p>
+        <div className="mt-6 space-y-3">
+          <PopupField label="اسم الحملة" value={form.campaignName} onChange={(v) => setForm((f) => ({ ...f, campaignName: v }))} placeholder="مثال: إطلاق شاورما البولد" />
+          <PopupField label="اسم العلامة التجارية" value={form.brandName} onChange={(v) => setForm((f) => ({ ...f, brandName: v }))} placeholder="مثال: شاورمر" />
+          <PopupField label="اسم المنتج" value={form.productName} onChange={(v) => setForm((f) => ({ ...f, productName: v }))} placeholder="مثال: شاورما البولد الجديدة" />
+          <PopupField label="المنصة" value={form.platform} onChange={(v) => setForm((f) => ({ ...f, platform: v }))} placeholder="X / تيك توك / انستقرام" />
+        </div>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <button
+            disabled={!valid || runPending}
+            onClick={async () => {
+              await createCampaign(form);
+              onClose();
+            }}
+            className="rounded-lg px-5 py-2.5 text-[13px] font-bold transition-all"
+            style={{
+              color: "#f0e8d8",
+              background: "linear-gradient(160deg, #3d7a5f, #163326)",
+              opacity: !valid || runPending ? 0.55 : 1,
+            }}
+          >
+            {runPending ? "جاري الإنشاء..." : "إنشاء الحملة"}
+          </button>
+          <button
+            onClick={onClose}
+            className="rounded-lg border px-5 py-2.5 text-[13px] font-bold"
+            style={{ color: "#5a4d39", borderColor: "#d9caa8", background: "rgba(255,255,255,0.45)" }}
+          >
+            إلغاء
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PopupField({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[11px] font-bold" style={{ color: "#a68b4b" }}>{label}</span>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-xl border bg-transparent px-4 py-2.5 text-[13px] outline-none transition-all focus:border-[#c8a96e]"
+        style={{ borderColor: "#e4ded4", color: "#1f1d1a", background: "rgba(255,255,255,0.5)" }}
+      />
+    </label>
   );
 }
 

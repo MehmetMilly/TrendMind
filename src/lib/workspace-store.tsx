@@ -10,7 +10,7 @@ import React, {
   useState,
 } from "react";
 
-import { PHASES, PHASE_SEQUENCE } from "@/lib/campaign-data";
+import { DEFAULT_BRIEF, PHASES, PHASE_SEQUENCE } from "@/lib/campaign-data";
 import type {
   BriefPatch,
   CampaignBootstrap,
@@ -98,6 +98,7 @@ interface StoreValue {
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
+const LOCAL_BOOTSTRAP_KEY = "trendmind.localBootstrap.v1";
 
 async function readJson<T>(input: RequestInfo, init?: RequestInit) {
   const response = await fetch(input, init);
@@ -133,6 +134,96 @@ function downloadFile(filename: string, content: string, type: string) {
   anchor.download = filename;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+function createLocalCampaign(input: CreateCampaignInput): CampaignWorkspace {
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? `local_${crypto.randomUUID().slice(0, 8)}`
+      : `local_${Date.now().toString(36)}`;
+  const updatedAt = new Date().toISOString();
+  const brief: CampaignBrief = {
+    ...DEFAULT_BRIEF,
+    campaignName: input.campaignName.trim() || DEFAULT_BRIEF.campaignName,
+    brandName: input.brandName.trim(),
+    productName: input.productName.trim(),
+    platform: input.platform?.trim() || DEFAULT_BRIEF.platform,
+  };
+  const phases = {} as CampaignWorkspace["phases"];
+  for (const phase of PHASE_SEQUENCE) {
+    (phases as Record<PhaseId, unknown>)[phase] = {
+      phase,
+      status: phase === "brief" ? "ready" : "idle",
+      version: phase === "brief" ? 1 : 0,
+      headline: phase === "brief" ? brief.campaignName : null,
+      summary: phase === "brief" ? brief.goal || null : null,
+      data: phase === "brief" ? brief : null,
+      generatedBy: phase === "brief" ? "director" : null,
+      updatedAt: phase === "brief" ? updatedAt : null,
+      startedAt: null,
+      completedAt: null,
+      staleReason: null,
+      error: null,
+    };
+  }
+
+  return {
+    id,
+    name: brief.campaignName,
+    brandName: brief.brandName,
+    status: "draft",
+    activePhase: "brief",
+    selectedAngleId: null,
+    selectedVariantId: null,
+    brief,
+    phases,
+    activities: [
+      {
+        id: `act_${id}`,
+        phase: "system",
+        actor: "director",
+        kind: "warning",
+        message: "This campaign is stored locally because the database was unavailable.",
+        metadata: { localFallback: true },
+        createdAt: updatedAt,
+      },
+    ],
+    runs: [],
+    revisions: [],
+    health: { ai: false, research: false },
+    updatedAt,
+  };
+}
+
+function campaignToSummary(campaign: CampaignWorkspace): CampaignSummary {
+  return {
+    id: campaign.id,
+    name: campaign.name,
+    brandName: campaign.brandName,
+    platform: campaign.brief.platform,
+    status: campaign.status,
+    updatedAt: campaign.updatedAt,
+    lastRunStatus: campaign.runs[0]?.status ?? null,
+  };
+}
+
+function readLocalBootstrap(): CampaignBootstrap | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const value = window.localStorage.getItem(LOCAL_BOOTSTRAP_KEY);
+    return value ? (JSON.parse(value) as CampaignBootstrap) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalBootstrap(payload: CampaignBootstrap) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(LOCAL_BOOTSTRAP_KEY, JSON.stringify(payload));
+  } catch {
+    // Local persistence is best-effort.
+  }
 }
 
 export function useStore() {
@@ -178,6 +269,7 @@ export function WorkspaceProvider({
   const briefTimeoutRef = useRef<number | null>(null);
   const pendingBriefRef = useRef<BriefPatch>({});
   const savePromiseRef = useRef<Promise<void> | null>(null);
+  const briefSaveFailedRef = useRef(false);
   const lastTrialVersionRef = useRef<number>(0);
   const lastReadyVersionsRef = useRef<Record<PhaseId, number> | null>(null);
 
@@ -187,6 +279,15 @@ export function WorkspaceProvider({
     else url.searchParams.delete("campaign");
     window.history.replaceState(window.history.state, "", url);
   }, []);
+
+  useEffect(() => {
+    if (!campaign && campaigns.length === 0) return;
+    writeLocalBootstrap({
+      campaigns,
+      activeCampaignId,
+      activeCampaign: campaign,
+    });
+  }, [activeCampaignId, campaign, campaigns]);
 
   const refreshCampaign = useCallback(
     async (silent = false) => {
@@ -204,6 +305,13 @@ export function WorkspaceProvider({
         setError(null);
         if (bootstrap.activeCampaignId) updateUrl(bootstrap.activeCampaignId);
       } catch (nextError) {
+        const localBootstrap = readLocalBootstrap();
+        if (localBootstrap) {
+          setCampaigns(localBootstrap.campaigns);
+          setCampaign(localBootstrap.activeCampaign);
+          setActiveCampaignId(localBootstrap.activeCampaignId);
+          if (localBootstrap.activeCampaignId) updateUrl(localBootstrap.activeCampaignId);
+        }
         setError(nextError instanceof Error ? nextError.message : "تعذر تحديث TrendMind.");
       } finally {
         setLoading(false);
@@ -266,6 +374,7 @@ export function WorkspaceProvider({
 
     let freshPhase: PhaseId | null = null;
     for (const phase of PHASE_SEQUENCE) {
+      if (phase === "brief") continue; // Brief never triggers a transition popup
       const record = campaign.phases[phase];
       if (record.status === "ready" && record.version > (lastReadyVersions[phase] ?? 0)) {
         freshPhase = phase;
@@ -274,9 +383,12 @@ export function WorkspaceProvider({
     lastReadyVersionsRef.current = nextVersions;
 
     if (!freshPhase || freshPhase !== activePhase || suppressTransitionFrom === activePhase) return;
+    // Don't show transition if user is actively typing in an input/textarea
+    const activeEl = document.activeElement;
+    if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || (activeEl as HTMLElement).isContentEditable)) return;
     const nextPhase = PHASE_SEQUENCE[PHASE_SEQUENCE.indexOf(activePhase) + 1];
     if (!nextPhase) return;
-    const handle = window.setTimeout(() => setPhaseTransitionTarget(nextPhase), 0);
+    const handle = window.setTimeout(() => setPhaseTransitionTarget(nextPhase), 600);
     return () => window.clearTimeout(handle);
   }, [activePhase, campaign, suppressTransitionFrom]);
 
@@ -284,6 +396,7 @@ export function WorkspaceProvider({
     if (!campaign || Object.keys(pendingBriefRef.current).length === 0) return;
     const payload = pendingBriefRef.current;
     pendingBriefRef.current = {};
+    briefSaveFailedRef.current = false;
     setSavingBrief(true);
 
     const promise = (async () => {
@@ -292,6 +405,13 @@ export function WorkspaceProvider({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      // Preserve any brief fields the user changed while the save was in-flight
+      const stillPending = pendingBriefRef.current;
+      if (Object.keys(stillPending).length > 0) {
+        const merged = { ...nextCampaign.brief, ...stillPending };
+        nextCampaign.brief = merged;
+        nextCampaign.phases.brief.data = merged;
+      }
       setCampaign(nextCampaign);
       setCampaigns((current) =>
         current.map((entry) =>
@@ -313,6 +433,8 @@ export function WorkspaceProvider({
       await promise;
       setError(null);
     } catch (nextError) {
+      pendingBriefRef.current = { ...payload, ...pendingBriefRef.current };
+      briefSaveFailedRef.current = true;
       setError(nextError instanceof Error ? nextError.message : "تعذر حفظ الإيجاز.");
     } finally {
       setSavingBrief(false);
@@ -325,11 +447,14 @@ export function WorkspaceProvider({
       window.clearTimeout(briefTimeoutRef.current);
       briefTimeoutRef.current = null;
     }
-    if (savePromiseRef.current) {
-      await savePromiseRef.current;
-      return;
+    while (savePromiseRef.current || Object.keys(pendingBriefRef.current).length > 0) {
+      if (savePromiseRef.current) {
+        await savePromiseRef.current;
+      } else {
+        await saveBriefNow();
+      }
+      if (briefSaveFailedRef.current) break;
     }
-    await saveBriefNow();
   }, [saveBriefNow]);
 
   const updateBrief = useCallback(
@@ -400,6 +525,13 @@ export function WorkspaceProvider({
         setCampaignDrawerOpen(false);
         updateUrl(nextCampaign.id);
       } catch (nextError) {
+        const localCampaign = createLocalCampaign(input);
+        setCampaign(localCampaign);
+        setActiveCampaignId(localCampaign.id);
+        lastReadyVersionsRef.current = null;
+        setCampaigns((current) => [campaignToSummary(localCampaign), ...current]);
+        setCampaignDrawerOpen(false);
+        updateUrl(localCampaign.id);
         setError(nextError instanceof Error ? nextError.message : "تعذر إنشاء الحملة.");
       } finally {
         setRunPending(false);

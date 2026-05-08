@@ -29,10 +29,6 @@ function resolvePGliteDataDir() {
     return process.env.TRENDMIND_PGLITE_DIR;
   }
 
-  if (process.env.NODE_ENV === "development") {
-    return "memory://trendmind";
-  }
-
   if (process.env.VERCEL) {
     return path.join("/tmp", "trendmind-pglite");
   }

@@ -13,8 +13,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl" className="h-full">
-      <body className="h-full overflow-hidden">{children}</body>
+    <html lang="ar" dir="rtl" className="h-full" suppressHydrationWarning>
+      <body className="h-full overflow-hidden" suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   );
 }

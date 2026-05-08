@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+
 import { CampaignDrawer } from "@/components/trendmind/campaign-drawer";
 import { CampaignWorkspace } from "@/components/trendmind/campaign-workspace";
 import { CommandPalette } from "@/components/trendmind/command-palette";
@@ -18,6 +20,23 @@ export function AppShell({
 }: {
   initialBootstrap: CampaignBootstrap;
 }) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    const handle = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(handle);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div
+        className="h-screen w-full"
+        style={{ background: "#cfc9bf" }}
+        suppressHydrationWarning
+      />
+    );
+  }
+
   return (
     <WorkspaceProvider initialBootstrap={initialBootstrap}>
       <div
