@@ -3248,12 +3248,26 @@ function WrapChip({ text, onRemove }: { text: string; onRemove?: () => void }) {
 }
 
 function EmptyPhase({ dark }: { dark?: boolean }) {
-  const { activePhase, phaseStatus, rerunPhase } = useStore();
+  const { activePhase, phaseStatus, rerunPhase, campaign } = useStore();
   const status = phaseStatus[activePhase];
   const isGenerating = status === "running" || status === "pending";
 
   if (isGenerating) {
     return <GeneratingPhase dark={dark} />;
+  }
+
+  if (status === "error") {
+    const errorMsg = campaign?.phases[activePhase]?.error || "حدث خطأ غير متوقع أثناء التوليد. الرجاء التأكد من إعدادات API والمحاولة مجدداً.";
+    return (
+      <div className="flex min-h-[420px] items-center justify-center">
+        <div className="max-w-lg rounded-2xl border px-8 py-7 text-center" style={{ background: dark ? "rgba(178,91,80,0.06)" : "#fff5f5", borderColor: dark ? "rgba(178,91,80,0.18)" : "#fcdada" }}>
+          <MessageSquare className="mx-auto" color={dark ? "#d9bf82" : "#b25b50"} />
+          <h2 className="mt-3 text-[24px]" style={{ fontFamily: "var(--font-heading)", color: dark ? "#f7ead0" : "#1f1d1a" }}>توقف التوليد بسبب خطأ</h2>
+          <p className="mt-3 whitespace-pre-wrap break-words text-[13px] leading-[1.6]" style={{ color: dark ? "rgba(247,234,208,0.65)" : "#b25b50" }}>{errorMsg}</p>
+          <button onClick={() => void rerunPhase(activePhase)} className="mt-5 rounded-lg px-4 py-2 text-[12px] font-bold" style={{ color: dark ? "#101c16" : "#ffffff", background: dark ? "#d9bf82" : "#b25b50" }}>إعادة المحاولة</button>
+        </div>
+      </div>
+    );
   }
 
   return (
