@@ -464,7 +464,10 @@ export function WorkspaceProvider({
     const nextPhase = PHASE_SEQUENCE[PHASE_SEQUENCE.indexOf(activePhase) + 1];
     if (!nextPhase) return;
     const nextRecord = campaign.phases[nextPhase];
-    if (nextRecord.status !== "running" && nextRecord.status !== "ready") return;
+    // Only present the transition overlay once the next phase is fully generated (ready).
+    // Showing it while still "running" causes the race condition where the user lands
+    // on an empty page before content has arrived.
+    if (nextRecord.status !== "ready") return;
     const handle = window.setTimeout(() => setPhaseTransitionTarget(nextPhase), 600);
     return () => window.clearTimeout(handle);
   }, [activePhase, campaign, suppressTransitionFrom]);

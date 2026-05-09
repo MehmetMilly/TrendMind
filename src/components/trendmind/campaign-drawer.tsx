@@ -6,6 +6,17 @@ import React from "react";
 import { useStore } from "@/lib/workspace-store";
 import { formatTimestampLabel } from "@/lib/time-format";
 
+const PLATFORM_OPTIONS = [
+  { value: "X", label: "X / Twitter" },
+  { value: "Instagram", label: "Instagram" },
+  { value: "LinkedIn", label: "LinkedIn" },
+  { value: "TikTok", label: "TikTok" },
+  { value: "Snapchat", label: "Snapchat" },
+  { value: "YouTube", label: "YouTube" },
+  { value: "Facebook", label: "Facebook" },
+  { value: "Website", label: "Website" },
+];
+
 export function CampaignDrawer() {
   const {
     activeCampaignId,
@@ -174,6 +185,29 @@ function Field({
   onChange: (value: string) => void;
   placeholder: string;
 }) {
+  if (placeholder === "X") {
+    return (
+      <label className="block">
+        <div className="mb-1 text-[8.5px] uppercase tracking-[0.18em]" style={{ color: "#9b9590" }}>
+          {label}
+        </div>
+        <select
+          aria-label={label}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="w-full rounded-lg border bg-transparent px-3 py-2 text-[12px] outline-none"
+          style={{ borderColor: "#e4ded4", color: "#1f1d1a", cursor: "pointer" }}
+        >
+          {PLATFORM_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value} style={{ color: "#1f1d1a", background: "#fdfaf5" }}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
+
   return (
     <label className="block">
       <div className="mb-1 text-[8.5px] uppercase tracking-[0.18em]" style={{ color: "#9b9590" }}>

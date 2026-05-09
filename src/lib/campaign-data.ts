@@ -137,7 +137,7 @@ export const RESEARCH_KIND_META: Record<
   { label: string; accent: string; background: string }
 > = {
   trend: {
-    label: "اتجاه",
+    label: "تريند",
     accent: "#a68b4b",
     background: "rgba(200,169,110,0.08)",
   },
