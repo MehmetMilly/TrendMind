@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   BadgeCheck,
@@ -2798,17 +2798,22 @@ function StudioPageFocused() {
 
               <div className="mt-4 border-t pt-4" style={{ borderColor: "#ece5d8" }}>
                 <div className="mb-3 text-[11px] font-bold" style={{ color: "#a68b4b" }}>لوحة الألوان المستخدمة</div>
-                <div className="flex flex-wrap gap-3">
-                  {data.palette.map((color) => (
-                    <div key={`studio-palette-${color}`} className="flex flex-col items-center gap-1.5">
-                      <span
-                        title={color}
-                        className="inline-flex h-10 w-10 rounded-full border shadow-sm"
-                        style={{ background: color, borderColor: "rgba(0,0,0,.14)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.35), 0 6px 14px rgba(31,29,26,.08)" }}
-                      />
-                      <span className="text-[9px] font-medium tabular-nums" style={{ color: "#9b9590" }}>{color}</span>
-                    </div>
-                  ))}
+                <div className="flex flex-col gap-3">
+                  {data.palette.map((color) => {
+                    const hexMatch = color.match(/#(?:[0-9a-fA-F]{3,4}){1,2}\b/i)?.[0];
+                    return (
+                      <div key={`studio-palette-${color}`} className="flex items-center gap-3">
+                        <span
+                          title={color}
+                          className="inline-flex h-8 w-8 shrink-0 rounded-full border shadow-sm"
+                          style={{ background: hexMatch ?? color, borderColor: "rgba(0,0,0,.14)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.35), 0 4px 10px rgba(31,29,26,.08)" }}
+                        />
+                        <span className="text-[11px] font-medium leading-[1.5]" style={{ color: "#6b6258", ...contentDirectionStyle(color) }}>
+                          {color}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </Panel>
@@ -2981,21 +2986,17 @@ function LaunchPostFocused({
     downloadTextFile(exportFilename, buildExportText());
   }
 
-  function publishToX(event: React.MouseEvent<HTMLButtonElement>) {
-    event.stopPropagation();
-    const text = [
-      campaign?.name ?? "TrendMind",
-      headline,
-      body || caption,
-      launch?.summary ?? "",
-      "#TrendMind",
-    ]
-      .filter(Boolean)
-      .join("\n\n")
-      .slice(0, 280);
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-    window.open(url, "_blank", "noopener,noreferrer,width=720,height=640");
-  }
+  const tweetText = [
+    campaign?.name ?? "TrendMind",
+    headline,
+    body || caption,
+    launch?.summary ?? "",
+    "#TrendMind",
+  ]
+    .filter(Boolean)
+    .join("\n\n")
+    .slice(0, 280);
+  const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
 
   return (
     <div
@@ -3079,15 +3080,17 @@ function LaunchPostFocused({
 
         {selected ? (
           <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={publishToX}
-              className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-bold transition-all"
-              style={{ background: "#0f1419", color: "#ffffff", borderColor: "#0f1419", boxShadow: "0 10px 24px rgba(31,29,26,0.08)" }}
+            <a
+              href={tweetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-bold transition-all hover:opacity-90"
+              style={{ background: "#0f1419", color: "#ffffff", borderColor: "#0f1419", boxShadow: "0 10px 24px rgba(31,29,26,0.08)", textDecoration: "none" }}
             >
               <Share2 size={13} />
               نشر على X
-            </button>
+            </a>
             <button
               type="button"
               onClick={exportFinalResult}
