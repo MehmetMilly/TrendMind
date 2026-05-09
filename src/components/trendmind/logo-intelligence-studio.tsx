@@ -4,24 +4,24 @@ import { useEffect, useRef, useState } from "react";
 
 const logoSuggestions = [
   {
-    title: "Improve colors",
-    body: "Increase contrast and reduce color noise so the logo stays clear in small previews and print.",
+    title: "تحسين الألوان",
+    body: "زيادة التباين وتقليل ضوضاء الألوان ليبقى الشعار واضحاً في المعاينات الصغيرة والطباعة.",
   },
   {
-    title: "Adjust spacing",
-    body: "Add safe space around the symbol and wordmark to improve readability inside thumbnails and packaging.",
+    title: "ضبط المسافات",
+    body: "إضافة مساحة آمنة حول الرمز والنص لتحسين القابلية للقراءة داخل الصور المصغرة والتغليف.",
   },
   {
-    title: "Simplify the design",
-    body: "Reduce fine details while preserving the core brand mark and identity.",
+    title: "تبسيط التصميم",
+    body: "تقليل التفاصيل الدقيقة مع الحفاظ على العلامة الجوهرية والهوية.",
   },
   {
-    title: "Improve clarity",
-    body: "Unify edge weight and contrast so the logo works on light and dark backgrounds.",
+    title: "تحسين الوضوح",
+    body: "توحيد وزن الحواف والتباين ليعمل الشعار على الخلفيات الفاتحة والداكنة.",
   },
   {
-    title: "Prepare usage versions",
-    body: "Create a square social version, horizontal website version, and one-color print version.",
+    title: "إعداد نسخ الاستخدام",
+    body: "إنشاء نسخة مربعة للتواصل، وأفقية للموقع، ونسخة بلون واحد للطباعة.",
   },
 ];
 
@@ -70,14 +70,14 @@ export function LogoIntelligenceStudio() {
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <div className="text-[8.5px] uppercase tracking-[0.2em]" style={{ color: "#a68b4b" }}>
-            Logo Intelligence
+            ذكاء الشعار
           </div>
           <h3 className="mt-1 text-[17px] tracking-[-0.01em]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
-            Logo upload and brand refinement
+            رفع الشعار وتحسين العلامة التجارية
           </h3>
         </div>
         <span className="rounded-full px-2.5 py-1 text-[9px] font-semibold" style={{ color: "#1e3a2f", background: "rgba(61,122,95,0.1)" }}>
-          Demo preview
+          عرض تجريبي
         </span>
       </div>
 
@@ -115,10 +115,10 @@ export function LogoIntelligenceStudio() {
                 UP
               </span>
               <strong className="mt-3 text-[13px]" style={{ color: "#1f1d1a" }}>
-                Drag your logo here
+                اسحب شعارك هنا
               </strong>
               <span className="mt-1 max-w-[250px] text-[11px] leading-[1.6]" style={{ color: "#6b6560" }}>
-                PNG, JPG, or WEBP. After upload, you will see a comparison and an API-ready AI analysis.
+                PNG، JPG، أو WEBP. بعد الرفع، سترى مقارنة وتحليلاً بالذكاء الاصطناعي جاهزاً عبر واجهة برمجة التطبيقات (API).
               </span>
             </>
           )}
@@ -128,30 +128,29 @@ export function LogoIntelligenceStudio() {
           {!previewUrl ? (
             <div className="flex h-full items-center justify-center text-center">
               <p className="max-w-sm text-[12px] leading-[1.7]" style={{ color: "#6b6560" }}>
-                Upload a brand logo to see the original, an enhanced preview, Brand Score, color palette,
-                typography suggestions, social preview, and packaging mockup.
+                قم بتحميل شعار العلامة التجارية لرؤية الأصل، والمعاينة المحسنة، ودرجة العلامة التجارية، ولوحة الألوان، واقتراحات الطباعة، والمعاينة الاجتماعية، ونموذج التغليف.
               </p>
             </div>
           ) : isAnalyzing ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <span className="h-10 w-10 animate-spin rounded-full border-2 border-transparent" style={{ borderTopColor: "#3d7a5f", borderRightColor: "#c8a96e" }} />
               <h4 className="mt-3 text-[14px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
-                Analyzing logo identity
+                جاري تحليل هوية الشعار
               </h4>
               <p className="mt-1 text-[11px]" style={{ color: "#6b6560" }}>
-                Checking colors, spacing, clarity, social usage, and print readiness.
+                التحقق من الألوان، المسافات، الوضوح، الاستخدام الاجتماعي، والجاهزية للطباعة.
               </p>
             </div>
           ) : analysisReady ? (
             <div className="grid gap-3">
               <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
-                <LogoPreview title="Before" image={previewUrl} />
-                <LogoPreview title="After" image={previewUrl} enhanced />
+                <LogoPreview title="قبل" image={previewUrl} />
+                <LogoPreview title="بعد" image={previewUrl} enhanced />
               </div>
               <div className="grid grid-cols-[120px_1fr] gap-3 max-sm:grid-cols-1">
                 <div className="rounded-xl border p-3 text-center" style={{ borderColor: "#e4ded4", background: "#fdfaf5" }}>
                   <div className="text-[8.5px] uppercase tracking-[0.18em]" style={{ color: "#a68b4b" }}>
-                    Brand Score
+                    درجة العلامة
                   </div>
                   <div className="mt-2 text-[28px] font-semibold" style={{ color: "#162b22", fontFamily: "var(--font-heading)" }}>
                     8.4
@@ -162,7 +161,7 @@ export function LogoIntelligenceStudio() {
                 </div>
                 <div className="rounded-xl border p-3" style={{ borderColor: "#e4ded4", background: "#fdfaf5" }}>
                   <div className="text-[8.5px] uppercase tracking-[0.18em]" style={{ color: "#a68b4b" }}>
-                    Suggested palette
+                    لوحة الألوان المقترحة
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {logoPalette.map((color) => (
@@ -170,7 +169,7 @@ export function LogoIntelligenceStudio() {
                     ))}
                   </div>
                   <div className="mt-3 text-[10.5px] leading-[1.55]" style={{ color: "#5a5550" }}>
-                    Typography: use a geometric Sans Serif in Medium weight, with subtle letter spacing for print versions.
+                    الطباعة: استخدم خط Sans Serif هندسي بوزن متوسط، مع تباعد طفيف في الأحرف لنسخ الطباعة.
                   </div>
                 </div>
               </div>
@@ -183,7 +182,7 @@ export function LogoIntelligenceStudio() {
         <div className="mt-3 grid grid-cols-[1.1fr_0.9fr] gap-3 max-lg:grid-cols-1">
           <div className="rounded-xl border p-3" style={{ borderColor: "#e4ded4", background: "#fdfaf5" }}>
             <div className="text-[8.5px] uppercase tracking-[0.18em]" style={{ color: "#a68b4b" }}>
-              Professional suggestions
+              اقتراحات مهنية
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2 max-sm:grid-cols-1">
               {logoSuggestions.map((item) => (
@@ -201,12 +200,12 @@ export function LogoIntelligenceStudio() {
 
           <div className="grid gap-3">
             <div className="grid grid-cols-2 gap-3">
-              <MiniMock title="Social" image={previewUrl} />
-              <MiniMock title="Package" image={previewUrl} box />
+              <MiniMock title="اجتماعي" image={previewUrl} />
+              <MiniMock title="تغليف" image={previewUrl} box />
             </div>
             <div className="rounded-xl border p-3" style={{ borderColor: "#e4ded4", background: "#111a15" }}>
               <div className="text-[8.5px] uppercase tracking-[0.18em]" style={{ color: "#c8a96e" }}>
-                AI prompt engineering
+                هندسة الأوامر (AI Prompt)
               </div>
               <p className="mt-2 max-h-[120px] overflow-auto text-[10px] leading-[1.55]" dir="ltr" style={{ color: "#f5e8c8" }}>
                 {logoPrompt}

@@ -43,6 +43,9 @@ import type {
   TrialOutput,
   TrialReaction,
 } from "@/lib/types";
+import { AnalyticsClient } from "@/components/trendmind/analytics-client";
+import { SettingsClient } from "@/components/trendmind/settings-client";
+import { computeAnalyticsData } from "@/lib/analytics-utils";
 import { useStore } from "@/lib/workspace-store";
 
 export function CampaignWorkspace() {
@@ -52,10 +55,18 @@ export function CampaignWorkspace() {
     <main id="tm-phase-page" className="relative min-h-0 flex-1 overflow-hidden">
       <PhaseBackdrop phase={activePhase} />
       {loading ? <WorkspacePlaceholder label="جاري تحميل مساحة العمل..." /> : null}
-      {!loading && !campaign ? <LandingPage errorMessage={error} /> : null}
-      {campaign ? (
+      {!loading && !campaign && workspaceView !== "settings" ? <LandingPage errorMessage={error} /> : null}
+      {workspaceView === "settings" ? (
+        <div className="relative h-full overflow-y-auto">
+          <SettingsClient />
+        </div>
+      ) : campaign ? (
         workspaceView === "logo" ? (
           <LogoStudioPage key={`logo-${activePhase}`} />
+        ) : workspaceView === "analytics" ? (
+          <div className="relative h-full overflow-y-auto">
+            <AnalyticsClient key={`analytics-${campaign.id}`} campaignId={campaign.id} initialData={computeAnalyticsData(campaign)} />
+          </div>
         ) : (
           <PhaseRouter key={activePhase} phase={activePhase} />
         )
@@ -94,13 +105,12 @@ function LogoStudioPage() {
                   <ImageUp size={14} />
                 </span>
                 <h1 className="text-[30px] leading-none" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
-                  Logo Studio
+                  استوديو الشعار
                 </h1>
                 <span className="h-2 w-2 rounded-full" style={{ background: "#3d7a5f" }} />
               </div>
               <p className="mt-2 max-w-[760px] text-[13px] leading-[1.7]" style={{ color: "#6b6258" }}>
-                Upload a brand logo to get a fast analysis, an enhanced preview, professional suggestions,
-                and an API-ready workflow for OpenAI Vision or any AI image model.
+                قم بتحميل شعار العلامة التجارية للحصول على تحليل سريع، ومعاينة محسنة، واقتراحات مهنية، وسير عمل جاهز لواجهة برمجة التطبيقات (API) لـ OpenAI Vision أو أي نموذج صور ذكاء اصطناعي آخر.
               </p>
             </div>
           </header>
@@ -718,7 +728,7 @@ function ResearchPageRevamp() {
               {visible.map((item, index) => {
                 const meta = RESEARCH_KIND_META[item.kind] || { label: item.kind || "غير معروف", accent: "#a29a90", background: "rgba(162,154,144,0.12)" };
                 return (
-                  <AgentPeek key={item.id} agent={item.by} reasoning={`Selected because it scores ${item.confidence}% confidence and strengthens the ${meta.label} path.`}>
+                  <AgentPeek key={item.id} agent={item.by} reasoning={`تم اختيارها لأن ثقتها تبلغ ${item.confidence}% وتدعم مسار ${meta.label}.`}>
                     <button
                       onClick={() => openInspector("research", item.id)}
                       className="group relative flex min-h-[320px] w-full flex-col overflow-hidden rounded-[28px] border p-5 text-start transition-all duration-300 hover:-translate-y-1"
@@ -1367,7 +1377,7 @@ function StudioPage() {
             <div className="absolute left-1/2 top-[33%] h-[192px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: "linear-gradient(90deg, #6d4f33, #9d7a4c, #6d4f33)" }} />
             <div className="absolute left-1/2 top-[33%] h-[18px] w-[245px] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: "linear-gradient(180deg, #6d4f33, #9d7a4c, #6d4f33)" }} />
             <div className="absolute bottom-16 left-8 right-8 text-center">
-              <div className="mb-4 text-[11px] font-bold tracking-[0.12em]" style={{ color: "rgba(247,234,208,0.64)" }}>PROMPT</div>
+              <div className="mb-4 text-[11px] font-bold tracking-[0.12em]" style={{ color: "rgba(247,234,208,0.64)" }}>الأمر البرمجي (PROMPT)</div>
               <h3 className="whitespace-pre-line text-[22px] leading-[1.75]" style={{ fontFamily: "var(--font-heading)", color: "#f7ead0", textShadow: "0 8px 28px rgba(0,0,0,.38)" }}>{fullPrompt}</h3>
               <div className="mt-7 inline-flex rounded-full px-5 py-2 text-[13px] font-bold" style={{ background: "linear-gradient(160deg, #dcc487, #a68b4b)", color: "#162b22", boxShadow: "0 10px 28px rgba(200,169,110,.28)" }}>أنشئ الصورة</div>
             </div>
@@ -1400,18 +1410,18 @@ function PackagingAgentPanel() {
   );
 
   return (
-    <AgentPeek agent="packaging" reasoning="Packaging Agent builds a market-ready packaging direction from the product, audience, positioning, materials, shelf appeal, and mockup requirements.">
+    <AgentPeek agent="packaging" reasoning="يقوم وكيل التغليف ببناء اتجاه تغليف جاهز للسوق بناءً على المنتج والجمهور والتمركز والمواد والجاذبية على الرف ومتطلبات الموك أب.">
       <section className="rounded-3xl border p-5" style={{ background: "#fffaf2", borderColor: "#d8bd7c", boxShadow: "0 18px 52px rgba(91,68,34,0.09)" }}>
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <div className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>Packaging Agent</div>
+            <div className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>وكيل التغليف</div>
             <h2 className="mt-1 text-[30px] leading-[1.15]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>اتجاه تغليف جاهز للموك أب</h2>
             <p className="mt-2 max-w-[780px] text-[13px] leading-[1.8]" style={{ color: "#5f574e" }}>
               {direction.description}
             </p>
           </div>
           <div className="rounded-2xl border px-4 py-3 text-start" style={{ borderColor: "#e4ded4", background: "#f8f0df" }}>
-            <div className="text-[10px] font-bold" style={{ color: "#a68b4b" }}>Brand Mood</div>
+            <div className="text-[10px] font-bold" style={{ color: "#a68b4b" }}>طابع العلامة</div>
             <div className="mt-1 text-[15px] font-bold" style={{ color: "#163326" }}>{direction.mood}</div>
             <div className="mt-1 text-[11px]" style={{ color: "#7a6e60" }}>{direction.positioning}</div>
           </div>
@@ -1425,7 +1435,7 @@ function PackagingAgentPanel() {
                 <div className="relative h-[270px] w-[210px] rounded-[28px]" style={{ background: "linear-gradient(180deg, #fdf8ee, #efe4cf)", boxShadow: "0 34px 60px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.42)" }}>
                   <div className="absolute left-1/2 top-8 h-[120px] w-[120px] -translate-x-1/2 rounded-[28px]" style={{ background: `linear-gradient(180deg, ${direction.colors[3]}, ${direction.colors[1]})`, boxShadow: "0 18px 30px rgba(0,0,0,.16)" }} />
                   <div className="absolute bottom-7 left-6 right-6">
-                    <div className="text-[10px] font-bold tracking-[0.18em]" style={{ color: direction.colors[0] }}>RETAIL PACKAGING</div>
+                    <div className="text-[10px] font-bold tracking-[0.18em]" style={{ color: direction.colors[0] }}>تغليف التجزئة</div>
                     <h3 className="mt-2 text-[22px] leading-[1.12]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>{brief?.brandName || "TrendMind"}</h3>
                     <p className="mt-1 text-[12px] leading-[1.5]" style={{ color: "#5f574e" }}>{brief?.productName || "منتج جديد"}</p>
                     <div className="mt-4 inline-flex rounded-full px-3 py-1 text-[11px] font-bold" style={{ background: "#163326", color: "#f7ead0" }}>{direction.slogan}</div>
@@ -1436,21 +1446,21 @@ function PackagingAgentPanel() {
           </div>
 
           <div className="space-y-4">
-            <Panel title="Brand Analysis">
+            <Panel title="تحليل العلامة التجارية">
               {direction.brandAnalysis.map((item) => (
                 <p key={item} className="rounded-xl border px-3 py-2 text-[12px] leading-[1.65]" style={{ borderColor: "#e4ded4", background: "rgba(250,247,240,0.64)", color: "#514a42" }}>
                   {item}
                 </p>
               ))}
             </Panel>
-            <Panel title="Packaging Concept">
+            <Panel title="مفهوم التغليف">
               {direction.concept.map((item) => (
                 <p key={item} className="rounded-xl border px-3 py-2 text-[12px] leading-[1.65]" style={{ borderColor: "#e4ded4", background: "rgba(250,247,240,0.64)", color: "#514a42" }}>
                   {item}
                 </p>
               ))}
             </Panel>
-            <Panel title="Visual Identity">
+            <Panel title="الهوية البصرية">
               <div className="flex flex-wrap gap-2">
                 {direction.colors.map((color) => <span key={color} className="h-9 w-9 rounded-full border" style={{ background: color, borderColor: "rgba(0,0,0,.12)" }} title={color} />)}
               </div>
@@ -1462,14 +1472,14 @@ function PackagingAgentPanel() {
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
-          <Panel title="Materials & Printing">
+          <Panel title="المواد والطباعة">
             {direction.materials.map((item) => (
               <p key={item} className="rounded-xl border px-3 py-2 text-[12px] leading-[1.65]" style={{ borderColor: "#e4ded4", background: "rgba(250,247,240,0.64)", color: "#514a42" }}>
                 {item}
               </p>
             ))}
           </Panel>
-          <Panel title="Shelf Appeal & CX">
+          <Panel title="الجاذبية على الرف وتجربة العميل">
             {direction.shelfAppeal.map((item) => (
               <p key={item} className="rounded-xl border px-3 py-2 text-[12px] leading-[1.65]" style={{ borderColor: "#e4ded4", background: "rgba(250,247,240,0.64)", color: "#514a42" }}>
                 {item}
@@ -1489,7 +1499,7 @@ function PackagingAgentPanel() {
         </div>
 
         <section className="mt-4 rounded-2xl border p-4" style={{ background: "#163326", borderColor: "#d8bd7c", color: "#f7ead0" }}>
-          <h3 className="mb-3 text-[18px]" style={{ fontFamily: "var(--font-heading)" }}>AI Mockup Prompt</h3>
+          <h3 className="mb-3 text-[18px]" style={{ fontFamily: "var(--font-heading)" }}>أمر الموك أب (AI Mockup Prompt)</h3>
           <p dir="ltr" className="rounded-xl border p-3 text-[11px] leading-[1.7]" style={{ background: "rgba(217,191,130,0.12)", borderColor: "rgba(217,191,130,0.24)", color: "rgba(247,234,208,0.82)" }}>
             {direction.mockupPrompt}
           </p>
@@ -1574,9 +1584,9 @@ function buildPackagingDirection(text: string, brandName: string, productName: s
 
 function defaultCosts(low: string, medium: string, premium: string) {
   return [
-    { label: "Low", value: low, note: "كميات أكبر وخامات اقتصادية." },
-    { label: "Medium", value: medium, note: "أفضل توازن بين الشكل والتكلفة." },
-    { label: "Premium", value: premium, note: "تفاصيل فاخرة وتجربة فتح أقوى." },
+    { label: "اقتصادي", value: low, note: "كميات أكبر وخامات اقتصادية." },
+    { label: "متوسط", value: medium, note: "أفضل توازن بين الشكل والتكلفة." },
+    { label: "فاخر", value: premium, note: "تفاصيل فاخرة وتجربة فتح أقوى." },
   ];
 }
 
@@ -1643,7 +1653,7 @@ function LaunchInfluencerSuggestions() {
     <section className="rounded-3xl border p-5" style={{ background: "#fffaf2", borderColor: "#d8bd7c", boxShadow: "0 18px 52px rgba(91,68,34,0.09)" }}>
       <div className="mb-4">
         <div>
-          <div className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>Influencer Agent</div>
+          <div className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>وكيل المؤثرين</div>
           <h2 className="mt-1 text-[26px] leading-[1.15]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>اقتراحات المؤثرين للإطلاق</h2>
           <p className="mt-2 max-w-[720px] text-[13px] leading-[1.8]" style={{ color: "#5f574e" }}>
             أفضل 3 مؤثرين لهذه الحملة، مرتبين حسب توافق الجمهور والتفاعل وجودة المحتوى واحتمالية تحقيق نتائج.
@@ -1653,7 +1663,7 @@ function LaunchInfluencerSuggestions() {
 
       <div className="grid grid-cols-3 gap-3">
         {suggestions.map((influencer) => (
-          <AgentPeek key={`launch-${influencer.platform}-${influencer.username}`} agent="influencer" reasoning={`Launch suggestion selected with ${influencer.matchScore}% match score.`}>
+          <AgentPeek key={`launch-${influencer.platform}-${influencer.username}`} agent="influencer" reasoning={`تم اختيار هذا الاقتراح بنسبة توافق تبلغ ${influencer.matchScore}%.`}>
             <article className="rounded-2xl border p-4" style={{ background: "#fdf8ee", borderColor: "#e4ded4", boxShadow: "0 10px 34px rgba(31,29,26,0.04)" }}>
               <div className="flex items-center gap-3">
                 <div aria-label={`${influencer.name} profile`} role="img" className="h-14 w-14 shrink-0 rounded-full bg-cover bg-center" style={{ backgroundImage: `url(${influencer.profileImage})`, border: "2px solid #efe4cf" }} />
@@ -1677,7 +1687,7 @@ function LaunchInfluencerSuggestions() {
 
               <div className="mt-4">
                 <div className="mb-2 flex items-center justify-between text-[12px] font-bold">
-                  <span style={{ color: "#6f5a34" }}>Match Score</span>
+                  <span style={{ color: "#6f5a34" }}>درجة التوافق (Match Score)</span>
                   <span className="tabular-nums" style={{ color: "#163326" }}>{influencer.matchScore}%</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full" style={{ background: "#eadfcb" }}>

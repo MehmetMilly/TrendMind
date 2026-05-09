@@ -515,7 +515,7 @@ export async function createCampaign(input?: Partial<CreateCampaignInput>) {
       phase: "brief",
       actor: "director",
       kind: "info",
-      message: "Campaign workspace created and ready for the brief.",
+      message: "تم إنشاء مساحة عمل الحملة وهي جاهزة للإيجاز.",
       metadata: {
         language: brief.language,
         platform: brief.platform,

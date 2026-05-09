@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   BarChart3,
@@ -30,10 +30,12 @@ export function NavRail() {
     campaign,
     campaigns,
     openCampaignDrawer,
-    openLogoStudio,
     selectCampaign,
     setActivePhase,
     workspaceView,
+    openAnalytics,
+    openSettings,
+    openLogoStudio,
   } = useStore();
   const router = useRouter();
 
@@ -84,7 +86,7 @@ export function NavRail() {
     } else if (id === "analytics") {
       const campaignId = campaign?.id ?? activeCampaignId;
       if (campaignId) {
-        router.push(`/analytics/${campaignId}`);
+        openAnalytics();
       } else {
         openCampaignDrawer();
       }
@@ -96,6 +98,8 @@ export function NavRail() {
   const isActive = (id: string) =>
     id === "logo"
       ? workspaceView === "logo"
+      : id === "analytics"
+      ? workspaceView === "analytics"
       : id === "workspace" && workspaceView === "phase";
 
   return (
@@ -236,7 +240,7 @@ export function NavRail() {
 
       {/* ── Bottom ── */}
       <div className="flex flex-col gap-1.5 px-1.5 pb-2.5">
-        <SidebarButton label="الإعدادات" expanded={expanded} onClick={() => router.push("/settings")}>
+        <SidebarButton label="الإعدادات" active={workspaceView === "settings"} expanded={expanded} onClick={openSettings}>
           <Settings2 size={15} />
         </SidebarButton>
         <div

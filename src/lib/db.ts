@@ -72,33 +72,49 @@ async function resolveDbMode() {
   if (global.__trendmindDbMode) return global.__trendmindDbMode;
   const env = getServerEnv();
 
+  // Explicit pglite-only mode (local dev without a cloud DB).
   if (env.TRENDMIND_DB_MODE === "pglite") {
     global.__trendmindDbMode = "pglite";
     await getPGlite();
     return global.__trendmindDbMode;
   }
 
-  if (!env.DATABASE_URL) {
-    global.__trendmindDbMode = "pglite";
-    await getPGlite();
-    return global.__trendmindDbMode;
-  }
-
-  try {
+  // Explicit pg-only mode: use cloud DB, throw on failure (no fallback).
+  if (env.TRENDMIND_DB_MODE === "pg") {
+    if (!env.DATABASE_URL) {
+      throw new Error(
+        "TRENDMIND_DB_MODE=pg but DATABASE_URL is not set. " +
+          "Provide a Postgres connection string or switch to TRENDMIND_DB_MODE=auto.",
+      );
+    }
     const pool = getPool();
     const client = await pool.connect();
     await client.query("SELECT 1");
     client.release();
     global.__trendmindDbMode = "pg";
-  } catch (error) {
-    console.warn(
-      "TrendMind: falling back to local PGlite because the remote Postgres connection is unavailable.",
-      error instanceof Error ? error.message : error,
-    );
-    global.__trendmindDbMode = "pglite";
-    await getPGlite();
+    return global.__trendmindDbMode;
   }
 
+  // Auto mode: use cloud DB when DATABASE_URL is provided, otherwise fall back to PGlite.
+  if (env.DATABASE_URL?.trim()) {
+    try {
+      const pool = getPool();
+      const client = await pool.connect();
+      await client.query("SELECT 1");
+      client.release();
+      global.__trendmindDbMode = "pg";
+      console.info("TrendMind: using cloud Postgres database.");
+      return global.__trendmindDbMode;
+    } catch (error) {
+      console.warn(
+        "TrendMind: cloud Postgres unavailable, falling back to local PGlite.",
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
+  global.__trendmindDbMode = "pglite";
+  await getPGlite();
   return global.__trendmindDbMode;
 }
 

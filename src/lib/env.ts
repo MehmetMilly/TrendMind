@@ -20,7 +20,7 @@ const serverEnvSchema = z.object({
     .default("https://openrouter.ai/api/v1"),
   OPENROUTER_MODEL: z
     .string()
-    .default("google/gemini-3-flash-preview"),
+    .default("google/gemini-3.1-pro"),
   OPENROUTER_FALLBACK_MODEL: z
     .string()
     .default("google/gemini-2.5-flash"),

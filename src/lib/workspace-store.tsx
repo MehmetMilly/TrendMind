@@ -51,7 +51,7 @@ interface StoreValue {
   brief: CampaignBrief | null;
   phaseStatus: Record<PhaseId, PhaseStatus>;
   activePhase: PhaseId;
-  workspaceView: "phase" | "logo";
+  workspaceView: "phase" | "logo" | "settings" | "analytics";
   savingBrief: boolean;
   runPending: boolean;
   campaignDrawerOpen: boolean;
@@ -86,6 +86,8 @@ interface StoreValue {
   refreshCampaign: (silent?: boolean) => Promise<void>;
   setActivePhase: (phase: PhaseId) => void;
   openLogoStudio: () => void;
+  openSettings: () => void;
+  openAnalytics: () => void;
   scrollToPhase: (phase: PhaseId) => void;
   registerSectionRef: (phase: PhaseId, node: HTMLElement | null) => void;
   acceptPhaseTransition: () => void;
@@ -298,7 +300,7 @@ export function WorkspaceProvider({
   const [directorDraft, setDirectorDraft] = useState<DirectorDraft>({ phase: "draft", note: "" });
   const [inspector, setInspector] = useState<InspectorSelection>({ kind: null, id: null });
   const [activePhase, setActivePhaseRaw] = useState<PhaseId>("brief");
-  const [workspaceView, setWorkspaceView] = useState<"phase" | "logo">("phase");
+  const [workspaceView, setWorkspaceView] = useState<"phase" | "logo" | "settings" | "analytics">("phase");
   const [trialPlaybackState, setTrialPlaybackState] = useState<"idle" | "running" | "complete">("idle");
   const [trialPlaybackTick, setTrialPlaybackTick] = useState(0);
   const [phaseTransitionTarget, setPhaseTransitionTarget] = useState<PhaseId | null>(null);
@@ -728,6 +730,14 @@ export function WorkspaceProvider({
     setWorkspaceView("logo");
   }, []);
 
+  const openSettings = useCallback(() => {
+    setWorkspaceView("settings");
+  }, []);
+
+  const openAnalytics = useCallback(() => {
+    setWorkspaceView("analytics");
+  }, []);
+
   const acceptPhaseTransition = useCallback(() => {
     if (!phaseTransitionTarget) return;
     setActivePhaseRaw(phaseTransitionTarget);
@@ -862,6 +872,8 @@ export function WorkspaceProvider({
       refreshCampaign,
       setActivePhase,
       openLogoStudio,
+      openSettings,
+      openAnalytics,
       scrollToPhase: setActivePhase,
       registerSectionRef: () => undefined,
       acceptPhaseTransition,
