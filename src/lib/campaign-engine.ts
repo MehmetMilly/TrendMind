@@ -1523,10 +1523,10 @@ function buildTrialOutputFromReactions(
       risk,
       verdict: prefersArabic(brief)
         ? averageScore >= 88
-          ? "ط¬ط§ظ‡ط²ط© ظ„ظ„ط¥ط·ظ„ط§ظ‚ ظ…ط¹ ظ…ط³ط§ط­ط© طھط­ط³ظٹظ† ط¨ط³ظٹط·ط© ظپظ‚ط·."
+          ? "جاهزة للإطلاق مع مساحة تحسين بسيطة فقط."
           : averageScore >= 80
-            ? "ظ‚ظˆظٹط©طŒ ظ„ظƒظ†ظ‡ط§ طھط­طھط§ط¬ طµظ‚ظ„ط§ظ‹ طµط؛ظٹط±ط§ظ‹ ظ‚ط¨ظ„ ط§ظ„ط§ط¹طھظ…ط§ط¯."
-            : "ط§ظ„ظپظƒط±ط© ظ…ط«ظٹط±ط©طŒ ظ„ظƒظ† ط§ظ„ظ†ط³ط®ط© ظ„ظٹط³طھ ط¬ط§ظ‡ط²ط© ط¨ط¹ط¯."
+            ? "قوية، لكنها تحتاج صقلاً صغيراً قبل الاعتماد."
+            : "الفكرة مثيرة، لكن النسخة ليست جاهزة بعد."
         : averageScore >= 88
           ? "Strong enough to launch with minor refinement only."
           : averageScore >= 80
@@ -1958,7 +1958,7 @@ async function generateTrial(workspace: CampaignWorkspace) {
       const fallbackOutput = deterministicTrial(workspace.brief, strategy, draft);
       return {
         output: fallbackOutput,
-        headline: prefersArabic(workspace.brief) ? "ط§ظƒطھظ…ظ„ ط§ظ„ط§ط®طھط¨ط§ط±" : "Trial complete",
+        headline: prefersArabic(workspace.brief) ? "اكتمل الاختبار" : "Trial complete",
         summary: firstSentence(fallbackOutput.summary),
         generatedBy: "simulator" as AgentId,
       };
@@ -2007,7 +2007,7 @@ async function generateTrial(workspace: CampaignWorkspace) {
       });
       return {
         output: fallbackOutput,
-        headline: prefersArabic(workspace.brief) ? "ط§ظƒطھظ…ظ„ ط§ظ„ط§ط®طھط¨ط§ط±" : "Trial complete",
+        headline: prefersArabic(workspace.brief) ? "اكتمل الاختبار" : "Trial complete",
         summary: firstSentence(fallbackOutput.summary),
         generatedBy: "simulator" as AgentId,
       };
@@ -2148,7 +2148,7 @@ async function generateStudio(workspace: CampaignWorkspace): Promise<GeneratedPh
 
     return {
       output,
-      headline: prefersArabic(workspace.brief) ? "ط§ظ„ط§طھط¬ط§ظ‡ ط§ظ„ط¨طµط±ظٹ ط¬ط§ظ‡ط²" : "Studio direction ready",
+      headline: prefersArabic(workspace.brief) ? "الاتجاه البصري جاهز" : "Studio direction ready",
       summary: firstSentence(output.summary),
       generatedBy: "visual",
     };
@@ -2593,7 +2593,7 @@ async function generateLaunch(workspace: CampaignWorkspace) {
 
     return {
       output,
-      headline: prefersArabic(workspace.brief) ? "ط­ط²ظ…ط© ط§ظ„ط¥ط·ظ„ط§ظ‚ ط¬ط§ظ‡ط²ط©" : "Launch package ready",
+      headline: prefersArabic(workspace.brief) ? "حزمة الإطلاق جاهزة" : "Launch package ready",
       summary: firstSentence(output.summary),
       generatedBy: "director" as AgentId,
     };

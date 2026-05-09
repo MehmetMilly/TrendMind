@@ -200,17 +200,17 @@ function BriefPage() {
         </div>
       </div>
 
-      {/* â”€â”€ 2أ—2 card grid â”€â”€ */}
+      {/* ── 2×2 card grid ── */}
       <div className="mt-4 grid grid-cols-2 gap-4">
 
-        {/* â”€â”€ ط¥ط·ط§ط± ط§ظ„ط­ظ…ظ„ط© â”€â”€ */}
+        {/* ── إطار الحملة ── */}
         <section className="overflow-hidden rounded-2xl border" style={{ background: "rgba(255,250,242,0.88)", borderColor: "#e4ded4", boxShadow: "0 10px 34px rgba(31,29,26,0.04)" }}>
           <div className="relative flex items-center border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
             <Settings size={18} color="#c8a96e" className="absolute right-5 top-1/2 -translate-y-1/2" />
             <h2 className="w-full pr-8 text-right text-[20px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>إطار الحملة</h2>
           </div>
           <div className="space-y-0">
-            {/* ط§ظ„ط¬ظ…ظ‡ظˆط± ط§ظ„ظ…ط³طھظ‡ط¯ظپ */}
+            {/* الجمهور المستهدف */}
             <div className="border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
               <div className="mb-2 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>الجمهور المستهدف</div>
               <div className="rounded-xl border px-4 py-3" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
@@ -226,7 +226,7 @@ function BriefPage() {
                 </div>
               </div>
             </div>
-            {/* ط¬ظˆظ‡ط± ط§ظ„ط±ط³ط§ظ„ط© */}
+            {/* جوهر الرسالة */}
             <div className="px-5 py-4">
               <div className="mb-2 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>جوهر الرسالة (الفكرة)</div>
               <div className="rounded-xl border px-4 py-3" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
@@ -251,7 +251,7 @@ function BriefPage() {
           </div>
         </section>
 
-        {/* â”€â”€ ط±ظˆط§ط¨ط· ط§ظ„ط¨ط±ط§ظ†ط¯ â”€â”€ */}
+        {/* ── روابط البراند ── */}
         <section className="overflow-hidden rounded-2xl border" style={{ background: "rgba(255,250,242,0.88)", borderColor: "#e4ded4", boxShadow: "0 10px 34px rgba(31,29,26,0.04)" }}>
           <div className="relative flex items-center border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
             <Link2 size={18} color="#c8a96e" className="absolute right-5 top-1/2 -translate-y-1/2" />
@@ -275,14 +275,14 @@ function BriefPage() {
           </div>
         </section>
 
-        {/* â”€â”€ ط¹ظ† ط§ظ„ظ…ظ†طھط¬ â”€â”€ */}
+        {/* ── عن المنتج ── */}
         <section className="overflow-hidden rounded-2xl border" style={{ background: "rgba(255,250,242,0.88)", borderColor: "#e4ded4", boxShadow: "0 10px 34px rgba(31,29,26,0.04)" }}>
           <div className="relative flex items-center border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
             <Layers3 size={18} color="#c8a96e" className="absolute right-5 top-1/2 -translate-y-1/2" />
             <h2 className="w-full pr-8 text-right text-[20px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>عن المنتج</h2>
           </div>
           <div className="space-y-0">
-            {/* ط§ط³ظ… ط§ظ„ظ…ظ†طھط¬ */}
+            {/* اسم المنتج */}
             <div className="border-b px-5 py-3.5" style={{ borderColor: "#ece5d8" }}>
               <div className="mb-1.5 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>اسم المنتج</div>
               <div className="rounded-xl border px-4 py-2.5" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
@@ -298,7 +298,7 @@ function BriefPage() {
                 </div>
               </div>
             </div>
-            {/* ظ‡ط¯ظپ ط§ظ„ط­ظ…ظ„ط© */}
+            {/* هدف الحملة */}
             <div className="border-b px-5 py-3.5" style={{ borderColor: "#ece5d8" }}>
               <div className="mb-1.5 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>هدف الحملة</div>
               <div className="rounded-xl border px-4 py-2.5" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
@@ -316,7 +316,7 @@ function BriefPage() {
                 </div>
               </div>
             </div>
-            {/* ظ†ط¨ط±ط© ط§ظ„ط¹ظ„ط§ظ…ط© */}
+            {/* نبرة العلامة */}
             <div className="border-b px-5 py-3.5" style={{ borderColor: "#ece5d8" }}>
               <div className="mb-1.5 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>نبرة العلامة</div>
               <div className="rounded-xl border px-4 py-2.5" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
@@ -332,7 +332,7 @@ function BriefPage() {
                 </div>
               </div>
             </div>
-            {/* ط§ظ„ط¯ط¹ظˆط© ظ„ظ„ط¹ظ…ظ„ */}
+            {/* الدعوة للعمل */}
             <div className="px-5 py-3.5">
               <div className="mb-1.5 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>الدعوة للعمل (CTA)</div>
               <div className="rounded-xl border px-4 py-2.5" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
@@ -351,7 +351,7 @@ function BriefPage() {
           </div>
         </section>
 
-        {/* â”€â”€ ط§ظ„ظ…ط­ط¸ظˆط±ط§طھ ظˆط§ظ„ظ‚ظٹظˆط¯ â”€â”€ */}
+        {/* ── المحظورات والقيود ── */}
         <section className="overflow-hidden rounded-2xl border" style={{ background: "rgba(255,250,242,0.88)", borderColor: "#e4ded4", boxShadow: "0 10px 34px rgba(31,29,26,0.04)" }}>
           <div className="relative flex items-center border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
             <ShieldCheck size={18} color="#c8a96e" className="absolute right-5 top-1/2 -translate-y-1/2" />
@@ -427,7 +427,7 @@ function ResearchPage() {
                       {item.title || `إشارة ${index + 1}`}
                     </h3>
                     <p className="mt-2 line-clamp-2 text-[12px] leading-[1.7]" style={{ color: "#665f56" }}>{item.summary}</p>
-                    <p className="mt-4 truncate text-[10px]" style={{ color: "#a29a90" }}>ط§ظ„ظ…طµط¯ط±: {item.source}</p>
+                    <p className="mt-4 truncate text-[10px]" style={{ color: "#a29a90" }}>المصدر: {item.source}</p>
                   </button>
                 </AgentPeek>
               );
@@ -491,7 +491,7 @@ function StrategyPage() {
               <h3 className="mt-3 text-[28px] leading-[1.15]" style={{ fontFamily: "var(--font-heading)" }}>{recommended?.title}</h3>
               <p className="mt-3 text-[13px] leading-[1.8]" style={{ color: "rgba(247,234,208,0.78)" }}>{recommended?.fit}</p>
               <p className="mt-3 text-[12px] leading-[1.75]" style={{ color: "rgba(247,234,208,0.68)" }}>{data.toneDirection}</p>
-              <div className="mt-4 inline-flex rounded-full px-3 py-1 text-[12px] font-bold" style={{ background: "rgba(217,191,130,0.14)", color: "#d9bf82" }}>{recommended?.score}% ط¬ط§ظ‡ط²ظٹط© ظ…ط¨ط¯ط¦ظٹط©</div>
+              <div className="mt-4 inline-flex rounded-full px-3 py-1 text-[12px] font-bold" style={{ background: "rgba(217,191,130,0.14)", color: "#d9bf82" }}>{recommended?.score}% جاهزية مبدئية</div>
             </div>
           </section>
           <div className="grid grid-cols-3 gap-4">
@@ -643,10 +643,10 @@ function ResearchPageRevamp() {
                       >
                         <div className="mb-2 flex items-center gap-2 text-[11px] font-bold" style={{ color: "#d9c28d" }}>
                           <ShieldCheck size={13} />
-                          ظ…ط§ط°ط§ ط³ظ†ط­ط§ظپط¸ ظ…ظ† ظ‡ط°ظ‡ ط§ظ„ط®ظ„ط§طµط©طں
+                          ماذا سنحافظ من هذه الخلاصة؟
                         </div>
                         <p className="text-[12px] leading-[1.75]" style={{ color: "rgba(247,241,231,0.88)" }}>
-                          ظ†ظ‚ط·ط© ط§ظ„ظ…طµط¯ط§ظ‚ظٹط© ظˆط§ظ„ط§ط±طھط¨ط§ط· ط¨ط§ظ„ط£ط¯ط§ط، طھط¨ظ‚ظ‰ ظ…ط±ط¦ظٹط© ظپظٹ ظƒظ„ ظ…ط§ ظٹظ„ظٹ ط­طھظ‰ ظ„ط§ ظ†ط®ط³ط± ط£ظ‚ظˆظ‰ ظ…ط§ ظ‚ط§ط¯ظ†ط§ ظ„ظ‡ط°ظ‡ ط§ظ„ط²ط§ظˆظٹط©.
+                          نقطة المصداقية والارتباط بالأداء تبقى مرئية في كل ما يلي حتى لا نخسر أقوى ما قادنا لهذه الزاوية.
                         </p>
                       </div>
                     </>
@@ -803,7 +803,7 @@ function StrategyPageRevamp() {
   const selectedAngle = data?.angles.find((angle) => angle.id === selectedAngleId) ?? recommended ?? null;
   const heroAngle = selectedAngle ?? recommended;
   const heroAngleLabel =
-    selectedAngle && recommended && selectedAngle.id !== recommended.id ? "ط§ظ„ط²ط§ظˆظٹط© ط§ظ„ظ…ط¹طھظ…ط¯ط© ط§ظ„ط¢ظ†" : "ط§ظ„ط²ط§ظˆظٹط© ط§ظ„ظ…ظ‚طھط±ط­ط© ط§ظ„ط¢ظ†";
+    selectedAngle && recommended && selectedAngle.id !== recommended.id ? "الزاوية المعتمدة الآن" : "الزاوية المقترحة الآن";
   const averageScore = data?.angles.length
     ? Math.round(data.angles.reduce((sum, angle) => sum + angle.score, 0) / data.angles.length)
     : 0;
@@ -1198,7 +1198,7 @@ function DraftPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>زاوية صياغة</div>
-                    <h3 className="mt-1 text-[22px] leading-[1.15]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>ط²ط§ظˆظٹط© {angle.letter}</h3>
+                    <h3 className="mt-1 text-[22px] leading-[1.15]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>زاوية {angle.letter}</h3>
                   </div>
                 </div>
                 <DraftList title="العناوين" items={laneHooks} selectedId={manualDraft.hookId} onSelect={(id) => updateManualDraft({ hookId: id })} onOpen={openInspector} />
@@ -1309,7 +1309,7 @@ function TrialPage() {
               return (
                 <AgentPeek key={variant.id} agent="simulator" reasoning={score?.verdict ?? "تم اختبار الإعلان على مجموعة شخصيات مركبة."}>
                   <article className="flex min-h-[390px] flex-col overflow-hidden rounded-[28px] border p-5" style={{ background: "linear-gradient(180deg, #fffdf8, #f7f0e1)", borderColor: score?.variantId === data.winningVariantId ? "#3d7a5f" : "#e0d5c1", boxShadow: score?.variantId === data.winningVariantId ? "0 20px 54px rgba(61,122,95,.18)" : "0 14px 38px rgba(31,29,26,.07)" }}>
-                    <div className="text-[18px] font-black" style={{ color: "#3d7a5f", fontFamily: "var(--font-heading)" }}>ط²ط§ظˆظٹط© {angle?.letter}</div>
+                    <div className="text-[18px] font-black" style={{ color: "#3d7a5f", fontFamily: "var(--font-heading)" }}>زاوية {angle?.letter}</div>
                     <div className="mt-3 h-1 w-14 rounded-full" style={{ background: "linear-gradient(90deg, #163326, #c8a96e)" }} />
                     <h3 className="mt-5 text-[28px] leading-[1.22]" style={{ fontFamily: "var(--font-heading)", color: "#2f2923" }}>{heading}</h3>
                     {body ? (
@@ -1501,9 +1501,9 @@ function PackagingAgentPanel() {
 
 function buildPackagingDirection(text: string, brandName: string, productName: string) {
   const normalized = text.toLowerCase();
-  const isBeauty = /(beauty|makeup|skin|perfume|cosmetic|serum|skincare|ط¹ط·ط±|طھط¬ظ…ظٹظ„|ط¨ط´ط±ط©)/.test(normalized);
-  const isFood = /(coffee|matcha|food|restaurant|dessert|chocolate|snack|ظ‚ظ‡ظˆط©|ظ…ط·ط¹ظ…|ط­ظ„ظˆظ‰|ط´ظˆظƒظˆظ„ط§طھط©)/.test(normalized);
-  const isFitness = /(protein|fitness|gym|wellness|health|bar|ط¨ط±ظˆطھظٹظ†|ط±ظٹط§ط¶ط©|طµط­ط©)/.test(normalized);
+  const isBeauty = /(beauty|makeup|skin|perfume|cosmetic|serum|skincare|عطر|تجميل|بشرة)/.test(normalized);
+  const isFood = /(coffee|matcha|food|restaurant|dessert|chocolate|snack|قهوة|مطعم|حلوى|شوكولاتة)/.test(normalized);
+  const isFitness = /(protein|fitness|gym|wellness|health|bar|بروتين|رياضة|صحة)/.test(normalized);
 
   if (isBeauty) {
     return {
@@ -1809,7 +1809,7 @@ function InfluencerStat({ label, value }: { label: string; value: string }) {
 function detectInfluencerProfile(text: string) {
   const normalized = text.toLowerCase();
 
-  if (/(beauty|makeup|skin|perfume|cosmetic|serum|skincare|ط¹ط·ط±|طھط¬ظ…ظٹظ„|ط¨ط´ط±ط©)/.test(normalized)) {
+  if (/(beauty|makeup|skin|perfume|cosmetic|serum|skincare|عطر|تجميل|بشرة)/.test(normalized)) {
     return {
       domain: "Beauty & Personal Care",
       creatorTypes: "Beauty reviewers, skincare educators, lifestyle creators",
@@ -1817,7 +1817,7 @@ function detectInfluencerProfile(text: string) {
     };
   }
 
-  if (/(food|restaurant|coffee|meal|snack|delivery|ظ…ط·ط¹ظ…|ظ‚ظ‡ظˆط©|ظˆط¬ط¨ط©)/.test(normalized)) {
+  if (/(food|restaurant|coffee|meal|snack|delivery|مطعم|قهوة|وجبة)/.test(normalized)) {
     return {
       domain: "Food & Beverage",
       creatorTypes: "Food reviewers, recipe creators, local city guides",
@@ -1825,7 +1825,7 @@ function detectInfluencerProfile(text: string) {
     };
   }
 
-  if (/(fitness|gym|protein|sport|wellness|health|ظ†ط§ط¯ظٹ|ط±ظٹط§ط¶ط©|طµط­ط©)/.test(normalized)) {
+  if (/(fitness|gym|protein|sport|wellness|health|نادي|رياضة|صحة)/.test(normalized)) {
     return {
       domain: "Fitness & Wellness",
       creatorTypes: "Fitness coaches, wellness creators, sports reviewers",
@@ -2192,7 +2192,7 @@ function ResearchPageFocused() {
               {visible.map((item, index) => {
                 const meta = RESEARCH_KIND_META[item.kind] || { label: item.kind || "غير معروف", accent: "#a29a90", background: "rgba(162,154,144,0.12)" };
                 return (
-                  <AgentPeek key={`research-card-${item.id}`} agent={item.by} reasoning={`Selected because it scores ${item.confidence}% confidence and strengthens the ${meta.label} path.`}>
+                  <AgentPeek key={`research-card-${item.id ?? index}`} agent={item.by} reasoning={`Selected because it scores ${item.confidence}% confidence and strengthens the ${meta.label} path.`}>
                     <button
                       onClick={() => openInspector("research", item.id)}
                       className="group relative flex min-h-[320px] w-full flex-col overflow-hidden rounded-[28px] border p-5 text-start transition-all duration-300 hover:-translate-y-1"
@@ -2349,7 +2349,7 @@ function StrategyPageFocused() {
                         {selected ? "المعتمدة الآن" : recommendedAngle ? "ترشيح النظام" : "اتجاه مرشح"}
                       </div>
                       <h3 className="mt-1 text-[30px] leading-[1.1]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
-                        ط²ط§ظˆظٹط© {angle.letter}
+                        زاوية {angle.letter}
                       </h3>
                     </div>
                     <button
@@ -2452,7 +2452,7 @@ function DraftPageFocused() {
                   <div>
                     <div className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>الاتجاه المعتمد للصياغة</div>
                     <h3 className="text-[34px] leading-[1.02]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
-                      ط²ط§ظˆظٹط© {angle.letter}
+                      زاوية {angle.letter}
                     </h3>
                   </div>
                 </div>
@@ -2556,7 +2556,7 @@ function DraftPageFocusedFinal() {
             return (
               <article key={`draft-final-${angle.id}`} className="rounded-3xl border p-4" style={{ background: "#fffaf2", borderColor: "#c8a96e", boxShadow: "0 16px 42px rgba(166,139,75,0.12)" }}>
                 <h3 className="text-[34px] leading-[1.02]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
-                  ط²ط§ظˆظٹط© {angle.letter}
+                  زاوية {angle.letter}
                 </h3>
 
                 <DraftAtomListFocused title="العناوين" items={laneHooks} selectedId={manualDraft.hookId} onSelect={(id) => updateManualDraft({ hookId: id })} compact onOpen={openInspector} />
@@ -2740,7 +2740,7 @@ function TrialPageFocused() {
                     </div>
 
                     <h3 className="mt-4 whitespace-normal break-words text-[22px] leading-[1.22]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
-                      {shortenDisplayText(heading, 120)}
+                      {heading}
                     </h3>
                     <p className="mt-3 whitespace-pre-line break-words text-[13px] leading-[1.8]" style={{ color: "#514a42" }}>
                       {body}
@@ -2800,12 +2800,14 @@ function StudioPageFocused() {
                 <div className="mb-3 text-[11px] font-bold" style={{ color: "#a68b4b" }}>لوحة الألوان المستخدمة</div>
                 <div className="flex flex-wrap gap-3">
                   {data.palette.map((color) => (
-                    <span
-                      key={`studio-palette-${color}`}
-                      title={color}
-                      className="inline-flex h-8 w-8 rounded-full border shadow-sm"
-                      style={{ background: color, borderColor: "rgba(0,0,0,.14)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.35), 0 6px 14px rgba(31,29,26,.08)" }}
-                    />
+                    <div key={`studio-palette-${color}`} className="flex flex-col items-center gap-1.5">
+                      <span
+                        title={color}
+                        className="inline-flex h-10 w-10 rounded-full border shadow-sm"
+                        style={{ background: color, borderColor: "rgba(0,0,0,.14)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.35), 0 6px 14px rgba(31,29,26,.08)" }}
+                      />
+                      <span className="text-[9px] font-medium tabular-nums" style={{ color: "#9b9590" }}>{color}</span>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -2837,11 +2839,11 @@ function StudioPageFocused() {
               معاينة 4:5
             </div>
 
-            <div className="absolute left-1/2 top-[33%] h-[152px] w-[152px] -translate-x-1/2 -translate-y-1/2 rounded-[36px]" style={{ background: "linear-gradient(180deg, #f4eadb, #c8a96e)", boxShadow: "0 34px 60px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.38)" }} />
-            <div className="absolute left-1/2 top-[33%] h-[192px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: "linear-gradient(90deg, #6d4f33, #9d7a4c, #6d4f33)" }} />
-            <div className="absolute left-1/2 top-[33%] h-[18px] w-[245px] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: "linear-gradient(180deg, #6d4f33, #9d7a4c, #6d4f33)" }} />
+            <div className="absolute left-1/2 top-[24%] h-[152px] w-[152px] -translate-x-1/2 -translate-y-1/2 rounded-[36px]" style={{ background: "linear-gradient(180deg, #f4eadb, #c8a96e)", boxShadow: "0 34px 60px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.38)" }} />
+            <div className="absolute left-1/2 top-[24%] h-[192px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: "linear-gradient(90deg, #6d4f33, #9d7a4c, #6d4f33)" }} />
+            <div className="absolute left-1/2 top-[24%] h-[18px] w-[245px] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: "linear-gradient(180deg, #6d4f33, #9d7a4c, #6d4f33)" }} />
 
-            <div className="absolute left-8 right-8 top-1/2 -translate-y-[42%] text-center">
+            <div className="absolute bottom-10 left-8 right-8 text-center">
               <div className="mb-4 text-[16px] font-bold tracking-[0.16em]" style={{ color: "rgba(247,234,208,0.72)", fontFamily: "'Manrope', var(--font-body)" }}>
                 PROMPT
               </div>
@@ -3059,36 +3061,21 @@ function LaunchPostFocused({
             className="inline-flex items-center gap-2 text-[12px] font-bold"
             style={{ color: "#6f5a34" }}
           >
-            <span>ط®ط·ط© ط§ظ„ط±ط¯ظˆط¯</span>
+            <span>خطة الردود</span>
             <ChevronDown size={14} style={{ transform: planOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 160ms ease" }} />
           </button>
         </div>
 
-        <div className="mt-4">
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              setPlanOpen((value) => !value);
-            }}
-            className="flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-[12px] font-bold"
-            style={{ borderColor: "#e4ded4", background: "#fffaf2", color: "#6f5a34" }}
-          >
-            <span>??????? ???????</span>
-            <span className="tabular-nums" style={{ color: "#163326" }}>{post.finalScore}%</span>
-          </button>
-
-          {planOpen ? (
-            <div className="mt-2 space-y-2 rounded-2xl border p-3" style={{ borderColor: "#e4ded4", background: "rgba(255,255,255,0.72)" }}>
-              {post.responsePlan.map((response, index) => (
-                <div key={`response-plan-${post.angle.id}-${index}`} className="rounded-xl border px-3 py-2 text-[12px] leading-[1.7]" style={{ borderColor: "#ece5d8", background: "#faf7f0", color: "#514a42" }}>
-                  <div className="mb-1 font-bold" style={{ color: "#a68b4b" }}>{response.scenario}</div>
-                  <div>{response.response}</div>
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        {planOpen ? (
+          <div className="mt-2 space-y-2 rounded-2xl border p-3" style={{ borderColor: "#e4ded4", background: "rgba(255,255,255,0.72)" }}>
+            {post.responsePlan.map((response, index) => (
+              <div key={`response-plan-${post.angle.id}-${index}`} className="rounded-xl border px-3 py-2 text-[12px] leading-[1.7]" style={{ borderColor: "#ece5d8", background: "#faf7f0", color: "#514a42" }}>
+                <div className="mb-1 font-bold" style={{ color: "#a68b4b" }}>{response.scenario}</div>
+                <div>{response.response}</div>
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         {selected ? (
           <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
@@ -3126,10 +3113,12 @@ function getVisibleVariantReactions(trial: TrialOutput, variantId: string, tick:
 }
 
 function summarizeVariantEngagement(reactions: TrialReaction[]) {
-  return {
-    likes: reactions.filter((reaction) => reaction.sentiment === "love" || reaction.sentiment === "warm").length,
-    comments: reactions.filter((reaction) => Boolean(reaction.quote)).length,
-  };
+  const loveWarm = reactions.filter((r) => r.sentiment === "love" || r.sentiment === "warm").length;
+  const neutral = reactions.filter((r) => r.sentiment === "neutral").length;
+  const likes = loveWarm + Math.ceil(neutral * 0.6);
+  const comments = reactions.filter((r) => r.sentiment === "love" && Boolean(r.quote)).length +
+    Math.floor(reactions.filter((r) => r.sentiment === "warm" && Boolean(r.quote)).length * 0.4);
+  return { likes, comments };
 }
 
 function contentDirectionStyle(text: string): React.CSSProperties {
@@ -3297,7 +3286,7 @@ function GeneratingPhase({ dark }: { dark?: boolean }) {
           <span className="relative inline-flex h-3 w-3 rounded-full" style={{ background: "#c8a96e" }} />
         </span>
         <span className="text-[13px] font-semibold" style={{ color: dark ? "#d9bf82" : "#a68b4b" }}>
-          ط¬ط§ط±ظٹ ط§ظ„طھظˆظ„ظٹط¯{".".repeat(dots)}
+          جاري التوليد{".".repeat(dots)}
         </span>
         <div className="mr-auto h-1 w-[180px] overflow-hidden rounded-full" style={{ background: skeletonBase }}>
           <div

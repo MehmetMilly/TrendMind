@@ -64,7 +64,7 @@ export function StudioSection() {
             <div className="flex flex-col gap-3">
               <div className="rounded-xl border p-3" style={{ borderColor: "#e4ded4", background: "#fdfaf5" }}>
                 <div className="text-[8.5px] uppercase tracking-[0.18em]" style={{ color: "#a68b4b" }}>
-                  Visual direction
+                  الاتجاه البصري
                 </div>
                 <p className="mt-1 text-[12px] leading-[1.6]" style={{ color: "#3a3631" }}>
                   {studio.summary}
@@ -77,7 +77,7 @@ export function StudioSection() {
               <div className="rounded-xl border overflow-hidden" style={{ borderColor: "#e4ded4", background: "#fdfaf5" }}>
                 <div className="flex items-center justify-between border-b px-3 py-2" style={{ borderColor: "#ece5d8", background: "#f5f1ea" }}>
                   <span className="text-[8.5px] font-bold uppercase tracking-[0.2em]" style={{ color: "#a68b4b" }}>
-                    Layers
+                    الطبقات
                   </span>
                   <span className="text-[9px] tabular-nums" style={{ color: "#b0a99e" }}>
                     {studio.layers.length}
@@ -119,7 +119,7 @@ export function StudioSection() {
 
               <div className="rounded-xl border p-3" style={{ borderColor: "#e4ded4", background: "#fdfaf5" }}>
                 <div className="text-[8.5px] uppercase tracking-[0.18em]" style={{ color: "#a68b4b" }}>
-                  Palette & prompt
+                  لوحة الألوان والموجه
                 </div>
                 <div className="mt-2 flex gap-2">
                   {studio.palette.map((color) => (
@@ -144,7 +144,7 @@ export function StudioSection() {
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div className="rounded-xl border p-3" style={{ borderColor: "#e4ded4", background: "#fdfaf5" }}>
               <div className="text-[8.5px] uppercase tracking-[0.18em]" style={{ color: "#a68b4b" }}>
-                Formats
+                الأبعاد
               </div>
               <div className="mt-2 grid grid-cols-1 gap-2">
                 {studio.formats.map((format) => (
@@ -167,7 +167,7 @@ export function StudioSection() {
 
             <div className="rounded-xl border p-3" style={{ borderColor: "#e4ded4", background: "#fdfaf5" }}>
               <div className="text-[8.5px] uppercase tracking-[0.18em]" style={{ color: "#a68b4b" }}>
-                Asset checklist
+                قائمة الأصول
               </div>
               <div className="mt-2 space-y-2">
                 {studio.assetChecklist.map((item, index) => (

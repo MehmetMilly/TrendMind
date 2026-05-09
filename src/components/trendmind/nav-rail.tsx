@@ -108,7 +108,7 @@ export function NavRail() {
         zIndex: 20,
       }}
     >
-      {/* â”€â”€ Logo + toggle row â”€â”€ */}
+      {/* ── Logo + toggle row ── */}
       <div className="flex items-center justify-between pb-2 pt-3" style={{ paddingInline: expanded ? "14px 10px" : "11px" }}>
         <button
           type="button"
@@ -154,7 +154,7 @@ export function NavRail() {
         }}
       />
 
-      {/* â”€â”€ Nav items â”€â”€ */}
+      {/* ── Nav items ── */}
       <nav className="mt-0.5 flex flex-1 flex-col gap-1 px-1.5">
         {ITEMS.map((item) => {
           const active = isActive(item.id);
@@ -234,7 +234,7 @@ export function NavRail() {
         })}
       </nav>
 
-      {/* â”€â”€ Bottom â”€â”€ */}
+      {/* ── Bottom ── */}
       <div className="flex flex-col gap-1.5 px-1.5 pb-2.5">
         <SidebarButton label="الإعدادات" expanded={expanded} onClick={() => router.push("/settings")}>
           <Settings2 size={15} />
