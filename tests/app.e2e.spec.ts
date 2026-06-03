@@ -4,11 +4,6 @@ test("campaign run stays stable through studio and launch rendering", async ({
   page,
   request,
 }) => {
-  test.skip(
-    !process.env.OPENROUTER_API_KEY,
-    "OPENROUTER_API_KEY is required for AI-only browser verification.",
-  );
-
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
 
@@ -69,7 +64,7 @@ test("campaign run stays stable through studio and launch rendering", async ({
 
         return `${json.status}:${json.phases.studio.status}:${json.phases.launch.status}`;
       },
-      { timeout: 180_000 },
+      { timeout: 90_000 },
     )
     .toBe("ready:ready:ready");
 
@@ -79,7 +74,7 @@ test("campaign run stays stable through studio and launch rendering", async ({
 
   await page.locator('button[title="الاستوديو"]').click();
   await expect(page.getByText("الاتجاه البصري", { exact: true })).toBeVisible();
-  await expect(page.getByText("لوحة الألوان والموجه", { exact: true })).toBeVisible();
+  await expect(page.getByText("#F4EADB", { exact: true }).first()).toBeVisible();
 
   await page.locator('button[title="الإطلاق"]').click();
   await expect(

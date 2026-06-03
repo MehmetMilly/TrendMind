@@ -335,7 +335,7 @@ export function WorkspaceProvider({
   const refreshCampaign = useCallback(
     async (silent = false) => {
       const requestedCampaignId =
-        activeCampaignId ?? new URL(window.location.href).searchParams.get("campaign");
+        new URL(window.location.href).searchParams.get("campaign") ?? activeCampaignId;
       if (!silent) setRefreshing(true);
 
       try {
@@ -403,6 +403,15 @@ export function WorkspaceProvider({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void refreshCampaign();
   }, [initialBootstrap, refreshCampaign]);
+
+  useEffect(() => {
+    if (!initialBootstrap) return;
+    const requestedCampaignId = new URL(window.location.href).searchParams.get("campaign");
+    if (requestedCampaignId && requestedCampaignId !== activeCampaignId) {
+      const handle = window.setTimeout(() => void refreshCampaign(true), 0);
+      return () => window.clearTimeout(handle);
+    }
+  }, [activeCampaignId, initialBootstrap, refreshCampaign]);
 
   useEffect(() => {
     const activeRun = campaign?.runs[0];
@@ -904,6 +913,8 @@ export function WorkspaceProvider({
       inspector,
       loading,
       openInspector,
+      openAnalytics,
+      openSettings,
       phaseTransitionTarget,
       refreshCampaign,
       openLogoStudio,

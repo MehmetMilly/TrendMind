@@ -85,7 +85,7 @@ function getRunMap() {
 }
 
 function allowSyntheticFallbacks() {
-  return false;
+  return getServerEnv().TRENDMIND_ALLOW_SYNTHETIC_FALLBACKS === "true";
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -1762,7 +1762,7 @@ function deterministicTrial(
       aiSuggestion?.summary?.trim() ||
       (prefersArabic(brief)
         ? "اختبر TrendMind مساحة الصياغة على أكثر من مئة شخصية مركبة حتى يعرف أي نسخة ترفع التفاعل وأيها تصطدم بالتردد أو الشك."
-        : "TrendMind pressure-tested the draft space across more than one hundred synthetic personas to reveal what wins attention, intent, and trust."),
+        : `TrendMind pressure-tested the draft space across ${personas.length} synthetic personas to reveal what may win attention, intent, and trust.`),
     personas,
     reactions,
     scoreboard,

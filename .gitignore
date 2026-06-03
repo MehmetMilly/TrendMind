@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/trendmind-app/.next/
 /out/
 
 # production
@@ -35,9 +36,33 @@ dev-server*.log
 .claude/
 .trendmind-pglite/
 test-results/
+/tmp/
+/CS1301_Tutorial_09_Solutions/
+/demo-data/
 
-# env files (can opt-in for committing if needed)
+# local planning / presentation scratch files
+/Full_Plan.md
+/Final Plan.md
+/PLAN*.md
+/ONESHOT.md
+/PRESENTATION_PLAN.md
+/RESOURCES.md
+/SUMMARY.md
+/Work_Plan.md
+/Influ
+/TrendMind_Presentation*.pptx
+/TrendMind*.docx
+/TrendMind*.pdf
+/trendmind-arabic-rebuild-v2-01f13f.md
+/TrendMind_UI_Notes_Reorganized.md
+/Laptop discussion transcript.txt
+/generate_pptx.js
+/scripts/fix-mojibake*.mjs
+/جميع محتوى التقديم النهائي.txt
+
+# env files
 .env*
+!.env.example
 
 # vercel
 .vercel
