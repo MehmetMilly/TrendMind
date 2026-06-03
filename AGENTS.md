@@ -1,201 +1,113 @@
-# TrendMind Front-End Exploration Brief
+# AGENTS.md
 
-You are helping define the next front-end direction for `TrendMind`.
+Guidance for Codex-like coding agents working in this repository.
 
-I will give you this prompt together with the attached PDF. Treat the PDF as the main source of truth for the current product idea.
+## Project Overview
 
-Do **not** start coding yet.
+TrendMind is a Next.js campaign intelligence studio. It turns a campaign brief into staged outputs: research, strategy, copy drafts, synthetic audience testing, studio direction, and a launch package.
 
-Your job is to:
-- read and understand the PDF deeply
-- understand what kind of product `TrendMind` is becoming
-- think hard about what kind of interface and workflow would make this concept feel truly special
-- research adjacent products, interaction patterns, and workflow models
-- then produce **three different UI/UX plans**, each serious and well thought out
+The project is an active prototype. Keep changes honest and scoped. Do not add fake users, fake metrics, fake screenshots, fake deployments, or unsupported claims.
 
-This is not a polish task.
-This is not a cleanup task.
-This is not a “make the current UI a bit better” task.
+## Install
 
-Treat this as a real product-concept exploration for a hackathon project that wants to stand out.
+```bash
+npm install
+```
 
----
+## Run Locally
 
-## Core Context
+```bash
+npm run dev
+```
 
-`TrendMind` is no longer just a standard AI marketing workspace.
+Open `http://localhost:3000`.
 
-The bigger idea is that it helps discover strong campaign angles, build multiple directions, test them, simulate likely audience reaction, refine the strongest ones, generate final creative assets, and prepare a polished launch-ready result.
+Use `TRENDMIND_DB_MODE=pglite` for local development without a cloud database.
 
-It is meant to feel smarter, sharper, and more ambitious than typical AI marketing tools that just generate bland copy.
+## Build And Checks
 
-The product should feel like a system for discovering what could actually work in the real world, not just a tool that writes ads.
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+```
 
-The PDF should tell you what the product is trying to become.
+`npm run test` runs TypeScript plus a no-secret local repository check using in-memory PGlite.
+It also runs `npm run check:encoding` to catch replacement characters and common mojibake markers in source and docs.
 
----
+Smoke test:
 
-## Important Freedom
+```bash
+npm run smoke
+```
 
-You should assume the **current front-end can be completely overhauled from the ground up**.
+The smoke test requires `OPENROUTER_API_KEY` because synthetic fallbacks are disabled.
 
-Do not feel any obligation to preserve:
-- the current shell
-- the current phase layouts
-- the current panel logic
-- the current information hierarchy
-- the current interaction model
+E2E test:
 
-If you believe the best answer is to rethink the whole interface structure, do it.
+```bash
+npm run test:e2e
+```
 
-Do not approach this like:
-- “what small changes should I make?”
-- “how can I respect the existing implementation?”
-- “how can I gently improve what is already there?”
+The Playwright test builds the app and runs the browser workflow with explicit synthetic fallbacks and no external keys. Use `npm run smoke` for the real OpenRouter-backed pipeline.
 
-Approach it like:
-- “what should this product actually feel like?”
-- “what kind of workflow would make this concept memorable and convincing?”
-- “what kind of interface would make this feel like a real step forward instead of another AI tool?”
+## Important Directories
 
-You are allowed to be bold.
+- `src/app`: Next.js App Router pages and API routes.
+- `src/components/trendmind`: workspace UI.
+- `src/lib/campaign-engine.ts`: staged AI campaign pipeline.
+- `src/lib/campaign-repository.ts`: campaign persistence API.
+- `src/lib/db.ts`: PGlite/Postgres runtime database layer.
+- `src/lib/db/migrations`: SQL migrations.
+- `src/lib/campaign-prompts.ts`: AI prompt construction.
+- `scripts`: migration and smoke-test scripts.
+- `tests`: Playwright tests.
+- `docs`: architecture, roadmap, and application-support docs.
 
----
+## Environment Variables
 
-## Current Problem, In Broad Terms
+Only use variables that are actually read by the app. See `.env.example`.
 
-The current front-end is not something you should optimize around.
+Never commit `.env`, API keys, database files, `.trendmind-pglite`, `.vercel`, logs, or private data.
 
-Some parts of it may be visually attractive, but overall it is not good enough and should not constrain your thinking.
+Key variables:
 
-Broadly, the current experience suffers from things like:
-- too much wasted space
-- too much decorative or low-value top chrome
-- weak use of the canvas area
-- UX that does not yet feel sharp or intentional
-- a workflow that does not yet feel as special as the product idea
-- a right-side agents panel that currently harms the layout more than it helps
+- `DATABASE_URL`
+- `TRENDMIND_DB_MODE`
+- `TRENDMIND_ALLOW_SYNTHETIC_FALLBACKS`
+- `OPENROUTER_API_KEY`
+- `OPENROUTER_BASE_URL`
+- `OPENROUTER_MODEL`
+- `OPENROUTER_FALLBACK_MODEL`
+- `OPENROUTER_TIMEOUT_MS`
+- `TAVILY_API_KEY`
+- `NEXT_PUBLIC_APP_URL`
 
-But I do **not** want you to simply solve those exact issues one by one.
+## Coding Style
 
-I want you to step back and decide what kind of front-end this product deserves now that the concept has become stronger.
+Prefer existing project patterns over new abstractions. Keep TypeScript types explicit where they clarify campaign data shapes. Use structured parsing and validation for AI outputs. Keep UI changes consistent with the existing Arabic-first, RTL workspace unless the user explicitly asks for a redesign.
 
----
+## Safe Implementation Guidelines
 
-## Design Goal
+Make small changes and run the narrowest useful checks first. If touching the pipeline, inspect both `campaign-engine.ts` and `types.ts`. If touching persistence, inspect the migration and repository layer. If touching UI phase rendering, verify the affected phase with a browser or Playwright when practical.
 
-The goal is **not** just “good-looking UI.”
+Do not remove major product phases, agents, demo flows, or Arabic support without user approval. Do not silently enable synthetic AI fallbacks in production-like paths.
 
-The goal is a front-end and workflow that:
-- feels special enough to help this stand out in a hackathon
-- feels clear enough that judges understand it quickly
-- feels smart enough that the product direction is immediately obvious
-- feels more impressive and more productized than generic AI marketing tools
-- gives the app a real identity
+## Known Limitations
 
-It should still be usable and coherent.
-But it should not be timid.
-
-This should feel like a product with a point of view.
-
----
-
-## What I Want From You
-
-I want you to create:
-
-- `PLAN1.md`
-- `PLAN2.md`
-- `PLAN3.md`
-
-Each plan should be real and meaningfully different.
-
-They should not be fake variations of the same answer.
-
-They should share a strong understanding of the product, but differ enough that I can compare them and choose a direction.
-
-The overall spread should feel like this:
-- one more grounded / practical direction
-- one balanced direction
-- one bolder or more radical direction
-
-But all three should still feel serious and viable.
-
----
-
-## How Different The Plans Should Be
-
-Do not limit the difference between the plans to visual style.
-
-The plans can differ in:
-- product structure
-- workflow model
-- layout philosophy
-- how phases or sections behave
-- how AI activity is surfaced
-- how user control vs. system automation should feel
-- how the main workspace is organized
-- how outputs, testing, iteration, and launch are presented
-
-You are free to explore different organizing ideas if they still fit the product in the PDF.
-
----
-
-## What To Think About
-
-Before writing the three plans, think deeply about questions like:
-
-- What kind of experience would make this feel genuinely different from common AI marketing tools?
-- What kind of workflow would make the audience-testing / simulation / refinement parts feel exciting and meaningful?
-- Should this feel like a workspace, a studio, a lab, a command center, or something else entirely?
-- How should the interface help the user understand what the system is doing and why it is better?
-- How should the product visually communicate that it does more than generate content?
-- What kind of interaction model would make this demo well in a hackathon setting?
-- What should be visible all the time, and what should stay secondary?
-- How should the product balance “wow” with clarity?
-
-You should also research similar or adjacent experiences where useful.
-Do not copy them directly.
-Use them to improve your reasoning.
-
----
-
-## Constraints
-
-- Do **not** write code yet.
-- Do **not** optimize for preserving the current implementation.
-- Do **not** make the plans too safe or too generic.
-- Do **not** give shallow surface-level styling suggestions instead of product thinking.
-- Do **not** assume the current front-end architecture deserves loyalty.
-
----
-
-## Output Expectations
-
-For each of the three plan files:
-
-- clearly define the core interface idea
-- explain the workflow model
-- explain how the user moves through the product
-- explain how the AI system shows up in the experience
-- explain what makes that direction special
-- explain why that direction fits the product in the PDF
-- explain what risks or tradeoffs come with it
-
-The plans should be detailed, opinionated, and creatively strong.
-
-They should help me choose a direction, not drown me in fluff.
-
----
-
-## Final Reminder
-
-Please think like a strong product designer, UX designer, and creative systems thinker.
-
-I want three serious front-end directions for what `TrendMind` could become now that the core idea has evolved.
-
-The current front-end is not sacred.
-The current workflow is not sacred.
-The current layout is not sacred.
-
-The product concept in the PDF matters far more than the existing UI.
+- Full campaign smoke testing currently requires `OPENROUTER_API_KEY`.
+- Research search enrichment requires `TAVILY_API_KEY`.
+- The current UI is a prototype and still needs stronger accessibility and responsive QA.
+- Screenshot/demo assets are not yet committed.
+- Test coverage is still thin around API routes, prompt normalization, and error states.
+
+## Preferred Workflow
+
+1. Check `git status --short --branch`.
+2. Read the relevant code before editing.
+3. Keep changes scoped to the request.
+4. Update docs when behavior changes.
+5. Run `npm run lint`, `npm run typecheck`, and `npm run build` for substantial changes.
+6. Run `npm run test:e2e` for browser workflow changes. Run `npm run smoke` only when required credentials and time are available.
+7. Report failures honestly instead of hiding them.

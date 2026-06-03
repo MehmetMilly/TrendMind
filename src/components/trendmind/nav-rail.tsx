@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   Settings2,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import React from "react";
 
 import { useStore } from "@/lib/workspace-store";
@@ -37,7 +36,6 @@ export function NavRail() {
     openSettings,
     openLogoStudio,
   } = useStore();
-  const router = useRouter();
 
   const [expanded, setExpanded] = React.useState(() => {
     if (typeof window === "undefined") return true;

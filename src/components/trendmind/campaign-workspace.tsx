@@ -12,7 +12,6 @@ import {
   Link2,
   MessageCircle,
   MessageSquare,
-  Orbit,
   Pencil,
   Play,
   Radar,
@@ -34,9 +33,11 @@ import { LogoIntelligenceStudio } from "@/components/trendmind/logo-intelligence
 import { PhaseBackdrop } from "@/components/trendmind/phase-backdrop";
 import { PHASES, RESEARCH_KIND_META } from "@/lib/campaign-data";
 import type {
+  CampaignStatus,
   DraftVariant,
   LaunchResponse,
   PhaseId,
+  PhaseStatus,
   ResearchItem,
   ResearchKind,
   StrategyAngle,
@@ -48,6 +49,44 @@ import { SettingsClient } from "@/components/trendmind/settings-client";
 import { computeAnalyticsData } from "@/lib/analytics-utils";
 import { useStore } from "@/lib/workspace-store";
 
+const PHASE_EMPTY_GUIDANCE: Record<PhaseId, { title: string; description: string; deliverable: string }> = {
+  brief: {
+    title: "الملخص جاهز للتعبئة",
+    description: "املأ الحقول الأساسية حتى يصبح المسار واضحاً لبقية الوكلاء قبل بدء أي توليد.",
+    deliverable: "موجز حملة واضح يتضمن العلامة، المنتج، الهدف، والجمهور.",
+  },
+  research: {
+    title: "لا توجد قراءة بحثية بعد",
+    description: "هذه المرحلة تجمع إشارات السوق والجمهور والمنافسة قبل اتخاذ قرار الرسالة.",
+    deliverable: "إشارات موثقة مع تركيز موصى به للحملة.",
+  },
+  strategy: {
+    title: "لم تُبنَ الزوايا الاستراتيجية بعد",
+    description: "بعد اكتمال البحث، تتحول الإشارات هنا إلى زوايا حملة قابلة للمقارنة والحسم.",
+    deliverable: "ثلاث زوايا مع ترشيح واضح ومبررات ومخاطر.",
+  },
+  draft: {
+    title: "النسخ لم تُولّد بعد",
+    description: "هنا تتحول الزاوية المختارة إلى نسخ مختلفة يمكن مراجعتها واختبارها لاحقاً.",
+    deliverable: "مجموعة نسخ قصيرة ومتوسطة وطويلة مع ملاحظات نقدية.",
+  },
+  trial: {
+    title: "لا يوجد اختبار جمهور بعد",
+    description: "يُظهر هذا المشهد كيف قد تستجيب الشرائح المختلفة للنسخ قبل الوصول إلى الإطلاق.",
+    deliverable: "لوحة نتائج وانطباعات جمهور ومخاطر استجابة.",
+  },
+  studio: {
+    title: "لم يتشكل الاتجاه البصري بعد",
+    description: "بعد اختيار الرسالة الفائزة، يبني الاستوديو الترجمة البصرية القابلة للإنتاج.",
+    deliverable: "Prompt بصري، طبقات تصميم، ولوحة ألوان وأحجام نشر.",
+  },
+  launch: {
+    title: "حزمة الإطلاق لم تكتمل بعد",
+    description: "المرحلة الأخيرة تجمع الفائز النهائي وخطة الردود وما يجب نشره أولاً.",
+    deliverable: "نسخة نهائية، خطة ردود، وخطوات إطلاق عملية.",
+  },
+};
+
 export function CampaignWorkspace() {
   const { activePhase, campaign, error, loading, workspaceView } = useStore();
 
@@ -55,7 +94,7 @@ export function CampaignWorkspace() {
     <main id="tm-phase-page" className="relative min-h-0 flex-1 overflow-hidden">
       <PhaseBackdrop phase={activePhase} />
       {loading ? <WorkspacePlaceholder label="جاري تحميل مساحة العمل..." /> : null}
-      {!loading && !campaign && workspaceView !== "settings" ? <LandingPage errorMessage={error} /> : null}
+      {!loading && !campaign && workspaceView !== "settings" ? <WorkspaceLanding errorMessage={error} /> : null}
       {workspaceView === "settings" ? (
         <div className="relative h-full overflow-y-auto">
           <SettingsClient />
@@ -88,8 +127,135 @@ function PhaseRouter({ phase }: { phase: PhaseId }) {
 
   return (
     <div className="relative h-full overflow-y-auto px-6 py-5">
-      <div className="mx-auto max-w-[1240px]">{page}</div>
+      <div className="mx-auto max-w-[1240px] space-y-5">
+        <WorkspaceOverview phase={phase} />
+        {page}
+      </div>
     </div>
+  );
+}
+
+function WorkspaceOverview({ phase }: { phase: PhaseId }) {
+  const { campaign, phaseStatus, setActivePhase } = useStore();
+
+  if (!campaign) return null;
+
+  const completedCount = PHASES.filter(({ id }) => phaseStatus[id] === "ready").length;
+  const currentMeta = PHASES.find((entry) => entry.id === phase)!;
+  const nextPhase = PHASES.find((entry) => {
+    if (entry.index <= currentMeta.index) return false;
+    return phaseStatus[entry.id] !== "ready";
+  });
+  const currentRecord = campaign.phases[phase];
+  const snapshot = [campaign.brief.brandName, campaign.brief.productName, campaign.brief.platform].filter(Boolean);
+
+  return (
+    <section className="grid gap-3 lg:grid-cols-[1.2fr_0.9fr_0.9fr]" aria-label="ملخص الحملة">
+      <article
+        className="rounded-3xl border p-5"
+        style={{
+          background: "linear-gradient(180deg, rgba(255,250,242,0.96), rgba(244,234,216,0.92))",
+          borderColor: "#e4ded4",
+          boxShadow: "0 14px 40px rgba(31,29,26,0.05)",
+        }}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ color: "#6f5a34", background: "rgba(200,169,110,0.16)" }}>
+            {campaignStatusLabel(campaign.status)}
+          </span>
+          <span className="rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ color: "#1f5f49", background: "rgba(61,122,95,0.12)" }}>
+            {completedCount}/{PHASES.length} مكتملة
+          </span>
+        </div>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-[24px] leading-tight" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
+              {campaign.name}
+            </h2>
+            <p className="mt-2 max-w-[720px] text-[13px] leading-[1.75]" style={{ color: "#5f574e" }}>
+              {currentMeta.label} الآن هي محطة القرار الحالية. هذه المرحلة تركز على {currentMeta.role} وتُبنى على ما سبقها بدون إخفاء حالة التقدم أو المخاطر.
+            </p>
+          </div>
+          {currentRecord.updatedAt ? (
+            <div className="text-[11px] leading-[1.6]" style={{ color: "#8b8378" }}>
+              آخر تحديث
+              <br />
+              {formatPhaseUpdatedAt(currentRecord.updatedAt)}
+            </div>
+          ) : null}
+        </div>
+        {snapshot.length > 0 ? (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {snapshot.map((item) => (
+              <span
+                key={item}
+                className="rounded-full px-3 py-1.5 text-[11px] font-semibold"
+                style={{ background: "rgba(255,255,255,0.82)", color: "#514a42", boxShadow: "inset 0 0 0 1px rgba(228,222,212,0.9)" }}
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </article>
+
+      <article
+        className="rounded-3xl border p-5"
+        style={{ background: "rgba(255,250,242,0.88)", borderColor: "#e4ded4", boxShadow: "0 14px 40px rgba(31,29,26,0.04)" }}
+      >
+        <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: "#a68b4b" }}>
+          Pipeline
+        </div>
+        <div className="mt-3 space-y-2.5">
+          {PHASES.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setActivePhase(item.id)}
+              className="flex w-full items-center justify-between rounded-2xl px-3 py-2 text-start transition-all"
+              style={{
+                background: item.id === phase ? "rgba(200,169,110,0.14)" : "rgba(255,255,255,0.64)",
+                color: "#1f1d1a",
+              }}
+            >
+              <span className="inline-flex items-center gap-2">
+                <span className="text-[10px] font-bold tabular-nums" style={{ color: "#a68b4b" }}>
+                  {String(item.index + 1).padStart(2, "0")}
+                </span>
+                <span className="text-[12px] font-semibold">{item.label}</span>
+              </span>
+              <PhaseStatusPill status={phaseStatus[item.id]} />
+            </button>
+          ))}
+        </div>
+      </article>
+
+      <article
+        className="rounded-3xl border p-5"
+        style={{ background: "rgba(24,43,34,0.96)", borderColor: "rgba(200,169,110,0.16)", boxShadow: "0 16px 40px rgba(22,51,38,0.16)" }}
+      >
+        <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: "#c8a96e" }}>
+          Next
+        </div>
+        <h3 className="mt-3 text-[22px] leading-tight" style={{ fontFamily: "var(--font-heading)", color: "#f7ead0" }}>
+          {nextPhase ? `الخطوة التالية: ${nextPhase.label}` : "الحملة وصلت إلى مرحلة الإطلاق"}
+        </h3>
+        <p className="mt-2 text-[13px] leading-[1.75]" style={{ color: "rgba(247,234,208,0.72)" }}>
+          {nextPhase
+            ? `عندما تراجع مخرجات ${currentMeta.label} وتبدو مقنعة، انتقل إلى ${nextPhase.label} حتى يبقى المسار مترابطاً وواضحاً.`
+            : "يمكنك الآن مراجعة الحزمة النهائية، تصديرها، أو إعادة تشغيل أي مرحلة تحتاج تحسيناً قبل التقديم."}
+        </p>
+        <button
+          type="button"
+          onClick={() => setActivePhase((nextPhase ?? currentMeta).id)}
+          className="mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[12px] font-bold"
+          style={{ background: "#d9bf82", color: "#101c16" }}
+        >
+          <Target size={14} />
+          {nextPhase ? `الانتقال إلى ${nextPhase.label}` : `مراجعة ${currentMeta.label}`}
+        </button>
+      </article>
+    </section>
   );
 }
 
@@ -154,11 +320,18 @@ function PageShell({
             </h1>
             <StatusDot status={phaseStatus[phase]} />
           </div>
-          {phase === "brief" ? (
-            <p className="mt-2 max-w-[720px] text-[13px] leading-[1.7]" style={{ color: dark ? "rgba(247,234,208,0.68)" : "#6b6258" }}>
-              {line}
-            </p>
-          ) : null}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span
+              className="rounded-full px-2.5 py-1 text-[10px] font-bold"
+              style={{ color: dark ? "#101c16" : "#6f5a34", background: dark ? "#d9bf82" : "rgba(200,169,110,0.16)" }}
+            >
+              {meta.role}
+            </span>
+            <PhaseStatusPill status={phaseStatus[phase]} dark={dark} />
+          </div>
+          <p className="mt-3 max-w-[760px] text-[13px] leading-[1.7]" style={{ color: dark ? "rgba(247,234,208,0.68)" : "#6b6258" }}>
+            {line}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {action}
@@ -179,222 +352,6 @@ function PageShell({
   );
 }
 
-
-function BriefPage() {
-  const { brief, startFullRun, updateBrief } = useStore();
-  if (!brief) return null;
-
-  const mergedGuardrails = [...brief.avoid, ...(brief.guardrails ?? [])];
-
-  return (
-    <PageShell
-      phase="brief"
-      line="ابدأ بإيجاز واضح. كل المراحل التالية ستقرأ هذه المدخلات كمرجع للحملة."
-      action={
-        <button
-          onClick={() => void startFullRun()}
-          className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-bold"
-          style={{ color: "#f8f1df", background: "#163326" }}
-        >
-          <Play size={14} />
-          بدء الحملة
-        </button>
-      }
-    >
-      {/* â”€â”€ Top row: campaign / brand / platform â”€â”€ */}
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="الحملة" value={brief.campaignName} onChange={(v) => updateBrief("campaignName", v)} placeholder="حملة إطلاق أو موسم" strong />
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="العلامة" value={brief.brandName} onChange={(v) => updateBrief("brandName", v)} placeholder="اسم البراند" />
-          <PlatformSelect value={brief.platform} onChange={(v) => updateBrief("platform", v)} />
-        </div>
-      </div>
-
-      {/* ── 2×2 card grid ── */}
-      <div className="mt-4 grid grid-cols-2 gap-4">
-
-        {/* ── إطار الحملة ── */}
-        <section className="overflow-hidden rounded-2xl border" style={{ background: "rgba(255,250,242,0.88)", borderColor: "#e4ded4", boxShadow: "0 10px 34px rgba(31,29,26,0.04)" }}>
-          <div className="relative flex items-center border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
-            <Settings size={18} color="#c8a96e" className="absolute right-5 top-1/2 -translate-y-1/2" />
-            <h2 className="w-full pr-8 text-right text-[20px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>إطار الحملة</h2>
-          </div>
-          <div className="space-y-0">
-            {/* الجمهور المستهدف */}
-            <div className="border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
-              <div className="mb-2 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>الجمهور المستهدف</div>
-              <div className="rounded-xl border px-4 py-3" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
-                <div className="flex items-center gap-2.5">
-                  <input
-                    value={brief.audience}
-                    onChange={(e) => updateBrief("audience", e.target.value)}
-                    placeholder="حدد الجمهور المستهدف وخصائصه الأساسية..."
-                    className="w-full bg-transparent text-[13px] leading-[1.55] outline-none"
-                    style={{ color: "#1f1d1a" }}
-                  />
-                  <Users size={16} color="#c8a96e" className="shrink-0" />
-                </div>
-              </div>
-            </div>
-            {/* جوهر الرسالة */}
-            <div className="px-5 py-4">
-              <div className="mb-2 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>جوهر الرسالة (الفكرة)</div>
-              <div className="rounded-xl border px-4 py-3" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
-                <div className="flex items-start gap-2.5">
-                  <textarea
-                    value={brief.valueProposition}
-                    onChange={(e) => updateBrief("valueProposition", e.target.value)}
-                    placeholder="ما الفكرة الأساسية التي تريد أن تصل إلى الجمهور؟"
-                    rows={2}
-                    maxLength={400}
-                    className="w-full resize-none bg-transparent text-[13px] leading-[1.6] outline-none"
-                    style={{ color: "#1f1d1a" }}
-                  />
-                  <Zap size={16} color="#c8a96e" className="mt-0.5 shrink-0" />
-                </div>
-                <div className="mt-1 flex items-center justify-between">
-                  <Pencil size={11} color="#b0a99e" />
-                  <span className="text-[10px] tabular-nums" style={{ color: "#b0a99e" }}>{brief.valueProposition.length}/400</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── روابط البراند ── */}
-        <section className="overflow-hidden rounded-2xl border" style={{ background: "rgba(255,250,242,0.88)", borderColor: "#e4ded4", boxShadow: "0 10px 34px rgba(31,29,26,0.04)" }}>
-          <div className="relative flex items-center border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
-            <Link2 size={18} color="#c8a96e" className="absolute right-5 top-1/2 -translate-y-1/2" />
-            <h2 className="w-full pr-8 text-right text-[20px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>روابط البراند</h2>
-          </div>
-          <div className="space-y-0">
-            <div className="border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
-              <div className="mb-2 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>حسابات التواصل الاجتماعي</div>
-              <div className="rounded-xl border px-4 py-3" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
-                <ChipEditor label="" values={brief.socialAccounts ?? []} onChange={(values) => updateBrief("socialAccounts", values)} placeholder="أضف روابط حسابات التواصل الاجتماعي..." />
-                <div className="mt-1"><Pencil size={11} color="#b0a99e" /></div>
-              </div>
-            </div>
-            <div className="px-5 py-4">
-              <div className="mb-2 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>الموقع الرسمي</div>
-              <div className="rounded-xl border px-4 py-3" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
-                <ChipEditor label="" values={brief.brandLinks} onChange={(values) => updateBrief("brandLinks", values)} placeholder="أضف رابط الموقع الرسمي للبراند..." />
-                <div className="mt-1"><Pencil size={11} color="#b0a99e" /></div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── عن المنتج ── */}
-        <section className="overflow-hidden rounded-2xl border" style={{ background: "rgba(255,250,242,0.88)", borderColor: "#e4ded4", boxShadow: "0 10px 34px rgba(31,29,26,0.04)" }}>
-          <div className="relative flex items-center border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
-            <Layers3 size={18} color="#c8a96e" className="absolute right-5 top-1/2 -translate-y-1/2" />
-            <h2 className="w-full pr-8 text-right text-[20px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>عن المنتج</h2>
-          </div>
-          <div className="space-y-0">
-            {/* اسم المنتج */}
-            <div className="border-b px-5 py-3.5" style={{ borderColor: "#ece5d8" }}>
-              <div className="mb-1.5 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>اسم المنتج</div>
-              <div className="rounded-xl border px-4 py-2.5" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
-                <div className="flex items-center gap-2.5">
-                  <input
-                    value={brief.productName}
-                    onChange={(e) => updateBrief("productName", e.target.value)}
-                    placeholder="ما اسم المنتج أو الخدمة المُسوَّق لها؟"
-                    className="w-full bg-transparent text-[13px] leading-[1.55] outline-none"
-                    style={{ color: "#1f1d1a" }}
-                  />
-                  <Target size={15} color="#c8a96e" className="shrink-0" />
-                </div>
-              </div>
-            </div>
-            {/* هدف الحملة */}
-            <div className="border-b px-5 py-3.5" style={{ borderColor: "#ece5d8" }}>
-              <div className="mb-1.5 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>هدف الحملة</div>
-              <div className="rounded-xl border px-4 py-2.5" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
-                <div className="flex items-start gap-2.5">
-                  <textarea
-                    value={brief.goal}
-                    onChange={(e) => updateBrief("goal", e.target.value)}
-                    placeholder="ماذا تريد أن يفعل جمهورك بعد رؤية الحملة؟ (شراء، تسجيل، تحميل...)"
-                    rows={2}
-                    maxLength={300}
-                    className="w-full resize-none bg-transparent text-[13px] leading-[1.6] outline-none"
-                    style={{ color: "#1f1d1a" }}
-                  />
-                  <Zap size={15} color="#c8a96e" className="mt-0.5 shrink-0" />
-                </div>
-              </div>
-            </div>
-            {/* نبرة العلامة */}
-            <div className="border-b px-5 py-3.5" style={{ borderColor: "#ece5d8" }}>
-              <div className="mb-1.5 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>نبرة العلامة</div>
-              <div className="rounded-xl border px-4 py-2.5" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
-                <div className="flex items-center gap-2.5">
-                  <input
-                    value={brief.tone}
-                    onChange={(e) => updateBrief("tone", e.target.value)}
-                    placeholder="كيف يجب أن تبدو العلامة؟ (جريء، دافئ، احترافي، طريف...)"
-                    className="w-full bg-transparent text-[13px] leading-[1.55] outline-none"
-                    style={{ color: "#1f1d1a" }}
-                  />
-                  <Sparkles size={15} color="#c8a96e" className="shrink-0" />
-                </div>
-              </div>
-            </div>
-            {/* الدعوة للعمل */}
-            <div className="px-5 py-3.5">
-              <div className="mb-1.5 text-right text-[12px] font-semibold" style={{ color: "#a68b4b" }}>الدعوة للعمل (CTA)</div>
-              <div className="rounded-xl border px-4 py-2.5" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
-                <div className="flex items-center gap-2.5">
-                  <input
-                    value={brief.callToAction}
-                    onChange={(e) => updateBrief("callToAction", e.target.value)}
-                    placeholder="ما الزر أو العبارة التي تريد الجمهور أن يضغط عليها؟"
-                    className="w-full bg-transparent text-[13px] leading-[1.55] outline-none"
-                    style={{ color: "#1f1d1a" }}
-                  />
-                  <BadgeCheck size={15} color="#c8a96e" className="shrink-0" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── المحظورات والقيود ── */}
-        <section className="overflow-hidden rounded-2xl border" style={{ background: "rgba(255,250,242,0.88)", borderColor: "#e4ded4", boxShadow: "0 10px 34px rgba(31,29,26,0.04)" }}>
-          <div className="relative flex items-center border-b px-5 py-4" style={{ borderColor: "#ece5d8" }}>
-            <ShieldCheck size={18} color="#c8a96e" className="absolute right-5 top-1/2 -translate-y-1/2" />
-            <h2 className="w-full pr-8 text-right text-[20px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>المحظورات والقيود</h2>
-          </div>
-          <div className="px-5 py-4">
-            <p className="mb-3 text-right text-[12px] leading-[1.7]" style={{ color: "#6b6258" }}>ما يجب تجنبه وما هو متاح للاستخدام في الحملة</p>
-            <div className="rounded-xl border px-4 py-3" style={{ background: "#faf7f0", borderColor: "#ece5d8" }}>
-              <textarea
-                value={mergedGuardrails.join("\n")}
-                onChange={(e) => {
-                  const values = e.target.value.split("\n").filter((s) => s.trim());
-                  updateBrief("avoid", values);
-                  updateBrief("guardrails", []);
-                }}
-                placeholder="اذكر المحظورات، المواد الحساسة، والقيود القانونية أو الشرعية..."
-                rows={4}
-                maxLength={400}
-                className="w-full resize-none bg-transparent text-[13px] leading-[1.6] outline-none"
-                style={{ color: "#1f1d1a" }}
-              />
-              <div className="mt-1 flex items-center justify-between">
-                <Pencil size={11} color="#b0a99e" />
-                <span className="text-[10px] tabular-nums" style={{ color: "#b0a99e" }}>{mergedGuardrails.join("\n").length}/400</span>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-    </PageShell>
-  );
-}
 
 // Legacy reference kept during the redesign restart.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -525,480 +482,6 @@ function StrategyPage() {
 }
 
 
-function ResearchPageRevamp() {
-  const { campaign, openInspector } = useStore();
-  const data = campaign?.phases.research.data;
-  const [showAll, setShowAll] = React.useState(false);
-  const [filter, setFilter] = React.useState<ResearchKind | "all">("all");
-  const items = React.useMemo(
-    () => [...(data?.items ?? [])].sort((a, b) => b.confidence - a.confidence),
-    [data?.items],
-  );
-  const filteredItems = React.useMemo(
-    () => (filter === "all" ? items : items.filter((item) => item.kind === filter)),
-    [filter, items],
-  );
-  const visible = showAll ? filteredItems : filteredItems.slice(0, 6);
-  const lead = filteredItems[0] ?? items[0] ?? null;
-  const averageConfidence = items.length
-    ? Math.round(items.reduce((sum, item) => sum + item.confidence, 0) / items.length)
-    : 0;
-  const sourceCount = new Set(items.map((item) => item.source)).size;
-
-  return (
-    <PageShell phase="research" line={data?.overview || "نلتقط الإشارات التي يمكن أن تتحول إلى زاوية حملة حقيقية، ثم نوضح لماذا تستحق الثقة."}>
-      {!data ? <EmptyPhase /> : null}
-      {data ? (
-        <div className="space-y-5">
-          <section
-            className="overflow-hidden rounded-[32px] border"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(255,250,242,0.96) 0%, rgba(248,241,225,0.98) 55%, rgba(241,230,202,0.98) 100%)",
-              borderColor: "#d8bd7c",
-              boxShadow: "0 20px 58px rgba(91,68,34,0.1)",
-            }}
-          >
-            <div className="grid gap-0 lg:grid-cols-[1.18fr_0.82fr]">
-              <div className="relative p-6 lg:p-7">
-                <div
-                  className="pointer-events-none absolute inset-0 opacity-[0.2]"
-                  style={{
-                    background:
-                      "radial-gradient(circle at 12% 18%, rgba(61,122,95,0.16), transparent 24%), radial-gradient(circle at 88% 22%, rgba(200,169,110,0.18), transparent 28%)",
-                  }}
-                />
-                <div className="relative">
-                  <h2
-                    className="max-w-[820px] text-[34px] leading-[1.16]"
-                    style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}
-                  >
-                    {data.recommendedFocus}
-                  </h2>
-
-                  <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                    <DecisionMetric
-                      label="الإشارات"
-                      value={String(items.length)}
-                      detail="نقاط بحث قابلة للتحويل إلى قرارات."
-                      icon={<Layers3 size={15} />}
-                    />
-                    <DecisionMetric
-                      label="الثقة المتوسطة"
-                      value={`${averageConfidence}%`}
-                      detail="مستوى صلابة القراءة عبر كامل المرحلة."
-                      icon={<BadgeCheck size={15} />}
-                    />
-                    <DecisionMetric
-                      label="المصادر"
-                      value={String(sourceCount)}
-                      detail="مراجع أو قواعد قراءة تدعم الاستنتاجات."
-                      icon={<Orbit size={15} />}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className="border-t p-6 lg:border-r lg:border-t-0 lg:p-7"
-                style={{
-                  borderColor: "rgba(216,189,124,0.36)",
-                  background: "linear-gradient(180deg, rgba(31,63,51,0.96), rgba(18,45,35,0.94))",
-                }}
-              >
-                <div
-                  className="rounded-[28px] border p-5"
-                  style={{ borderColor: "rgba(217,194,141,0.2)", background: "rgba(255,255,255,0.05)" }}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-[10px] font-bold" style={{ color: "#a68b4b" }}>
-                        البوصلة الحالية
-                      </div>
-                      <h3
-                        className="mt-1 text-[24px] leading-[1.2]"
-                        style={{ fontFamily: "var(--font-heading)", color: "#f7f1e7" }}
-                      >
-                        {lead?.title ?? "لا توجد إشارة بارزة"}
-                      </h3>
-                    </div>
-                    <span
-                      className="rounded-full px-3 py-1 text-[11px] font-bold tabular-nums"
-                      style={{ background: "rgba(61,122,95,0.1)", color: "#163326" }}
-                    >
-                      {lead?.confidence ?? 0}%
-                    </span>
-                  </div>
-
-                  {lead ? (
-                    <>
-                      <p className="mt-3 text-[13px] leading-[1.8]" style={{ color: "rgba(247,241,231,0.92)" }}>
-                        {buildResearchWhyRevamp(lead)}
-                      </p>
-                      <div
-                        className="mt-4 rounded-2xl border p-3"
-                        style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.08)" }}
-                      >
-                        <div className="mb-2 flex items-center gap-2 text-[11px] font-bold" style={{ color: "#6f5a34" }}>
-                          <Sparkles size={13} />
-                          ما الذي يفعله TrendMind بهذه الإشارة؟
-                        </div>
-                        <p className="text-[12px] leading-[1.75]" style={{ color: "rgba(247,241,231,0.88)" }}>
-                          {buildResearchNextStepRevamp(lead)}
-                        </p>
-                      </div>
-                      <div
-                        className="mt-3 rounded-2xl border p-3"
-                        style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.07)" }}
-                      >
-                        <div className="mb-2 flex items-center gap-2 text-[11px] font-bold" style={{ color: "#d9c28d" }}>
-                          <ShieldCheck size={13} />
-                          ماذا سنحافظ من هذه الخلاصة؟
-                        </div>
-                        <p className="text-[12px] leading-[1.75]" style={{ color: "rgba(247,241,231,0.88)" }}>
-                          نقطة المصداقية والارتباط بالأداء تبقى مرئية في كل ما يلي حتى لا نخسر أقوى ما قادنا لهذه الزاوية.
-                        </p>
-                      </div>
-                    </>
-                  ) : null}
-
-                  <div className="mt-4">
-                    <div className="mb-2 flex items-center gap-2 text-[11px] font-bold" style={{ color: "#a68b4b" }}>
-                      <FileText size={13} />
-                      مصادر داعمة
-                    </div>
-                    <div className="space-y-2">
-                      {data.sourceSummary.slice(0, 3).map((source, index) => (
-                        <div
-                          key={`${source}-${index}`}
-                          className="rounded-2xl border px-3 py-2 text-[12px] leading-[1.65]"
-                          style={{ borderColor: "#ece5d8", background: "rgba(255,255,255,0.58)", color: "#5f574e" }}
-                        >
-                          {source}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section
-            className="space-y-4 rounded-[28px] border p-4"
-            style={{ background: "rgba(255,250,242,0.84)", borderColor: "#e4ded4", boxShadow: "0 16px 42px rgba(31,29,26,0.05)" }}
-          >
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-2 text-[12px]" style={{ color: "#6b6258" }}>
-                <Filter size={14} color="#a68b4b" />
-                اختر نوع الإشارات أو افتح أي بطاقة لمعرفة كيف وصل النظام لهذا الاستنتاج.
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {(["all", "trend", "audience", "competitive", "fact", "risk"] as const).map((entry) => {
-                  const active = filter === entry;
-                  const count = entry === "all" ? items.length : items.filter((item) => item.kind === entry).length;
-                  const meta = entry === "all" ? null : RESEARCH_KIND_META[entry];
-
-                  return (
-                    <button
-                      key={entry}
-                      onClick={() => setFilter(entry)}
-                      className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-[11px] font-bold transition-all"
-                      style={{
-                        borderColor: active ? meta?.accent ?? "#c8a96e" : "#e4ded4",
-                        background: active ? meta?.background ?? "rgba(200,169,110,0.14)" : "#fffaf2",
-                        color: active ? meta?.accent ?? "#6f5a34" : "#6b6258",
-                        boxShadow: active ? "0 10px 24px rgba(200,169,110,0.12)" : "none",
-                      }}
-                    >
-                      {entry === "all" ? "الكل" : meta?.label}
-                      <span
-                        className="rounded-full px-1.5 py-0.5 text-[10px] tabular-nums"
-                        style={{ background: active ? "rgba(255,255,255,0.7)" : "rgba(200,169,110,0.12)", color: "inherit" }}
-                      >
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {visible.map((item, index) => {
-                const meta = RESEARCH_KIND_META[item.kind] || { label: item.kind || "غير معروف", accent: "#a29a90", background: "rgba(162,154,144,0.12)" };
-                return (
-                  <AgentPeek key={item.id} agent={item.by} reasoning={`تم اختيارها لأن ثقتها تبلغ ${item.confidence}% وتدعم مسار ${meta.label}.`}>
-                    <button
-                      onClick={() => openInspector("research", item.id)}
-                      className="group relative flex min-h-[320px] w-full flex-col overflow-hidden rounded-[28px] border p-5 text-start transition-all duration-300 hover:-translate-y-1"
-                      style={{
-                        background: "linear-gradient(180deg, #fffdf8 0%, #fff8ee 100%)",
-                        borderColor: `${meta.accent}33`,
-                        boxShadow: "0 14px 36px rgba(31,29,26,0.06)",
-                      }}
-                    >
-                      <div className="absolute inset-x-0 top-0 h-1" style={{ background: `linear-gradient(90deg, ${meta.accent}, transparent 82%)` }} />
-                      <div className="flex items-start justify-between gap-3">
-                        <span className="rounded-full px-3 py-1.5 text-[12px] font-bold" style={{ color: meta.accent, background: meta.background }}>
-                          {meta.label}
-                        </span>
-                      </div>
-
-                      <h3
-                        className="mt-4 line-clamp-3 text-[22px] leading-[1.28]"
-                        style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}
-                      >
-                        {item.title || `إشارة ${index + 1}`}
-                      </h3>
-
-                      <p className="mt-3 line-clamp-3 text-[13px] leading-[1.8]" style={{ color: "#625b52" }}>
-                        {item.summary}
-                      </p>
-
-                      <div className="mt-4 rounded-2xl border p-3" style={{ borderColor: "#ece5d8", background: "rgba(255,255,255,0.56)" }}>
-                        <div className="mb-1 text-[10px] font-bold" style={{ color: "#a68b4b" }}>
-                          لماذا تهم؟
-                        </div>
-                        <p className="text-[12px] leading-[1.7]" style={{ color: "#584f45" }}>
-                          {buildResearchWhyRevamp(item)}
-                        </p>
-                      </div>
-
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {item.tags.slice(0, 3).map((tag) => (
-                          <span key={tag} className="rounded-full px-2 py-1 text-[10px] font-semibold" style={{ background: "rgba(200,169,110,0.12)", color: "#6f5a34" }}>
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="mt-auto pt-4">
-                        <div className="rounded-2xl border px-3 py-2.5" style={{ borderColor: "#ece5d8", background: "#faf7f0" }}>
-                          <div className="mb-1 text-[10px] font-bold" style={{ color: "#a68b4b" }}>
-                            الدليل أو المصدر
-                          </div>
-                          <div className="truncate text-[11px]" style={{ color: "#7a7063" }}>
-                            {item.source}
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  </AgentPeek>
-                );
-              })}
-            </div>
-
-            {filteredItems.length > 6 ? (
-              <button
-                onClick={() => setShowAll((value) => !value)}
-                className="mx-auto block rounded-full px-4 py-2 text-[12px] font-bold"
-                style={{ background: "#efe5d2", color: "#6f5a34" }}
-              >
-                {showAll ? "عرض أقل" : "عرض بقية الإشارات"}
-              </button>
-            ) : null}
-          </section>
-        </div>
-      ) : null}
-    </PageShell>
-  );
-}
-
-function StrategyPageRevamp() {
-  const { campaign, openInspector, setSelectedAngleId } = useStore();
-  const data = campaign?.phases.strategy.data;
-  const selectedAngleId = campaign?.selectedAngleId ?? data?.recommendedAngleId ?? null;
-  const recommended = data?.angles.find((angle) => angle.id === data.recommendedAngleId) ?? null;
-  const selectedAngle = data?.angles.find((angle) => angle.id === selectedAngleId) ?? recommended ?? null;
-  const heroAngle = selectedAngle ?? recommended;
-  const heroAngleLabel =
-    selectedAngle && recommended && selectedAngle.id !== recommended.id ? "الزاوية المعتمدة الآن" : "الزاوية المقترحة الآن";
-  const averageScore = data?.angles.length
-    ? Math.round(data.angles.reduce((sum, angle) => sum + angle.score, 0) / data.angles.length)
-    : 0;
-
-  return (
-    <PageShell phase="strategy" line={data?.campaignThesis || "نحوّل البحث إلى غرفة قرار: لماذا هذه الزاوية، ماذا نختبر فيها، وكيف قد يراها الناس فعلًا."}>
-      {!data ? <EmptyPhase /> : null}
-      {data ? (
-        <div className="space-y-4">
-          <section
-            className="overflow-hidden rounded-[32px] border"
-            style={{
-              background: "linear-gradient(135deg, #fffaf2 0%, #f5ebd8 58%, #efe2c0 100%)",
-              borderColor: "#d8bd7c",
-              boxShadow: "0 20px 58px rgba(91,68,34,0.1)",
-            }}
-          >
-            <div className="grid gap-0 lg:grid-cols-[1.12fr_0.88fr]">
-              <div className="p-6 lg:p-7">
-                <h2
-                  className="max-w-[860px] text-[34px] leading-[1.16]"
-                  style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}
-                >
-                  {data.campaignThesis}
-                </h2>
-                <p className="mt-3 max-w-[780px] text-[14px] leading-[1.9]" style={{ color: "#5b544a" }}>
-                  {data.decisionFrame}
-                </p>
-
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <DecisionMetric
-                    label="الزوايا"
-                    value={String(data.angles.length)}
-                    detail="خيارات حقيقية قابلة للمقارنة قبل الصياغة والاختبار."
-                    icon={<Layers3 size={15} />}
-                  />
-                  <DecisionMetric
-                    label="المتوسط"
-                    value={`${averageScore}%`}
-                    detail="مستوى جاهزية أولي قبل الانتقال للنسخ والتنفيذ."
-                    icon={<BadgeCheck size={15} />}
-                  />
-                  <DecisionMetric
-                    label="المعتمدة الآن"
-                    value={selectedAngle?.letter ?? recommended?.letter ?? "-"}
-                    detail="المسار الأقرب للوضوح والجدوى في هذه اللحظة."
-                    icon={<Sparkles size={15} />}
-                  />
-                </div>
-
-                <div className="mt-5 grid gap-3 lg:grid-cols-3">
-                  <DecisionFrameBlock title="اتجاه الرسالة" body={data.messageDirection} />
-                  <DecisionFrameBlock title="منطق التمركز" body={data.positioningLogic} />
-                  <DecisionFrameBlock title="نبرة القرار" body={data.toneDirection} />
-                </div>
-              </div>
-
-              <div
-                className="border-t p-6 lg:border-r lg:border-t-0 lg:p-7"
-                style={{ borderColor: "rgba(216,189,124,0.36)", background: "rgba(18,31,24,0.96)", color: "#f7ead0" }}
-              >
-                <div
-                  className="rounded-[28px] border p-5"
-                  style={{
-                    borderColor: "rgba(217,191,130,0.24)",
-                    background: "linear-gradient(180deg, rgba(30,49,38,0.95), rgba(18,31,24,0.98))",
-                  }}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-[10px] font-bold" style={{ color: "#d9bf82" }}>
-                        {heroAngleLabel}
-                      </div>
-                      <h3 className="mt-2 text-[28px] leading-[1.14]" style={{ fontFamily: "var(--font-heading)" }}>
-                        {heroAngle?.title}
-                      </h3>
-                    </div>
-                    <span
-                      className="rounded-full px-3 py-1 text-[11px] font-bold tabular-nums"
-                      style={{ background: "rgba(217,191,130,0.14)", color: "#f7ead0" }}
-                    >
-                      {heroAngle?.score ?? 0}%
-                    </span>
-                  </div>
-
-                  <p className="mt-4 text-[30px] leading-[1.22]" style={{ fontFamily: "var(--font-heading)", color: "#f7ead0" }}>
-                    {heroAngle?.hook}
-                  </p>
-                  <p className="mt-4 text-[13px] leading-[1.85]" style={{ color: "rgba(247,234,208,0.76)" }}>
-                    {heroAngle?.fit}
-                  </p>
-
-                  <div className="mt-5 grid gap-3">
-                    <DarkDecisionCard title="لماذا اقترحناها؟" body={heroAngle ? buildAngleWhyRevamp(heroAngle) : ""} icon={<Sparkles size={14} />} />
-                    <DarkDecisionCard title="رد الفعل المتوقع" body={heroAngle ? buildAngleAudienceReadRevamp(heroAngle) : ""} icon={<Users size={14} />} />
-                    <DarkDecisionCard title="الخطر الذي نراقبه" body={heroAngle?.risks[0] ?? "لا يوجد خطر ظاهر بعد."} icon={<TriangleAlert size={14} />} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <div className="grid gap-4 lg:grid-cols-3">
-            {data.angles.map((angle) => {
-              const selected = selectedAngleId === angle.id;
-              const recommendedAngle = angle.id === data.recommendedAngleId;
-
-              return (
-                <article
-                  key={angle.id}
-                  className="flex min-h-[500px] flex-col rounded-[30px] border p-5 transition-all duration-300"
-                  style={{
-                    background: selected ? "linear-gradient(180deg, #fffaf2, #f1e5c9)" : "linear-gradient(180deg, #fffdf8, #fff8ee)",
-                    borderColor: selected ? "#c8a96e" : recommendedAngle ? "#d8bd7c" : "#e4ded4",
-                    boxShadow: selected ? "0 20px 46px rgba(166,139,75,0.18)" : "0 12px 34px rgba(31,29,26,0.05)",
-                    transform: selected ? "translateY(-4px)" : "translateY(0)",
-                  }}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3">
-                      <span className="text-[44px] leading-none" style={{ fontFamily: "var(--font-heading)", color: "#d1b675" }}>
-                        {angle.letter}
-                      </span>
-                      <div>
-                        <h3 className="text-[26px] leading-[1.18]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
-                          {angle.title}
-                        </h3>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => openInspector("angle", angle.id)}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl"
-                      style={{ background: "#f1e7d5", color: "#745f39" }}
-                      title="عدل الزاوية"
-                      aria-label="عدل الزاوية"
-                    >
-                      <Pencil size={15} />
-                    </button>
-                  </div>
-
-                  <p className="mt-4 text-[22px] leading-[1.3]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
-                    {angle.hook}
-                  </p>
-
-                  <p className="mt-3 text-[13px] leading-[1.85]" style={{ color: "#5f574e" }}>
-                    {angle.thesis}
-                  </p>
-
-                  <div className="mt-4">
-                    <div className="mb-2 flex items-center justify-between text-[11px] font-bold">
-                      <span style={{ color: "#6f5a34" }}>جاهزية الاتجاه</span>
-                      <span className="tabular-nums" style={{ color: "#163326" }}>{angle.score}%</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(200,169,110,0.14)" }}>
-                      <div className="h-full rounded-full" style={{ width: `${angle.score}%`, background: "linear-gradient(90deg, #3d7a5f, #c8a96e)" }} />
-                    </div>
-                  </div>
-
-                  <div className="mt-5 space-y-3">
-                    <AngleInsightCard title="لماذا هذا الخيار؟" body={buildAngleWhyRevamp(angle)} icon={<Sparkles size={13} />} />
-                    <AngleInsightCard title="كيف سيتلقاه الجمهور؟" body={buildAngleAudienceReadRevamp(angle)} icon={<Users size={13} />} />
-                    <AngleInsightCard title="ماذا نثبت عند الاختبار؟" body={buildAngleTestingReadRevamp(angle)} icon={<Target size={13} />} />
-                    <AngleInsightCard title="الخطر الرئيسي" body={angle.risks[0] ?? "الخطر منخفض حالياً."} icon={<TriangleAlert size={13} />} />
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    <Chip text={`الفكرة: ${angle.promise}`} />
-                    <WrapChip text={`النبرة: ${angle.tone}`} />
-                    <WrapChip text={`الموقف: ${angle.stance}`} />
-                  </div>
-
-                  <div className="mt-auto pt-5">
-                    <button onClick={() => void setSelectedAngleId(angle.id)} className="w-full rounded-xl px-3 py-2.5 text-[12px] font-bold" style={{ color: selected ? "#f8f1df" : "#163326", background: selected ? "#163326" : "#efe5d2" }}>
-                      {selected ? "هذه هي الزاوية المعتمدة الآن" : "اعتماد هذه الزاوية"}
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-    </PageShell>
-  );
-}
 
 function buildResearchWhyRevamp(item: ResearchItem) {
   switch (item.kind) {
@@ -1050,17 +533,6 @@ function buildAngleAudienceReadRevamp(angle: StrategyAngle) {
   return "الجمهور قد يلتقط الرسالة بسرعة إذا كان التنفيذ مضبوطًا، لكن هذا المسار يحتاج مراقبة حتى لا يتحول الاهتمام إلى تشويش أو مبالغة.";
 }
 
-function buildAngleTestingReadRevamp(angle: StrategyAngle) {
-  if (angle.lane === "safe") {
-    return "نختبر هنا: هل الوضوح وحده يكفي لرفع القبول والتحويل، أم أن المسار يحتاج عنصرًا أكثر تميزًا حتى يُتذكر؟";
-  }
-
-  if (angle.lane === "sharp") {
-    return "نختبر هنا: هل هذا التوازن بين الجاذبية والوضوح يعطي أفضل استجابة، وهل يشعر الجمهور أن الرسالة ذكية لا متصنعة؟";
-  }
-
-  return "نختبر هنا: هل الجرأة ترفع الانتباه فعليًا أم أنها تسرق التركيز من الفائدة الأساسية التي نريد تثبيتها؟";
-}
 
 // Legacy helper kept while the new trial layout settles.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1140,253 +612,8 @@ function AngleInsightCard({
   );
 }
 
-function DraftPage() {
-  const { campaign, openInspector } = useStore();
-  const data = campaign?.phases.draft.data;
-  const strategy = campaign?.phases.strategy.data;
-  const [manualDrafts, setManualDrafts] = React.useState<Record<string, { hookId: string; bodyId: string; ctaId: string }>>({});
-
-  return (
-    <PageShell phase="draft" line={data?.summary || "نجهّز لكل مسار أكثر من صياغة، ثم نعتمد إعلاناً مركباً من العنوان والجسم والدعوة قبل الاختبار."}>
-      {!data ? <EmptyPhase /> : null}
-      {data ? (
-        <div className="grid grid-cols-3 gap-3">
-          {(strategy?.angles ?? []).map((angle) => {
-            const hooks = data.atoms.filter((atom) => atom.angleId === angle.id && atom.kind === "hook");
-            const bodies = data.atoms.filter((atom) => atom.angleId === angle.id && atom.kind === "body");
-            const ctas = data.atoms.filter((atom) => atom.angleId === angle.id && atom.kind === "cta");
-            const laneHooks = hooks.length > 0 ? hooks : [
-              { id: angle.id + "_hook_1", text: angle.hook },
-              { id: angle.id + "_hook_2", text: angle.promise },
-              { id: angle.id + "_hook_3", text: angle.title },
-            ];
-            const laneBodies = bodies.length > 0 ? bodies : [
-              { id: angle.id + "_body_1", text: angle.thesis },
-              { id: angle.id + "_body_2", text: angle.fit },
-              { id: angle.id + "_body_3", text: angle.stance },
-            ];
-            const laneCtas = ctas.length > 0 ? ctas : [
-              { id: angle.id + "_cta_1", text: "ابدأ الآن" },
-              { id: angle.id + "_cta_2", text: "اكتشف التفاصيل" },
-              { id: angle.id + "_cta_3", text: "انضم إلى قائمة الانتظار" },
-            ];
-            const variant = data.variants.filter((entry) => entry.angleId === angle.id).sort((left, right) => right.score - left.score)[0] ?? {
-              id: angle.id + "_assembled",
-              angleId: angle.id,
-              name: angle.title,
-              hookId: laneHooks[0].id,
-              bodyId: laneBodies[0].id,
-              ctaId: laneCtas[0].id,
-              tone: angle.tone,
-              length: "medium" as const,
-              score: angle.score,
-              critique: [{ agent: "critic" as const, note: "مسار جاهز للمقارنة في الاختبار." }],
-              fullText: laneHooks[0].text + "\n\n" + laneBodies[0].text + "\n\n" + laneCtas[0].text,
-            };
-            const manualDraft = manualDrafts[angle.id] ?? {
-              hookId: variant.hookId,
-              bodyId: variant.bodyId,
-              ctaId: variant.ctaId,
-            };
-            const selectedHook = laneHooks.find((item) => item.id === manualDraft.hookId) ?? laneHooks[0];
-            const selectedBody = laneBodies.find((item) => item.id === manualDraft.bodyId) ?? laneBodies[0];
-            const selectedCta = laneCtas.find((item) => item.id === manualDraft.ctaId) ?? laneCtas[0];
-            const assembledText = [selectedHook?.text, selectedBody?.text, selectedCta?.text].filter(Boolean).join("\n\n");
-            const updateManualDraft = (patch: Partial<{ hookId: string; bodyId: string; ctaId: string }>) => {
-              setManualDrafts((current) => ({
-                ...current,
-                [angle.id]: {
-                  hookId: manualDraft.hookId,
-                  bodyId: manualDraft.bodyId,
-                  ctaId: manualDraft.ctaId,
-                  ...patch,
-                },
-              }));
-            };
-            return (
-              <article key={angle.id} className="rounded-3xl border p-4" style={{ background: "#fffaf2", borderColor: "#c8a96e", boxShadow: "0 16px 42px rgba(166,139,75,0.12)" }}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>زاوية صياغة</div>
-                    <h3 className="mt-1 text-[22px] leading-[1.15]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>زاوية {angle.letter}</h3>
-                  </div>
-                </div>
-                <DraftList title="العناوين" items={laneHooks} selectedId={manualDraft.hookId} onSelect={(id) => updateManualDraft({ hookId: id })} onOpen={openInspector} />
-                <DraftList title="الأجسام" items={laneBodies} selectedId={manualDraft.bodyId} onSelect={(id) => updateManualDraft({ bodyId: id })} onOpen={openInspector} />
-                <DraftList title="الدعوات" items={laneCtas} selectedId={manualDraft.ctaId} onSelect={(id) => updateManualDraft({ ctaId: id })} onOpen={openInspector} />
-                {variant ? (
-                  <div className="mt-4 rounded-2xl border p-4" style={{ borderColor: "#c8a96e", background: "linear-gradient(180deg, #f6ecd2, #fffaf2)" }}>
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>التركيبة المعتمدة لهذه الزاوية</span>
-                      <button
-                        onClick={() => openInspector("variant", variant.id)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl"
-                        style={{ background: "rgba(255,255,255,0.58)", color: "#6f5a34" }}
-                        title="عدل النص"
-                        aria-label="عدل النص"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                    </div>
-                    <p className="whitespace-pre-line text-[13px] leading-[1.75]" style={{ color: "#514a42" }}>{assembledText}</p>
-                    <div className="mt-3 flex flex-wrap gap-1.5">{variant.critique.slice(0, 2).map((note, index) => <Chip key={index} text={note.note} />)}</div>
-                  </div>
-                ) : null}
-              </article>
-            );
-          })}
-        </div>
-      ) : null}
-    </PageShell>
-  );
-}
 
 
-function DraftList({
-  title,
-  items,
-  selectedId,
-  onSelect,
-  onOpen,
-}: {
-  title: string;
-  items: Array<{ id: string; text: string; note?: string }>;
-  selectedId?: string;
-  onSelect?: (id: string) => void;
-  onOpen: (kind: "draft-atom", id: string) => void;
-}) {
-  return (
-    <div className="mt-4">
-      <div className="mb-2 flex items-center justify-between text-[11px] font-bold" style={{ color: "#a68b4b" }}>
-        <span>{title}</span>
-        <span className="tabular-nums" style={{ color: "#b0a99e" }}>{items.length}</span>
-      </div>
-      <div className="space-y-1.5">
-        {items.slice(0, 5).map((item) => {
-          const selected = item.id === selectedId;
-          return (
-          <button key={item.id} onClick={() => onSelect ? onSelect(item.id) : onOpen("draft-atom", item.id)} onDoubleClick={() => onOpen("draft-atom", item.id)} className="w-full rounded-xl border px-3 py-2 text-start text-[12px] leading-[1.55] transition-all" style={{ background: selected ? "rgba(61,122,95,0.09)" : "#fdf8ee", borderColor: selected ? "#3d7a5f" : "#e7decc", color: "#3f3932" }}>
-            <span className="ml-2 inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold" style={{ background: selected ? "#163326" : "#efe5d2", color: selected ? "#f8f1df" : "#9b875e" }}>{selected ? "✓" : ""}</span>
-            {item.text}
-          </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function TrialPage() {
-  const { campaign, resetTrialReplay } = useStore();
-  const data = campaign?.phases.trial.data;
-  const draft = campaign?.phases.draft.data;
-  const strategy = campaign?.phases.strategy.data;
-  const testedVariants = (data?.angleWinners ?? [])
-    .map((winner) => draft?.variants.find((variant) => variant.id === winner.variantId))
-    .filter(Boolean)
-    .slice(0, 3);
-
-  return (
-    <PageShell
-      phase="trial"
-      line={data?.summary || "اختبار يقارن الإعلانات الثلاثة المعتمدة ويعرض تفاعل الجمهور مع كل صيغة قبل الإطلاق."}
-      action={
-        data ? (
-          <button onClick={resetTrialReplay} className="rounded-lg px-3 py-2 text-[12px] font-bold" style={{ background: "#163326", color: "#f8f1df" }}>
-            إعادة العرض
-          </button>
-        ) : null
-      }
-    >
-      {!data ? <EmptyPhase /> : null}
-      {data ? (
-        <div className="overflow-hidden rounded-3xl border p-5 animate-curtain-rise" style={{ background: "linear-gradient(135deg, #fffaf2 0%, #f2eadb 56%, #e9f0e6 100%)", borderColor: "rgba(61,122,95,0.24)", boxShadow: "0 24px 70px rgba(31,29,26,.08)" }}>
-          <div className="mb-5 flex items-center justify-between">
-            <div>
-              <h3 className="text-[24px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>الإعلانات الثلاثة تحت الاختبار</h3>
-            </div>
-            <span title="نموذج شخصيات اصطناعي، وليس مستخدمين حقيقيين" className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: "rgba(61,122,95,0.12)", color: "#163326" }}>i</span>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            {testedVariants.map((variant) => {
-              if (!variant) return null;
-              const angle = strategy?.angles.find((entry) => entry.id === variant.angleId);
-              const score = data.scoreboard.find((entry) => entry.variantId === variant.id);
-              const parts = variant.fullText.split(/\n\s*\n/).filter(Boolean);
-              const heading = parts[0] ?? variant.fullText;
-              const body = parts.slice(1, -1).join("\n\n") || parts.slice(1).join("\n\n");
-              const cta = parts.length > 2 ? parts[parts.length - 1] : "";
-              return (
-                <AgentPeek key={variant.id} agent="simulator" reasoning={score?.verdict ?? "تم اختبار الإعلان على مجموعة شخصيات مركبة."}>
-                  <article className="flex min-h-[390px] flex-col overflow-hidden rounded-[28px] border p-5" style={{ background: "linear-gradient(180deg, #fffdf8, #f7f0e1)", borderColor: score?.variantId === data.winningVariantId ? "#3d7a5f" : "#e0d5c1", boxShadow: score?.variantId === data.winningVariantId ? "0 20px 54px rgba(61,122,95,.18)" : "0 14px 38px rgba(31,29,26,.07)" }}>
-                    <div className="text-[18px] font-black" style={{ color: "#3d7a5f", fontFamily: "var(--font-heading)" }}>زاوية {angle?.letter}</div>
-                    <div className="mt-3 h-1 w-14 rounded-full" style={{ background: "linear-gradient(90deg, #163326, #c8a96e)" }} />
-                    <h3 className="mt-5 text-[28px] leading-[1.22]" style={{ fontFamily: "var(--font-heading)", color: "#2f2923" }}>{heading}</h3>
-                    {body ? (
-                      <p className="mt-5 whitespace-pre-line text-[14px] leading-[1.9]" style={{ color: "#4e473f" }}>{body}</p>
-                    ) : null}
-                    <div className="mt-auto pt-6 text-[14px] font-bold" style={{ color: "#6f5a34" }}>
-                      {cta}
-                    </div>
-                  </article>
-                </AgentPeek>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-    </PageShell>
-  );
-}
-
-
-function StudioPage() {
-  const { campaign, openInspector } = useStore();
-  const data = campaign?.phases.studio.data;
-  const fullPrompt = data?.imagePrompt ?? "اكتب هنا الأمر الكامل لتوليد الصورة النهائية.";
-
-  return (
-    <PageShell phase="studio" line={data?.summary || "تحويل النسخة المختارة إلى لوحة اتجاه بصري قابلة للإنتاج."}>
-      {!data ? <EmptyPhase /> : null}
-      {data ? (
-        <div className="grid gap-4 lg:grid-cols-[0.88fr_1.12fr]">
-          <div className="space-y-4">
-            <Panel title="الاتجاه البصري">
-              <p className="text-[13px] leading-[1.8]" style={{ color: "#514a42" }}>{data.summary}</p>
-              <p className="text-[12px] leading-[1.75]" style={{ color: "#6b6258" }}>{data.composition}</p>
-            </Panel>
-            <section className="overflow-hidden rounded-2xl border" style={{ background: "#fffaf2", borderColor: "#e4ded4" }}>
-              <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: "#ece5d8", background: "#f5efe4" }}><span className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>الطبقات</span><span className="text-[11px] tabular-nums" style={{ color: "#b0a99e" }}>{data.layers.length}</span></div>
-              {data.layers.map((layer) => (
-                <button key={layer.id} onClick={() => openInspector("layer", layer.id)} className="flex w-full gap-3 border-b px-4 py-3 text-start last:border-b-0" style={{ borderColor: "#ece5d8" }}>
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold" style={{ background: "rgba(200,169,110,.12)", color: "#a68b4b" }}>{layer.kind.slice(0, 1)}</span>
-                  <span><span className="block text-[13px] font-bold" style={{ color: "#1f1d1a" }}>{layer.name}</span><span className="mt-1 block text-[11px] leading-[1.55]" style={{ color: "#766d62" }}>{layer.note}</span></span>
-                </button>
-              ))}
-            </section>
-            <Panel title="لوحة الألوان والموجه">
-              <div className="flex flex-wrap gap-2">{data.palette.map((color) => <span key={color} className="h-9 w-9 rounded-full border" style={{ background: color, borderColor: "rgba(0,0,0,.1)" }} title={color} />)}</div>
-              <div className="rounded-2xl border p-3 text-[12px] leading-[1.8]" style={{ background: "#faf7f0", borderColor: "#e4ded4", color: "#514a42" }}>{fullPrompt}</div>
-            </Panel>
-          </div>
-
-          <div className="relative min-h-[640px] overflow-hidden rounded-3xl border" style={{ background: "linear-gradient(160deg, #18251f 0%, #312719 100%)", borderColor: "rgba(200,169,110,0.28)", boxShadow: "0 24px 72px rgba(31,29,26,0.22)" }}>
-            <div className="absolute inset-0 opacity-[0.16]" style={{ backgroundImage: "repeating-linear-gradient(90deg, rgba(244,234,219,.42) 0, rgba(244,234,219,.42) 1px, transparent 1px, transparent 4px), repeating-linear-gradient(0deg, rgba(244,234,219,.24) 0, rgba(244,234,219,.24) 1px, transparent 1px, transparent 4px)" }} />
-            <div className="absolute right-5 top-4 z-10 flex items-center gap-2 text-[11px] font-bold" style={{ color: "rgba(247,234,208,0.72)" }}><span className="h-2 w-2 rounded-full" style={{ background: "#c8a96e" }} /> معاينة 4:5</div>
-            <div className="absolute left-1/2 top-[33%] h-[152px] w-[152px] -translate-x-1/2 -translate-y-1/2 rounded-[36px]" style={{ background: "linear-gradient(180deg, #f4eadb, #c8a96e)", boxShadow: "0 34px 60px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.38)" }} />
-            <div className="absolute left-1/2 top-[33%] h-[192px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: "linear-gradient(90deg, #6d4f33, #9d7a4c, #6d4f33)" }} />
-            <div className="absolute left-1/2 top-[33%] h-[18px] w-[245px] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: "linear-gradient(180deg, #6d4f33, #9d7a4c, #6d4f33)" }} />
-            <div className="absolute bottom-16 left-8 right-8 text-center">
-              <div className="mb-4 text-[11px] font-bold tracking-[0.12em]" style={{ color: "rgba(247,234,208,0.64)" }}>الأمر البرمجي (PROMPT)</div>
-              <h3 className="whitespace-pre-line text-[22px] leading-[1.75]" style={{ fontFamily: "var(--font-heading)", color: "#f7ead0", textShadow: "0 8px 28px rgba(0,0,0,.38)" }}>{fullPrompt}</h3>
-              <div className="mt-7 inline-flex rounded-full px-5 py-2 text-[13px] font-bold" style={{ background: "linear-gradient(160deg, #dcc487, #a68b4b)", color: "#162b22", boxShadow: "0 10px 28px rgba(200,169,110,.28)" }}>أنشئ الصورة</div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </PageShell>
-  );
-}
 
 
 // Legacy reference kept during the redesign restart.
@@ -1590,45 +817,6 @@ function defaultCosts(low: string, medium: string, premium: string) {
   ];
 }
 
-function LaunchPage() {
-  const { campaign } = useStore();
-  const data = campaign?.phases.launch.data;
-  const draft = campaign?.phases.draft.data;
-  const strategy = campaign?.phases.strategy.data;
-  const posts = (strategy?.angles ?? []).map((angle) => {
-    const variant = draft?.variants.find((entry) => entry.angleId === angle.id) ?? {
-      fullText: angle.hook + "\n\n" + angle.thesis + "\n\nابدأ الآن",
-      score: angle.score,
-    };
-    const pkg = data?.packages.find((entry) => entry.id.includes(angle.id) || entry.headline === angle.hook);
-    return { angle, variant, pkg, score: variant?.score ?? angle.score };
-  }).sort((a, b) => {
-    const winner = data?.winningAngleId;
-    if (a.angle.id === winner) return -1;
-    if (b.angle.id === winner) return 1;
-    return b.score - a.score;
-  });
-  const defaultId = data?.winningAngleId ?? posts[0]?.angle.id;
-  const [selectedId, setSelectedId] = React.useState(defaultId);
-
-  return (
-    <PageShell phase="launch" line={data?.summary || "لوحة قرار نهائية: ثلاث منشورات جاهزة، فائز واضح، وخطة إطلاق وردود."}>
-      {!data ? <EmptyPhase /> : null}
-      {data ? (
-        <div className="space-y-5">
-          <div className="grid grid-cols-3 items-start gap-4">
-            {posts.map((post) => {
-              const isWinner = post.angle.id === data.winningAngleId;
-              const isSelected = post.angle.id === selectedId;
-              return <LaunchPost key={post.angle.id} post={post} winner={isWinner} selected={isSelected} onClick={() => setSelectedId(post.angle.id)} />;
-            })}
-          </div>
-          <LaunchInfluencerSuggestions />
-        </div>
-      ) : null}
-    </PageShell>
-  );
-}
 
 
 function LaunchInfluencerSuggestions() {
@@ -1867,40 +1055,6 @@ function calculateInfluencerMatch(
   );
 }
 
-
-function LaunchPost({ post, winner, selected, onClick }: { post: { angle: { id: string; title: string; hook: string; letter: string }; variant?: { fullText: string; score: number }; pkg?: { cta: string } }; winner: boolean; selected: boolean; onClick: () => void }) {
-  const caption = post.variant?.fullText ?? post.angle.hook;
-  const emphasized = selected || winner;
-  return (
-    <button
-      onClick={onClick}
-      aria-pressed={selected}
-      className="relative w-full rounded-3xl border p-4 text-start transition-all duration-300"
-      style={{
-        background: emphasized ? "#fffaf2" : "rgba(255,250,242,0.88)",
-        borderColor: emphasized ? "#c8a96e" : "#e4ded4",
-        transform: selected ? "translateY(-16px) scale(1.01)" : winner ? "translateY(-10px)" : "translateY(0)",
-        opacity: emphasized ? 1 : 0.66,
-        boxShadow: selected
-          ? "0 28px 76px rgba(166,139,75,0.28), 0 0 0 8px rgba(200,169,110,0.08)"
-          : winner
-            ? "0 22px 62px rgba(166,139,75,0.22), 0 0 0 6px rgba(61,122,95,0.08)"
-            : "0 10px 34px rgba(31,29,26,0.04)",
-      }}
-    >
-      <div className="mb-3 flex items-center justify-between">
-        <span className="rounded-full px-2 py-1 text-[10px] font-bold" style={{ color: winner ? "#163326" : "#7c6a48", background: winner ? "rgba(61,122,95,0.12)" : "rgba(200,169,110,0.13)" }}>{winner ? "الأقوى" : "زاوية " + post.angle.letter}</span>
-        <span dir="ltr" className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>X post</span>
-      </div>
-      <div className="rounded-2xl border p-4" style={{ background: "linear-gradient(180deg, #fdf8ee, #f4ead8)", borderColor: emphasized ? "#d8bd7c" : "#e4ded4" }}>
-        <div className="flex items-center gap-2"><div className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: "#163326", color: "#f8f1df" }}>T</div><div><div className="text-[13px] font-bold" style={{ color: "#1f1d1a" }}>TrendMind</div><div dir="ltr" className="text-[11px]" style={{ color: "#8f877b" }}>@campaign_lab</div></div></div>
-        <h3 className="mt-4 text-[22px] leading-[1.18]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>{post.angle.hook}</h3>
-        <p className="mt-3 line-clamp-6 whitespace-pre-line text-[12px] leading-[1.7]" style={{ color: "#514a42" }}>{caption}</p>
-        <div className="mt-4 flex items-center justify-between border-t pt-3" style={{ borderColor: "#e4ded4" }}><span className="text-[12px] font-bold" style={{ color: "#a68b4b" }}>خطة الردود</span><span className="tabular-nums text-[12px] font-bold" style={{ color: "#163326" }}>{post.variant?.score ?? 0}%</span></div>
-      </div>
-    </button>
-  );
-}
 
 function BriefPageRefined() {
   const { brief, startFullRun, updateBrief } = useStore();
@@ -2405,106 +1559,6 @@ function StrategyPageFocused() {
   );
 }
 
-function DraftPageFocused() {
-  const { campaign, openInspector } = useStore();
-  const data = campaign?.phases.draft.data;
-  const strategy = campaign?.phases.strategy.data;
-  const [manualDrafts, setManualDrafts] = React.useState<Record<string, { hookId: string; bodyId: string; ctaId: string }>>({});
-
-  return (
-    <PageShell phase="draft" line={data?.summary || "نبني لكل زاوية نسخة أوضح وأنظف، ثم نختار التركيبة الأنسب للاختبار."}>
-      {!data ? <EmptyPhase /> : null}
-      {data ? (
-        <div className="grid grid-cols-3 gap-4">
-          {(strategy?.angles ?? []).map((angle) => {
-            const hooks = data.atoms.filter((atom) => atom.angleId === angle.id && atom.kind === "hook");
-            const bodies = data.atoms.filter((atom) => atom.angleId === angle.id && atom.kind === "body");
-            const ctas = data.atoms.filter((atom) => atom.angleId === angle.id && atom.kind === "cta");
-            const laneHooks = hooks.length > 0 ? hooks : [
-              { id: `${angle.id}_hook_1`, text: angle.hook },
-              { id: `${angle.id}_hook_2`, text: angle.promise },
-              { id: `${angle.id}_hook_3`, text: angle.title },
-            ];
-            const laneBodies = bodies.length > 0 ? bodies : [
-              { id: `${angle.id}_body_1`, text: angle.thesis },
-              { id: `${angle.id}_body_2`, text: angle.fit },
-              { id: `${angle.id}_body_3`, text: angle.stance },
-            ];
-            const laneCtas = ctas.length > 0 ? ctas : [
-              { id: `${angle.id}_cta_1`, text: "اكتشف التفاصيل" },
-              { id: `${angle.id}_cta_2`, text: "اطلب الآن" },
-              { id: `${angle.id}_cta_3`, text: "شاهد المزيد" },
-            ];
-            const variant = data.variants.filter((entry) => entry.angleId === angle.id).sort((left, right) => right.score - left.score)[0];
-            const manualDraft = manualDrafts[angle.id] ?? {
-              hookId: variant?.hookId ?? laneHooks[0].id,
-              bodyId: variant?.bodyId ?? laneBodies[0].id,
-              ctaId: variant?.ctaId ?? laneCtas[0].id,
-            };
-            const selectedHook = laneHooks.find((item) => item.id === manualDraft.hookId) ?? laneHooks[0];
-            const selectedBody = laneBodies.find((item) => item.id === manualDraft.bodyId) ?? laneBodies[0];
-            const selectedCta = laneCtas.find((item) => item.id === manualDraft.ctaId) ?? laneCtas[0];
-            const updateManualDraft = (patch: Partial<{ hookId: string; bodyId: string; ctaId: string }>) => {
-              setManualDrafts((current) => ({
-                ...current,
-                [angle.id]: {
-                  hookId: manualDraft.hookId,
-                  bodyId: manualDraft.bodyId,
-                  ctaId: manualDraft.ctaId,
-                  ...patch,
-                },
-              }));
-            };
-
-            return (
-              <article key={`draft-${angle.id}`} className="rounded-3xl border p-4" style={{ background: "#fffaf2", borderColor: "#c8a96e", boxShadow: "0 16px 42px rgba(166,139,75,0.12)" }}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>الاتجاه المعتمد للصياغة</div>
-                    <h3 className="text-[34px] leading-[1.02]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
-                      زاوية {angle.letter}
-                    </h3>
-                  </div>
-                </div>
-
-                <DraftAtomListFocused title="العناوين" items={laneHooks} selectedId={manualDraft.hookId} onSelect={(id) => updateManualDraft({ hookId: id })} compact onOpen={openInspector} />
-                <DraftAtomListFocused title="الأجسام" items={laneBodies} selectedId={manualDraft.bodyId} onSelect={(id) => updateManualDraft({ bodyId: id })} onOpen={openInspector} />
-                <DraftAtomListFocused title="الدعوة" items={laneCtas} selectedId={manualDraft.ctaId} onSelect={(id) => updateManualDraft({ ctaId: id })} compact onOpen={openInspector} />
-
-                <div className="mt-4 rounded-2xl border p-4" style={{ borderColor: "#c8a96e", background: "linear-gradient(180deg, #f6ecd2, #fffaf2)" }}>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-[11px] font-bold" style={{ color: "#a68b4b" }}>التركيبة المعتمدة لهذه الزاوية</span>
-                    {variant ? (
-                      <button
-                        onClick={() => openInspector("variant", variant.id)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl"
-                        style={{ background: "#163326", color: "#f8f1df" }}
-                        title="عدل النص"
-                        aria-label="عدل النص"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                    ) : null}
-                  </div>
-                  <div className="space-y-3 text-[13px] leading-[1.8]" style={{ color: "#514a42" }}>
-                    <p>{shortenDisplayText(selectedHook.text, 110)}</p>
-                    <p>{selectedBody.text}</p>
-                    <p>{shortenDisplayText(selectedCta.text, 90)}</p>
-                  </div>
-                  {variant?.critique?.length ? (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {variant.critique.slice(0, 2).map((note, index) => <WrapChip key={`critique-${variant.id}-${index}`} text={note.note} />)}
-                    </div>
-                  ) : null}
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      ) : null}
-    </PageShell>
-  );
-}
 
 function DraftPageFocusedFinal() {
   const { campaign, openInspector } = useStore();
@@ -2920,7 +1974,8 @@ function LaunchPageFocused() {
       {!data ? <EmptyPhase /> : null}
       {data ? (
         <div className="space-y-5">
-          <div className="grid grid-cols-3 items-start gap-4 pt-1">
+          <LaunchDecisionBoard posts={posts} />
+          <div className="grid gap-4 pt-1 md:grid-cols-2 xl:grid-cols-3">
             {posts.map((post) => (
               <LaunchPostFocused
                 key={`launch-focused-${post.angle.id}`}
@@ -2935,6 +1990,78 @@ function LaunchPageFocused() {
         </div>
       ) : null}
     </PageShell>
+  );
+}
+
+function LaunchDecisionBoard({
+  posts,
+}: {
+  posts: Array<{
+    angle: { id: string; title: string; hook: string; letter: string };
+    variant: DraftVariant | null;
+    finalScore: number;
+    engagement: { likes: number; comments: number };
+    responsePlan: LaunchResponse[];
+  }>;
+}) {
+  const { campaign } = useStore();
+  const launch = campaign?.phases.launch.data;
+  const winner = posts.find((post) => post.angle.id === launch?.winningAngleId) ?? posts[0] ?? null;
+
+  if (!launch || !winner) return null;
+
+  return (
+    <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]" style={{ direction: "rtl" }}>
+      <article
+        className="rounded-3xl border p-5"
+        style={{
+          background: "linear-gradient(180deg, #fff8e8 0%, #f3e2b5 100%)",
+          borderColor: "#d8bd7c",
+          boxShadow: "0 18px 48px rgba(166,139,75,0.16)",
+        }}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ color: "#fff1bf", background: "linear-gradient(135deg, #7f5310, #f0b431 45%, #fff0b3 100%)" }}>
+            الزاوية الفائزة
+          </span>
+          <span className="rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ color: "#6d4d00", background: "rgba(255,255,255,0.55)" }}>
+            {winner.finalScore}% score
+          </span>
+        </div>
+        <h2 className="mt-3 text-[28px] leading-[1.2]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
+          {winner.angle.title}
+        </h2>
+        <p className="mt-2 text-[13px] leading-[1.8]" style={{ color: "#514a42" }}>
+          {launch.summary}
+        </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <LaunchDecisionMetric label="النسخة المرجعية" value={winner.variant?.name ?? "غير محددة"} />
+          <LaunchDecisionMetric label="الإعجابات المتوقعة" value={String(winner.engagement.likes)} />
+          <LaunchDecisionMetric label="التعليقات المتوقعة" value={String(winner.engagement.comments)} />
+        </div>
+      </article>
+
+      <article
+        className="rounded-3xl border p-5"
+        style={{ background: "rgba(255,250,242,0.9)", borderColor: "#e4ded4", boxShadow: "0 12px 36px rgba(31,29,26,0.05)" }}
+      >
+        <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: "#a68b4b" }}>
+          Readiness
+        </div>
+        <div className="mt-3 space-y-3">
+          {launch.nextSteps.slice(0, 3).map((step) => (
+            <div key={step} className="rounded-2xl px-3 py-2.5 text-[12px] leading-[1.7]" style={{ background: "rgba(255,255,255,0.82)", color: "#514a42" }}>
+              {step}
+            </div>
+          ))}
+          {launch.riskNotes.slice(0, 2).map((note) => (
+            <div key={note} className="rounded-2xl border px-3 py-2.5 text-[12px] leading-[1.7]" style={{ borderColor: "rgba(178,91,80,0.18)", background: "rgba(178,91,80,0.06)", color: "#8b4d45" }}>
+              {note}
+            </div>
+          ))}
+        </div>
+      </article>
+    </section>
   );
 }
 
@@ -3248,6 +2375,16 @@ function StatusDot({ status }: { status: string }) {
   return <span className="h-2 w-2 rounded-full" style={{ background: color }} />;
 }
 
+function PhaseStatusPill({ status, dark }: { status: PhaseStatus; dark?: boolean }) {
+  const palette = phaseStatusPalette(status, dark);
+
+  return (
+    <span className="rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ color: palette.fg, background: palette.bg }}>
+      {phaseStatusLabel(status)}
+    </span>
+  );
+}
+
 function WrapChip({ text, onRemove }: { text: string; onRemove?: () => void }) {
   return (
     <span className="inline-flex max-w-full items-start gap-1.5 rounded-2xl px-2.5 py-1.5 text-[11px] font-semibold" style={{ background: "rgba(200,169,110,0.13)", color: "#6f5a34" }}>
@@ -3261,6 +2398,7 @@ function EmptyPhase({ dark }: { dark?: boolean }) {
   const { activePhase, phaseStatus, rerunPhase, campaign } = useStore();
   const status = phaseStatus[activePhase];
   const isGenerating = status === "running" || status === "pending";
+  const guidance = PHASE_EMPTY_GUIDANCE[activePhase];
 
   if (isGenerating) {
     return <GeneratingPhase dark={dark} />;
@@ -3282,7 +2420,7 @@ function EmptyPhase({ dark }: { dark?: boolean }) {
 
   return (
     <div className="flex min-h-[420px] items-center justify-center">
-      <div className="rounded-2xl border px-8 py-7 text-center" style={{ background: dark ? "rgba(255,248,235,0.06)" : "#fffaf2", borderColor: dark ? "rgba(217,191,130,0.18)" : "#e4ded4" }}>
+      <div className="max-w-xl rounded-3xl border px-8 py-7 text-center" title={guidance.deliverable} style={{ background: dark ? "rgba(255,248,235,0.06)" : "#fffaf2", borderColor: dark ? "rgba(217,191,130,0.18)" : "#e4ded4" }}>
         <MessageSquare className="mx-auto" color={dark ? "#d9bf82" : "#a68b4b"} />
         <h2 className="mt-3 text-[24px]" style={{ fontFamily: "var(--font-heading)", color: dark ? "#f7ead0" : "#1f1d1a" }}>لا توجد مخرجات بعد</h2>
         <p className="mt-2 text-[13px]" style={{ color: dark ? "rgba(247,234,208,0.65)" : "#6b6258" }}>ابدأ المرحلة لتظهر النتائج هنا بشكل واضح ومختصر.</p>
@@ -3368,39 +2506,6 @@ function GeneratingPhase({ dark }: { dark?: boolean }) {
   );
 }
 
-function LandingPage({ errorMessage }: { errorMessage: string | null }) {
-  const [showPopup, setShowPopup] = React.useState(false);
-
-  return (
-    <div className="relative flex h-full items-center justify-center px-6">
-      <div className="max-w-lg text-center animate-rise-in">
-        <div dir="ltr" className="text-[36px] leading-none" style={{ fontFamily: "var(--font-wordmark)", color: "#1f1d1a" }}>
-          TrendMind
-        </div>
-        <p className="mx-auto mt-4 max-w-[320px] text-[14px] leading-[1.7]" style={{ color: "#6b6258" }}>
-          منصة ذكية لبناء حملات تسويقية متكاملة تبدأ من الإيجاز وتنتهي بالإطلاق.
-        </p>
-        {errorMessage ? (
-          <p className="mt-3 text-[12px]" style={{ color: "#b25b50" }}>{errorMessage}</p>
-        ) : null}
-        <button
-          onClick={() => setShowPopup(true)}
-          className="mt-8 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[14px] font-bold transition-all hover:scale-[1.02]"
-          style={{
-            color: "#f0e8d8",
-            background: "linear-gradient(160deg, #3d7a5f, #163326)",
-            boxShadow: "0 8px 28px rgba(22,51,38,0.28), 0 2px 6px rgba(0,0,0,0.08)",
-          }}
-        >
-          <span className="text-[16px]">+</span>
-          إنشاء حملة جديدة
-        </button>
-      </div>
-      {showPopup ? <CreateCampaignPopup onClose={() => setShowPopup(false)} /> : null}
-    </div>
-  );
-}
-
 function CreateCampaignPopup({ onClose }: { onClose: () => void }) {
   const { createCampaign, runPending } = useStore();
   const [form, setForm] = React.useState({
@@ -3482,6 +2587,159 @@ function WorkspacePlaceholder({ label }: { label: string }) {
         <h2 className="mt-2 text-[24px]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>مساحة العمل</h2>
         <p className="mt-2 text-[12px] leading-[1.6]" style={{ color: "#5a5550" }}>{label}</p>
       </div>
+    </div>
+  );
+}
+
+function phaseStatusLabel(status: PhaseStatus) {
+  return {
+    idle: "لم يبدأ",
+    pending: "قيد الانتظار",
+    running: "جارٍ التنفيذ",
+    ready: "جاهز",
+    stale: "يحتاج تحديثاً",
+    error: "تعثر",
+  }[status];
+}
+
+function campaignStatusLabel(status: CampaignStatus) {
+  return {
+    draft: "مسودة",
+    running: "قيد التشغيل",
+    ready: "جاهزة",
+    attention: "تحتاج انتباهاً",
+  }[status];
+}
+
+function phaseStatusPalette(status: PhaseStatus, dark?: boolean) {
+  if (status === "ready") {
+    return { fg: dark ? "#163326" : "#1f5f49", bg: dark ? "#d9bf82" : "rgba(61,122,95,0.12)" };
+  }
+  if (status === "running" || status === "pending") {
+    return { fg: dark ? "#101c16" : "#7a6235", bg: dark ? "#d9bf82" : "rgba(200,169,110,0.14)" };
+  }
+  if (status === "stale") {
+    return { fg: dark ? "#101c16" : "#8a6a35", bg: dark ? "#d9bf82" : "rgba(183,134,63,0.14)" };
+  }
+  if (status === "error") {
+    return { fg: dark ? "#f7ead0" : "#8b4d45", bg: dark ? "rgba(178,91,80,0.24)" : "rgba(178,91,80,0.1)" };
+  }
+  return { fg: dark ? "#f7ead0" : "#6b6258", bg: dark ? "rgba(255,255,255,0.08)" : "rgba(31,29,26,0.06)" };
+}
+
+function formatPhaseUpdatedAt(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("ar-SA", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function LaunchDecisionMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl px-3 py-3" style={{ background: "rgba(255,255,255,0.58)", color: "#514a42" }}>
+      <div className="text-[10px] font-bold" style={{ color: "#a68b4b" }}>{label}</div>
+      <div className="mt-1 text-[13px] font-semibold leading-[1.7]">{value}</div>
+    </div>
+  );
+}
+
+function WorkspaceLanding({ errorMessage }: { errorMessage: string | null }) {
+  const [showPopup, setShowPopup] = React.useState(false);
+
+  return (
+    <div className="relative flex h-full items-center justify-center px-6 py-8">
+      <div className="grid w-full max-w-[1120px] gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+        <section
+          className="rounded-[32px] border px-8 py-9"
+          style={{
+            background: "linear-gradient(180deg, rgba(255,250,242,0.96), rgba(243,235,223,0.9))",
+            borderColor: "#e4ded4",
+            boxShadow: "0 18px 52px rgba(31,29,26,0.06)",
+          }}
+        >
+          <div dir="ltr" className="text-[36px] leading-none" style={{ fontFamily: "var(--font-wordmark)", color: "#1f1d1a" }}>
+            TrendMind
+          </div>
+          <h1 className="mt-4 text-[34px] leading-[1.15]" style={{ fontFamily: "var(--font-heading)", color: "#1f1d1a" }}>
+            من brief الحملة إلى حزمة إطلاق قابلة للمراجعة.
+          </h1>
+          <p className="mt-4 max-w-[620px] text-[14px] leading-[1.85]" style={{ color: "#5f574e" }}>
+            TrendMind يبقي مسار العمل واضحاً: بحث، استراتيجية، نسخ، اختبار جمهور، اتجاه بصري، ثم نتيجة نهائية يمكن مناقشتها وتصديرها.
+          </p>
+          {errorMessage ? (
+            <p className="mt-4 rounded-2xl px-4 py-3 text-[12px] leading-[1.7]" style={{ color: "#8b4d45", background: "rgba(178,91,80,0.08)" }}>
+              {errorMessage}
+            </p>
+          ) : null}
+          <div className="mt-6 flex flex-wrap gap-2">
+            {["بحث موثق", "زوايا قابلة للمقارنة", "اختبار ردود", "حزمة إطلاق نهائية"].map((item) => (
+              <span
+                key={item}
+                className="rounded-full px-3 py-1.5 text-[11px] font-semibold"
+                style={{ background: "rgba(255,255,255,0.82)", color: "#514a42", boxShadow: "inset 0 0 0 1px rgba(228,222,212,0.9)" }}
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowPopup(true)}
+            className="mt-8 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[14px] font-bold transition-all hover:scale-[1.02]"
+            style={{
+              color: "#f0e8d8",
+              background: "linear-gradient(160deg, #3d7a5f, #163326)",
+              boxShadow: "0 8px 28px rgba(22,51,38,0.28), 0 2px 6px rgba(0,0,0,0.08)",
+            }}
+          >
+            <span className="text-[16px]">+</span>
+            إنشاء حملة جديدة
+          </button>
+        </section>
+
+        <section className="grid content-start gap-4">
+          <div className="rounded-3xl border p-5" style={{ background: "rgba(255,250,242,0.9)", borderColor: "#e4ded4", boxShadow: "0 12px 34px rgba(31,29,26,0.05)" }}>
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: "#a68b4b" }}>
+              Workflow
+            </div>
+            <div className="mt-3 space-y-3">
+              <WorkspaceLandingStep
+                title="1. اكتب brief واضح"
+                body="اسم الحملة، العلامة، المنتج، الهدف، والجمهور هي المدخل الذي يبني بقية المسار."
+              />
+              <WorkspaceLandingStep
+                title="2. راجع القرارات مرحلة بمرحلة"
+                body="كل مرحلة تعرض زاوية قرار مختلفة بدلاً من دفن كل شيء داخل نص طويل."
+              />
+              <WorkspaceLandingStep
+                title="3. صدّر الحزمة النهائية"
+                body="عند اكتمال الاختبار والإطلاق تستطيع مشاركة النتيجة أو تصديرها مباشرة."
+              />
+            </div>
+          </div>
+
+          <div className="rounded-3xl border p-5" style={{ background: "rgba(24,43,34,0.96)", borderColor: "rgba(200,169,110,0.16)", boxShadow: "0 16px 40px rgba(22,51,38,0.16)" }}>
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: "#c8a96e" }}>
+              Trust
+            </div>
+            <p className="mt-3 text-[13px] leading-[1.8]" style={{ color: "rgba(247,234,208,0.74)" }}>
+              الواجهة مصممة لتوضيح حالة الحملة وحدودها. المسار المحلي القابل للاختبار لا يدّعي أنه بديل عن التشغيل الحقيقي بالنماذج، بل طريقة واضحة للتحقق من المنتج نفسه.
+            </p>
+          </div>
+        </section>
+      </div>
+      {showPopup ? <CreateCampaignPopup onClose={() => setShowPopup(false)} /> : null}
+    </div>
+  );
+}
+
+function WorkspaceLandingStep({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="rounded-2xl px-4 py-3" style={{ background: "rgba(255,255,255,0.78)" }}>
+      <div className="text-[12px] font-bold" style={{ color: "#1f1d1a" }}>{title}</div>
+      <p className="mt-1 text-[12px] leading-[1.7]" style={{ color: "#5f574e" }}>{body}</p>
     </div>
   );
 }

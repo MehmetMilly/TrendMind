@@ -7,9 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run typecheck && npm run check:encoding && npm run test:local && npm run test:error-paths",
+    "check:encoding": "tsx scripts/encoding-check.ts",
+    "test:local": "tsx scripts/local-check.ts",
+    "test:error-paths": "tsx scripts/error-path-check.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "smoke": "tsx scripts/smoke.ts",
-    "test:e2e": "npm run build && playwright test"
+    "test:e2e": "tsx scripts/e2e.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.4.5",

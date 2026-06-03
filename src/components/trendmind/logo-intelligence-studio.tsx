@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 const logoSuggestions = [
@@ -104,7 +105,14 @@ export function LogoIntelligenceStudio() {
           <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(event) => acceptFile(event.target.files?.[0])} />
           {previewUrl ? (
             <>
-              <img src={previewUrl} alt="Uploaded logo" className="max-h-[150px] max-w-[82%] object-contain drop-shadow-md" />
+              <Image
+                src={previewUrl}
+                alt="Uploaded logo"
+                width={240}
+                height={150}
+                unoptimized
+                className="max-h-[150px] max-w-[82%] object-contain drop-shadow-md"
+              />
               <span className="mt-3 max-w-full truncate text-[10px] font-medium" style={{ color: "#5a5550" }}>
                 {fileName}
               </span>
@@ -225,9 +233,12 @@ function LogoPreview({ title, image, enhanced = false }: { title: string; image:
         {title}
       </div>
       <div className="flex aspect-square items-center justify-center rounded-lg" style={{ background: enhanced ? "#f8f4ed" : "#f5f1ea" }}>
-        <img
+        <Image
           src={image}
           alt={`${title} logo preview`}
+          width={180}
+          height={180}
+          unoptimized
           className="max-h-[70%] max-w-[70%] object-contain"
           style={enhanced ? { filter: "contrast(1.12) saturate(1.22) drop-shadow(0 10px 18px rgba(0,0,0,0.18))" } : undefined}
         />
@@ -244,7 +255,15 @@ function MiniMock({ title, image, box = false }: { title: string; image: string;
       </div>
       <div className="mt-2 flex h-[110px] items-center justify-center rounded-lg" style={{ background: box ? "linear-gradient(135deg,#efe8dc,#fffaf2)" : "linear-gradient(135deg,#162b22,#3d7a5f)" }}>
         <div className={box ? "rounded-xl border bg-white p-4 shadow-md" : "rounded-full bg-white p-3"} style={{ borderColor: "#e4ded4" }}>
-          <img src={image} alt={`${title} logo mockup`} className="h-12 w-12 object-contain" style={{ filter: "contrast(1.12) saturate(1.18)" }} />
+          <Image
+            src={image}
+            alt={`${title} logo mockup`}
+            width={48}
+            height={48}
+            unoptimized
+            className="h-12 w-12 object-contain"
+            style={{ filter: "contrast(1.12) saturate(1.18)" }}
+          />
         </div>
       </div>
     </div>
