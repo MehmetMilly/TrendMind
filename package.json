@@ -19,7 +19,7 @@
   "dependencies": {
     "@electric-sql/pglite": "^0.4.5",
     "lucide-react": "^1.14.0",
-    "next": "16.2.4",
+    "next": "16.4.1",
     "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^5.7.284",
     "pg": "^8.20.0",
