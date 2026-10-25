@@ -20,8 +20,12 @@ declare global {
   var __trendmindDbMode: "pg" | "pglite" | undefined;
 }
 
-function shouldUseSsl(connectionString: string) {
-  return !/(localhost|127\.0\.0\.1)/i.test(connectionString);
+function shouldUseSsl(connectionUrl: URL) {
+  // Match pg: the final host query parameter overrides the URL hostname.
+  const hostname = connectionUrl.searchParams.getAll("host").at(-1)
+    || decodeURIComponent(connectionUrl.hostname);
+  return !["localhost", "127.0.0.1", "::1", "[::1]"].includes(hostname.toLowerCase())
+    && !hostname.startsWith("/");
 }
 
 function resolvePGliteDataDir() {
@@ -47,13 +51,26 @@ export function getPool() {
       throw new Error("DATABASE_URL is not configured.");
     }
 
+    let connectionUrl: URL;
+    try {
+      connectionUrl = new URL(env.DATABASE_URL);
+      if (!["postgres:", "postgresql:"].includes(connectionUrl.protocol)) {
+        throw new Error("Unsupported database URL protocol.");
+      }
+    } catch {
+      throw new Error("DATABASE_URL must be a valid PostgreSQL URL.");
+    }
+    const useSsl = shouldUseSsl(connectionUrl);
+    if (useSsl) {
+      // pg parses URL SSL options after the ssl object. Enforce verification there too.
+      connectionUrl.searchParams.set("sslmode", "verify-full");
+    }
+
     global.__trendmindPool = new Pool({
-      connectionString: env.DATABASE_URL,
+      connectionString: connectionUrl.toString(),
       max: 10,
       connectionTimeoutMillis: 5000,
-      ssl: shouldUseSsl(env.DATABASE_URL)
-        ? { rejectUnauthorized: false }
-        : undefined,
+      ssl: useSsl ? { rejectUnauthorized: true } : undefined,
     });
   }
 
