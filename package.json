@@ -8,25 +8,23 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "npm run typecheck && npm run check:encoding && npm run test:local && npm run test:error-paths",
+    "test": "npm run typecheck && npm run check:encoding && npm run test:local && npm run test:error-paths && npm run test:db-tls",
     "check:encoding": "tsx scripts/encoding-check.ts",
     "test:local": "tsx scripts/local-check.ts",
     "test:error-paths": "tsx scripts/error-path-check.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "smoke": "tsx scripts/smoke.ts",
-    "test:e2e": "tsx scripts/e2e.ts"
+    "test:e2e": "tsx scripts/e2e.ts",
+    "test:db-tls": "tsx scripts/db-tls-check.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.4.5",
     "lucide-react": "^1.14.0",
-    "next": "16.2.4",
-    "pdf-parse": "^2.4.5",
-    "pdfjs-dist": "^5.7.284",
+    "next": "16.4.1",
     "pg": "^8.20.0",
-    "pptxgenjs": "^4.0.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "zod": "^4.4.1"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
@@ -36,7 +34,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.4",
+    "eslint-config-next": "16.4.1",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"
